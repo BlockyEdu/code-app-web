@@ -1,0 +1,12 @@
+# Default owner for this repository
+* @blockyedu/code-platform
+
+# Source code
+/src/ @blockyedu/code-platform
+
+# CI/CD
+/.github/ @blockyedu/devops-team
+
+# Configuration changes require owner review
+/package.json @blockyedu/code-platform
+/tsconfig.json @blockyedu/code-platform
