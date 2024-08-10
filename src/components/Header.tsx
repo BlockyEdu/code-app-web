@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react';
 import { useAuthStore } from '../lib/auth-store';
 import { startSsoLogin } from '../lib/sso';
+import { appBrandTitle } from '../lib/deploy-profile';
 import { LanguageSelector } from './LanguageSelector';
 import { RunControls } from './RunControls';
 
@@ -31,7 +32,7 @@ export function Header() {
     <header className="app-header">
       <div className="brand">
         <span className="brand-icon">🧩</span>
-        <span>BlockyEdu</span>
+        <span>{appBrandTitle()}</span>
         <span className="badge">MVP</span>
       </div>
       <LanguageSelector />
