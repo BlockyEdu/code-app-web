@@ -1,4 +1,4 @@
-/** @see edu-app-web/src/lib/idp.ts */
+/** LuminaryWorks OIDC SPA client — prefer `@luminary/auth-react` when available; see edu-app-web/src/lib/idp.ts */
 import { type User, UserManager, WebStorageStateStore } from 'oidc-client-ts';
 
 export interface IdpConfig {

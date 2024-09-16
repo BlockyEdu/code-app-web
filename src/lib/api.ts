@@ -4,9 +4,6 @@ export type { AiPublicConfig, AiUserSettings };
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
-type UnauthorizedHandler = () => void;
-let onUnauthorized: UnauthorizedHandler | null = null;
-
 export class UnauthorizedError extends Error {
   readonly status = 401;
 
@@ -16,8 +13,30 @@ export class UnauthorizedError extends Error {
   }
 }
 
+export class EntitlementRequiredError extends Error {
+  readonly status = 402;
+  readonly code?: string;
+  readonly featureCode?: string;
+
+  constructor(message: string, opts?: { code?: string; featureCode?: string }) {
+    super(message);
+    this.name = 'EntitlementRequiredError';
+    this.code = opts?.code;
+    this.featureCode = opts?.featureCode;
+  }
+}
+
+type UnauthorizedHandler = () => void;
+type EntitlementHandler = (err: EntitlementRequiredError) => void;
+let onUnauthorized: UnauthorizedHandler | null = null;
+let onEntitlementRequired: EntitlementHandler | null = null;
+
 export function setUnauthorizedHandler(handler: UnauthorizedHandler) {
   onUnauthorized = handler;
+}
+
+export function setEntitlementRequiredHandler(handler: EntitlementHandler) {
+  onEntitlementRequired = handler;
 }
 
 function headers(): HeadersInit {
@@ -36,6 +55,20 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (res.status === 401) {
     onUnauthorized?.();
     throw new UnauthorizedError('请先登录后再使用云端功能');
+  }
+  if (res.status === 402) {
+    let payload: { error?: { code?: string; message?: string; featureCode?: string } } = {};
+    try {
+      payload = JSON.parse(await res.text());
+    } catch {
+      /* ignore */
+    }
+    const err = new EntitlementRequiredError(
+      payload.error?.message || '需要 Pro / Ultra / 企业订阅',
+      { code: payload.error?.code, featureCode: payload.error?.featureCode },
+    );
+    onEntitlementRequired?.(err);
+    throw err;
   }
   if (!res.ok) {
     const text = await res.text();
@@ -177,5 +210,12 @@ export const api = {
         provider: opts?.provider,
         model: opts?.model,
       }),
+    }),
+  getMembership: () =>
+    request<import('./membership-types').MembershipResponse>('/membership'),
+  ensureTrial: (body?: { organizationId?: string }) =>
+    request<unknown>('/membership/trial/ensure', {
+      method: 'POST',
+      body: JSON.stringify(body ?? {}),
     }),
 };
