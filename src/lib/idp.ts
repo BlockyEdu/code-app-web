@@ -1,74 +1,120 @@
-/** LuminaryWorks OIDC SPA client — prefer `@luminary/auth-react` when available; see edu-app-web/src/lib/idp.ts */
-import { type User, UserManager, WebStorageStateStore } from 'oidc-client-ts';
+/**
+ * LuminaryWorks OIDC SPA client — thin wrapper over `@luminaryworks/auth-react`.
+ * Rsbuild/Vite only inlines static `import.meta.env.VITE_*` reads.
+ */
+import {
+  createPostLoginPathHelpers,
+  handleSignInCallback,
+  handleSignInPopupCallback,
+  isIdpConfigured,
+  isOidcPopupWindow,
+  type LuminaryAuthSession,
+  type LuminaryIdpConfig,
+  readIdpConfigFromEnv,
+  resetUserManager,
+  signInRedirect,
+  signOutRedirect,
+} from '@luminaryworks/auth-react';
 
-export interface IdpConfig {
-  issuer: string;
-  clientId: string;
-  redirectUri: string;
-  postLogoutRedirectUri?: string;
-  scopes?: string;
-  tokenKey?: string;
-}
+export type { LuminaryAuthSession, LuminaryIdpConfig };
 
-export function readIdpConfig(): Partial<IdpConfig> {
+export const DEFAULT_REDIRECT_PATH = '/auth/callback';
+
+function viteEnv(): Record<string, string | undefined> {
   return {
-    issuer: import.meta.env.VITE_IDP_ISSUER,
-    clientId: import.meta.env.VITE_IDP_CLIENT_ID,
-    redirectUri: import.meta.env.VITE_IDP_REDIRECT_URI ?? `${window.location.origin}/auth/callback`,
-    postLogoutRedirectUri: import.meta.env.VITE_IDP_POST_LOGOUT_URI ?? window.location.origin,
-    scopes: import.meta.env.VITE_IDP_SCOPES ?? 'openid profile email offline_access',
-    tokenKey: import.meta.env.VITE_IDP_TOKEN_KEY ?? 'blockyedu_token',
+    VITE_AUTH_GATEWAY_URL: import.meta.env.VITE_AUTH_GATEWAY_URL,
+    PUBLIC_AUTH_GATEWAY_URL: import.meta.env.PUBLIC_AUTH_GATEWAY_URL,
+    AUTH_GATEWAY_URL: import.meta.env.AUTH_GATEWAY_URL,
+    VITE_AUTH_EXPERIENCE_URL: import.meta.env.VITE_AUTH_EXPERIENCE_URL,
+    PUBLIC_AUTH_EXPERIENCE_URL: import.meta.env.PUBLIC_AUTH_EXPERIENCE_URL,
+    AUTH_EXPERIENCE_URL: import.meta.env.AUTH_EXPERIENCE_URL,
+    VITE_IDP_ISSUER: import.meta.env.VITE_IDP_ISSUER,
+    PUBLIC_IDP_ISSUER: import.meta.env.PUBLIC_IDP_ISSUER,
+    IDP_ISSUER: import.meta.env.IDP_ISSUER,
+    VITE_IDP_CLIENT_ID: import.meta.env.VITE_IDP_CLIENT_ID,
+    PUBLIC_IDP_CLIENT_ID: import.meta.env.PUBLIC_IDP_CLIENT_ID,
+    VITE_IDP_REDIRECT_URI: import.meta.env.VITE_IDP_REDIRECT_URI,
+    PUBLIC_IDP_REDIRECT_URI: import.meta.env.PUBLIC_IDP_REDIRECT_URI,
+    VITE_IDP_POPUP_REDIRECT_URI: import.meta.env.VITE_IDP_POPUP_REDIRECT_URI,
+    PUBLIC_IDP_POPUP_REDIRECT_URI: import.meta.env.PUBLIC_IDP_POPUP_REDIRECT_URI,
+    VITE_IDP_POST_LOGOUT_URI: import.meta.env.VITE_IDP_POST_LOGOUT_URI,
+    PUBLIC_IDP_POST_LOGOUT_URI: import.meta.env.PUBLIC_IDP_POST_LOGOUT_URI,
+    VITE_IDP_SCOPES: import.meta.env.VITE_IDP_SCOPES,
+    PUBLIC_IDP_SCOPES: import.meta.env.PUBLIC_IDP_SCOPES,
+    VITE_IDP_AUDIENCE: import.meta.env.VITE_IDP_AUDIENCE,
+    PUBLIC_IDP_AUDIENCE: import.meta.env.PUBLIC_IDP_AUDIENCE,
+    VITE_IDP_TOKEN_KEY: import.meta.env.VITE_IDP_TOKEN_KEY ?? 'blockyedu_token',
   };
 }
 
+export function readLuminaryIdpConfig(): Partial<LuminaryIdpConfig> {
+  const env = viteEnv();
+  const fromShared = readIdpConfigFromEnv(env);
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const redirectUri =
+    fromShared.redirectUri ||
+    env.VITE_IDP_REDIRECT_URI ||
+    `${origin}${DEFAULT_REDIRECT_PATH}`;
+  return {
+    ...fromShared,
+    redirectUri,
+    popupRedirectUri: fromShared.popupRedirectUri || redirectUri,
+    postLogoutRedirectUri:
+      fromShared.postLogoutRedirectUri ||
+      env.VITE_IDP_POST_LOGOUT_URI ||
+      origin,
+    tokenStorageKey: fromShared.tokenStorageKey || 'blockyedu_token',
+  };
+}
+
+export function readIdpConfig(): Partial<LuminaryIdpConfig> {
+  return readLuminaryIdpConfig();
+}
+
 export function isDirectIdpEnabled(): boolean {
-  const c = readIdpConfig();
-  return Boolean(c.issuer && c.clientId);
+  return isIdpConfigured(readLuminaryIdpConfig());
 }
 
-let userManager: UserManager | null = null;
+export function isLocalPasswordLoginAllowed(): boolean {
+  return import.meta.env.VITE_ALLOW_LOCAL_LOGIN === 'true';
+}
 
-function getUserManager(config: IdpConfig): UserManager {
-  if (userManager) return userManager;
-  userManager = new UserManager({
-    authority: config.issuer.replace(/\/$/, ''),
-    client_id: config.clientId,
-    redirect_uri: config.redirectUri,
-    post_logout_redirect_uri: config.postLogoutRedirectUri ?? config.redirectUri,
-    response_type: 'code',
-    scope: config.scopes ?? 'openid profile email offline_access',
-    automaticSilentRenew: true,
-    userStore: new WebStorageStateStore({ store: window.localStorage }),
+export const { rememberPostLoginPath, peekPostLoginPath, consumePostLoginPath } =
+  createPostLoginPathHelpers({
+    storageKey: 'blockyedu:code:postLoginPath',
+    defaultPath: '/',
+    unsafePrefixes: ['/login', '/auth'],
   });
-  return userManager;
-}
 
 export async function idpSignIn(returnUrl?: string): Promise<void> {
-  const partial = readIdpConfig();
-  if (!partial.issuer || !partial.clientId) throw new Error('IdP not configured');
-  await getUserManager(partial as IdpConfig).signinRedirect({
-    state: returnUrl ? { returnUrl } : undefined,
-  });
+  const config = readLuminaryIdpConfig();
+  if (!isIdpConfigured(config)) throw new Error('IdP not configured');
+  resetUserManager();
+  await signInRedirect(config, returnUrl);
 }
 
-export async function idpHandleCallback(): Promise<{ accessToken: string; returnUrl?: string }> {
-  const partial = readIdpConfig();
-  if (!partial.issuer || !partial.clientId) throw new Error('IdP not configured');
-  const config = partial as IdpConfig;
-  const user: User = await getUserManager(config).signinRedirectCallback();
-  const tokenKey = config.tokenKey ?? 'blockyedu_token';
-  localStorage.setItem(tokenKey, user.access_token);
-  const returnUrl =
-    typeof user.state === 'object' && user.state && 'returnUrl' in user.state
-      ? String((user.state as { returnUrl?: string }).returnUrl ?? '')
-      : undefined;
-  return { accessToken: user.access_token, returnUrl: returnUrl || undefined };
+export async function idpHandleCallback(): Promise<{
+  accessToken: string;
+  returnUrl?: string;
+  session: LuminaryAuthSession;
+}> {
+  const config = readLuminaryIdpConfig();
+  if (!isIdpConfigured(config)) throw new Error('IdP not configured');
+  const { session, returnUrl } = await handleSignInCallback(config);
+  localStorage.setItem(config.tokenStorageKey ?? 'blockyedu_token', session.accessToken);
+  return { accessToken: session.accessToken, returnUrl, session };
+}
+
+export async function idpHandlePopupCallback(): Promise<void> {
+  const config = readLuminaryIdpConfig();
+  if (!isIdpConfigured(config)) throw new Error('IdP not configured');
+  await handleSignInPopupCallback(config);
 }
 
 export async function idpSignOut(): Promise<void> {
-  const partial = readIdpConfig();
-  if (!partial.issuer || !partial.clientId) return;
-  const config = partial as IdpConfig;
-  localStorage.removeItem(config.tokenKey ?? 'blockyedu_token');
-  await getUserManager(config).signoutRedirect();
+  const config = readLuminaryIdpConfig();
+  if (!isIdpConfigured(config)) return;
+  await signOutRedirect(config);
 }
+
+export { isOidcPopupWindow, handleSignInCallback };

@@ -1,0 +1,10 @@
+# pnpm 10+: allow required postinstall scripts (parcel watcher).
+allowBuilds:
+  '@parcel/watcher': true
+  core-js: false
+
+# Temporary: admit nanoid CVE patch before default 24h minimumReleaseAge elapses.
+minimumReleaseAgeExclude:
+  - nanoid@3.3.18
+  - '@luminaryworks/auth-dev-proxy@0.1.0'
+  - '@luminaryworks/auth-react@0.3.0'
