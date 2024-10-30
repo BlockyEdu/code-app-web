@@ -62,7 +62,7 @@ export function readLuminaryIdpConfig(): Partial<LuminaryIdpConfig> {
     postLogoutRedirectUri:
       fromShared.postLogoutRedirectUri ||
       env.VITE_IDP_POST_LOGOUT_URI ||
-      origin,
+      `${origin}/login`,
     tokenStorageKey: fromShared.tokenStorageKey || 'blockyedu_token',
   };
 }

@@ -1,3 +1,17 @@
+/**
+ * Blockly helpers for the create workspace.
+ * TOOLBOX_XML kept as exercise XML fallback; prefer `buildToolbox(kind)`.
+ */
+export { DEFAULT_JS } from "./blockly-defaults";
+export {
+  buildToolbox,
+  DEFAULT_KIND_CODE,
+  DEFAULT_KIND_XML,
+  ensureTargetGenerators,
+  registerTargetBlocks,
+} from "./targets";
+
+/** Legacy XML toolbox — exercise fallback if JSON toolbox fails. */
 export const TOOLBOX_XML = `
 <xml xmlns="https://developers.google.com/blockly/xml">
   <category name="逻辑" colour="210">
@@ -28,8 +42,4 @@ export const TOOLBOX_XML = `
   </category>
   <category name="变量" colour="330" custom="VARIABLE"></category>
 </xml>
-`;
-
-export const DEFAULT_JS = `// 在 Monaco 模式下编辑 JavaScript
-console.log("Hello BlockyEdu");
 `;

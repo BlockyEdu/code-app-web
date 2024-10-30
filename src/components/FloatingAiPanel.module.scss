@@ -1,0 +1,81 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.shell {
+  position: fixed;
+  right: $space-4;
+  bottom: $space-4;
+  width: min(360px, calc(100vw - 32px));
+  height: min(440px, calc(100vh - 96px));
+  z-index: $z-overlay;
+  display: flex;
+  flex-direction: column;
+  background: $color-bg-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-xl;
+  overflow: hidden;
+  animation: slideIn 0.18s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.header {
+  @include flex-row($space-2);
+  justify-content: space-between;
+  padding: $space-3 $space-4;
+  border-bottom: 1px solid $color-border;
+  flex-shrink: 0;
+  background: $color-bg-elevated;
+}
+
+.title {
+  @include flex-row($space-2);
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.closeBtn {
+  @include flex-center();
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  border-radius: $radius-md;
+  cursor: pointer;
+
+  &:hover {
+    background: $color-bg-hover;
+    color: $color-text-primary;
+  }
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.hubHint {
+  margin: $space-3 $space-4 0;
+  padding: $space-3;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: $color-bg-base;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: $line-height-base;
+}

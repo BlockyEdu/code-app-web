@@ -1,0 +1,288 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: $z-overlay;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: rgba(0, 0, 0, 0.35);
+  cursor: default;
+}
+
+.overlay {
+  position: fixed;
+  top: $header-height;
+  left: 0;
+  bottom: 0;
+  width: min(320px, 88vw);
+  z-index: calc(#{$z-overlay} + 1);
+  box-shadow: $shadow-xl;
+  animation: assetsSlide 0.16s ease;
+}
+
+@keyframes assetsSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.leftPanel {
+  @include flex-col();
+  align-items: stretch;
+  height: 100%;
+  width: 100%;
+  border-right: 1px solid $color-border;
+  overflow: hidden;
+  background: $color-bg-surface;
+}
+
+.drawerHead {
+  @include flex-row();
+  justify-content: space-between;
+  padding: $space-3 $space-3;
+  border-bottom: 1px solid $color-border;
+  flex-shrink: 0;
+}
+
+.drawerTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.drawerClose {
+  @include flex-center();
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  border-radius: $radius-md;
+  cursor: pointer;
+
+  &:hover {
+    background: $color-bg-hover;
+    color: $color-text-primary;
+  }
+}
+
+.drawerBody {
+  @include flex-row();
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.activityBar {
+  @include flex-col($space-1);
+  width: $activity-bar-width;
+  min-width: $activity-bar-width;
+  background: $color-bg-base;
+  border-right: 1px solid $color-border-subtle;
+  padding: $space-2 0;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.activityBtn {
+  @include flex-center();
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: $color-text-muted;
+  cursor: pointer;
+  border-radius: $radius-md;
+  font-size: 17px;
+  transition: background $transition-fast, color $transition-fast;
+  position: relative;
+
+  &:hover {
+    background: $color-bg-elevated;
+    color: $color-text-secondary;
+  }
+}
+
+.activityBtnActive {
+  color: $color-primary !important;
+  background: $color-primary-muted !important;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 20px;
+    background: $color-primary;
+    border-radius: 0 $radius-sm $radius-sm 0;
+  }
+}
+
+.panelContent {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  @include scrollbar-thin();
+}
+
+.sectionHeader {
+  @include flex-row();
+  justify-content: space-between;
+  padding: $space-3 $space-3 $space-2;
+  border-bottom: 1px solid $color-border-subtle;
+  position: sticky;
+  top: 0;
+  background: $color-bg-surface;
+  z-index: $z-base;
+}
+
+.sectionTitle {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.sectionAction {
+  @include flex-center();
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: $color-text-muted;
+  cursor: pointer;
+  border-radius: $radius-sm;
+  font-size: 11px;
+
+  &:hover {
+    background: $color-bg-elevated;
+    color: $color-text-primary;
+  }
+}
+
+.fileTree {
+  padding-bottom: $space-4;
+}
+
+.treeFolder,
+.treeFile {
+  @include flex-row($space-1);
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  padding: 4px $space-3;
+  font-size: $font-size-sm;
+  text-align: left;
+
+  &:hover {
+    background: $color-bg-elevated;
+    color: $color-text-primary;
+  }
+}
+
+.treeFileActive {
+  background: $color-primary-muted;
+  color: $color-primary !important;
+}
+
+.treeChevron {
+  width: 14px;
+  font-size: 9px;
+  color: $color-text-muted;
+  flex-shrink: 0;
+}
+
+.treeIcon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.treeName {
+  @include truncate();
+  font-size: $font-size-sm;
+}
+
+.modulesGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: $space-2;
+}
+
+.moduleCard {
+  @include flex-col();
+  align-items: flex-start;
+  width: 100%;
+  border: none;
+  background: $color-bg-elevated;
+  color: $color-text-primary;
+  cursor: pointer;
+  padding: 8px $space-3;
+  border-left: 2px solid transparent;
+  border-radius: $radius-md;
+  text-align: left;
+  gap: 2px;
+
+  &:hover {
+    background: $color-bg-overlay;
+  }
+}
+
+.moduleLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+}
+
+.moduleDesc {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.templateList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: $space-2;
+}
+
+.templateItem {
+  @include flex-row($space-2);
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  padding: 7px $space-2;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  text-align: left;
+
+  &:hover {
+    background: $color-bg-elevated;
+    color: $color-text-primary;
+  }
+}
+
+.learnStack {
+  @include flex-col();
+  gap: 0;
+  height: 100%;
+}
+
+.learnSection {
+  border-bottom: 1px solid $color-border-subtle;
+  padding: $space-2;
+}

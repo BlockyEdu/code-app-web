@@ -1,0 +1,493 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.previewPanel {
+  @include flex-col();
+  height: 100%;
+  width: 100%;
+  border-left: 1px solid $color-border;
+  background: $color-bg-surface;
+  overflow: hidden;
+}
+
+.previewHeader {
+  @include flex-row();
+  justify-content: space-between;
+  padding: $space-2 $space-3;
+  border-bottom: 1px solid $color-border;
+  background: $color-bg-base;
+  flex-shrink: 0;
+  height: 36px;
+  align-items: center;
+}
+
+.previewTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+}
+
+.previewBadge {
+  margin-left: $space-2;
+  font-size: 10px;
+  color: $color-text-muted;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  padding: 1px 6px;
+}
+
+.previewActions {
+  @include flex-row($space-1);
+}
+
+.previewBtn {
+  @include flex-center();
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: $color-text-muted;
+  cursor: pointer;
+  border-radius: $radius-sm;
+  font-size: 11px;
+
+  &:hover {
+    background: $color-bg-elevated;
+    color: $color-text-primary;
+  }
+}
+
+.previewContent {
+  flex: 1;
+  overflow: auto;
+  @include scrollbar-thin();
+  background: #111827;
+}
+
+// Web
+.webFrame {
+  @include flex-col();
+  height: 100%;
+}
+
+.webIframe {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  background: #0f172a;
+  min-height: 0;
+}
+
+.browserBar {
+  @include flex-row($space-2);
+  background: #1f2937;
+  padding: 6px $space-3;
+  border-bottom: 1px solid $color-border;
+  flex-shrink: 0;
+}
+
+.browserDots {
+  @include flex-row($space-1);
+  span {
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-radius: $radius-full;
+  }
+}
+
+.browserUrl {
+  flex: 1;
+  background: #111827;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  padding: 2px $space-2;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  font-family: $font-mono;
+}
+
+.webContent {
+  flex: 1;
+  padding: $space-4;
+  overflow-y: auto;
+  @include scrollbar-thin();
+}
+
+.webHero {
+  @include flex-col($space-3);
+  align-items: center;
+  text-align: center;
+  padding: $space-6 $space-4;
+  background: linear-gradient(135deg, #1a1e26, #1e2a3d);
+  border-radius: $radius-lg;
+  margin-bottom: $space-4;
+}
+
+.webHeroTag {
+  padding: 3px 10px;
+  background: $color-primary-muted;
+  color: $color-primary;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  border: 1px solid #{$color-primary}40;
+}
+
+.webHeroTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.webHeroSub {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.webHeroBtn {
+  padding: 7px $space-5;
+  background: $color-primary;
+  color: #fff;
+  border-radius: $radius-full;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+}
+
+.webSection {
+  @include flex-row($space-2);
+}
+
+.webCard {
+  flex: 1;
+  background: $color-bg-elevated;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-3;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  text-align: center;
+  min-height: 48px;
+  @include flex-center();
+}
+
+// Miniprogram
+.phoneFrame {
+  @include flex-center();
+  height: 100%;
+  padding: $space-4;
+}
+
+.phoneScreen {
+  width: 220px;
+  height: 400px;
+  background: $color-bg-surface;
+  border-radius: 24px;
+  border: 2px solid $color-border;
+  overflow: hidden;
+  @include flex-col();
+  box-shadow: $shadow-xl;
+}
+
+.mpHeader {
+  @include flex-center();
+  background: #07c160;
+  padding: $space-3;
+  flex-shrink: 0;
+}
+
+.mpTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: #fff;
+}
+
+.mpContent {
+  flex: 1;
+  overflow-y: auto;
+  @include scrollbar-thin();
+}
+
+.mpBanner {
+  width: 100%;
+  height: 100px;
+  background: linear-gradient(135deg, #07c160, #0b9c49);
+}
+
+.mpItem {
+  @include flex-row($space-2);
+  padding: $space-2 $space-3;
+  border-bottom: 1px solid $color-border-subtle;
+}
+
+.mpItemIcon {
+  width: 28px;
+  height: 28px;
+  background: $color-primary-muted;
+  border-radius: $radius-sm;
+  flex-shrink: 0;
+}
+
+.mpItemText {
+  flex: 1;
+  min-width: 0;
+}
+
+.mpItemTitle {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.mpItemSub {
+  font-size: 10px;
+  color: $color-text-muted;
+}
+
+.mpTabBar {
+  @include flex-row();
+  justify-content: space-around;
+  background: $color-bg-base;
+  border-top: 1px solid $color-border;
+  padding: $space-1 0;
+  flex-shrink: 0;
+}
+
+.mpTab {
+  @include flex-col($space-1);
+  align-items: center;
+  border: none;
+  background: transparent;
+  color: $color-text-muted;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.mpTabActive {
+  color: #07c160 !important;
+}
+
+.mpTabIcon {
+  font-size: 16px;
+}
+
+// Toy
+.toyPreview {
+  @include flex-col($space-3);
+  padding: $space-4;
+  height: 100%;
+  overflow-y: auto;
+  @include scrollbar-thin();
+}
+
+.toyDevice {
+  @include flex-col($space-3);
+  align-items: center;
+}
+
+.toyBoard {
+  position: relative;
+  width: 200px;
+  height: 130px;
+  background: #1a2744;
+  border: 2px solid #2a3f6f;
+  border-radius: $radius-lg;
+  @include flex-center();
+  gap: $space-5;
+  box-shadow: $shadow-md;
+}
+
+.toyChip {
+  @include flex-center();
+  width: 48px;
+  height: 48px;
+  background: #2563eb;
+  border: 2px solid #3b82f6;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  color: #fff;
+  font-family: $font-mono;
+}
+
+.toyLed {
+  width: 20px;
+  height: 20px;
+  border-radius: $radius-full;
+  transition: background $transition-slow, box-shadow $transition-slow;
+}
+
+.toyMotorLabel {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 9px;
+  color: $color-text-muted;
+  font-family: $font-mono;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.toyControls {
+  @include flex-row($space-2);
+}
+
+.toyBtn {
+  padding: 6px $space-3;
+  border: 1px solid $color-border;
+  background: $color-bg-elevated;
+  color: $color-text-primary;
+  cursor: pointer;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &:hover {
+    border-color: $color-primary;
+    color: $color-primary;
+  }
+}
+
+.toyBtnActive {
+  background: $color-primary-muted;
+  border-color: $color-primary;
+  color: $color-primary;
+}
+
+.toyLog {
+  @include flex-col($space-1);
+  background: $color-bg-base;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-3;
+  font-family: $font-mono;
+}
+
+.toyLogLine {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: 1.6;
+}
+
+// Smarthome device panel
+.homePreview {
+  @include flex-col($space-3);
+  padding: $space-3;
+  height: 100%;
+  overflow-y: auto;
+  @include scrollbar-thin();
+}
+
+.homeNotice {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  border: 1px dashed #{$color-kind-smarthome}50;
+  background: rgba(14, 165, 233, 0.08);
+  border-radius: $radius-md;
+  padding: $space-2 $space-3;
+}
+
+.roomTabs {
+  @include flex-row($space-1);
+  flex-wrap: wrap;
+}
+
+.roomTab {
+  padding: 4px 10px;
+  border: 1px solid $color-border;
+  background: $color-bg-elevated;
+  color: $color-text-secondary;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $color-kind-smarthome;
+  }
+}
+
+.roomTabActive {
+  background: rgba(14, 165, 233, 0.15);
+  border-color: $color-kind-smarthome;
+  color: $color-kind-smarthome;
+}
+
+.deviceGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-2;
+}
+
+.deviceCard {
+  @include flex-col($space-2);
+  background: $color-bg-elevated;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-3;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color $transition-fast, background $transition-fast;
+
+  &:hover {
+    border-color: $color-kind-smarthome;
+  }
+}
+
+.deviceCardOn {
+  border-color: #{$color-kind-smarthome}80;
+  background: rgba(14, 165, 233, 0.1);
+}
+
+.deviceName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.deviceMeta {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.deviceStatus {
+  font-size: $font-size-xs;
+  font-family: $font-mono;
+  color: $color-kind-smarthome;
+}
+
+.sceneRow {
+  @include flex-row($space-2);
+  flex-wrap: wrap;
+}
+
+.sceneBtn {
+  padding: 6px 12px;
+  border: 1px solid $color-border;
+  background: $color-bg-base;
+  color: $color-text-secondary;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $color-kind-smarthome;
+    color: $color-kind-smarthome;
+  }
+}
+
+.homeLog {
+  @include flex-col($space-1);
+  background: $color-bg-base;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: $space-3;
+  font-family: $font-mono;
+  min-height: 72px;
+}
+
+.homeLogLine {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: 1.6;
+}

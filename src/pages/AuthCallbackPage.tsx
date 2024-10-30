@@ -1,19 +1,37 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '../lib/auth-store';
-import { idpHandleCallback, isDirectIdpEnabled } from '../lib/idp';
+import {
+  consumePostLoginPath,
+  idpHandleCallback,
+  idpHandlePopupCallback,
+  isDirectIdpEnabled,
+  isOidcPopupWindow,
+} from '../lib/idp';
 import { clearAuthHash, readTokenFromHash } from '../lib/sso';
 
 export function AuthCallbackPage() {
   const fetchMe = useAuthStore((s) => s.fetchMe);
   const [error, setError] = useState('');
+  const started = useRef(false);
 
   useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+
     const run = async () => {
       if (isDirectIdpEnabled()) {
         try {
-          await idpHandleCallback();
+          if (isOidcPopupWindow()) {
+            await idpHandlePopupCallback();
+            return;
+          }
+          const { accessToken, returnUrl } = await idpHandleCallback();
+          localStorage.setItem('blockyedu_token', accessToken);
           await fetchMe();
-          window.location.replace('/');
+          const dest = consumePostLoginPath(
+            (returnUrl || '/').replace(/^\/?/, '/') || '/',
+          );
+          window.location.replace(dest.startsWith('http') ? '/' : dest);
           return;
         } catch (e) {
           setError(e instanceof Error ? e.message : 'SSO 登录失败');
@@ -42,8 +60,8 @@ export function AuthCallbackPage() {
     return (
       <div className="auth-callback-page">
         <p className="error">{error}</p>
-        <button type="button" className="btn-ghost" onClick={() => window.location.replace('/')}>
-          返回编辑器
+        <button type="button" className="btn-ghost" onClick={() => window.location.replace('/login')}>
+          返回登录
         </button>
       </div>
     );

@@ -1,6 +1,6 @@
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useState } from 'react';
 import { useAuthStore } from '../lib/auth-store';
-import { startSsoLogin } from '../lib/sso';
+import { isDirectIdpEnabled, isLocalPasswordLoginAllowed } from '../lib/idp';
 import { appBrandTitle } from '../lib/deploy-profile';
 import { LanguageSelector } from './LanguageSelector';
 import { LogoMark } from './Logo';
@@ -9,8 +9,7 @@ import { RunControls } from './RunControls';
 export function Header() {
   const { user, logout, login, loading, loginPromptOpen, openLoginPrompt, closeLoginPrompt } =
     useAuthStore();
-  const showLogin = loginPromptOpen;
-  const [ssoAvailable, setSsoAvailable] = useState(false);
+  const showLogin = loginPromptOpen && isLocalPasswordLoginAllowed() && !isDirectIdpEnabled();
   const [username, setUsername] = useState('learner1');
   const [password, setPassword] = useState('learner123');
 
@@ -20,14 +19,13 @@ export function Header() {
     if (ok) closeLoginPrompt();
   };
 
-  useEffect(() => {
-    fetch(
-      `${import.meta.env.VITE_API_BASE_URL ?? '/api/v1'}/auth/login?returnUrl=${encodeURIComponent(`${window.location.origin}/auth/callback`)}`,
-    )
-      .then((r) => r.json())
-      .then((info: { mode?: string }) => setSsoAvailable(info.mode === 'oidc'))
-      .catch(() => setSsoAvailable(false));
-  }, []);
+  const goLogin = () => {
+    if (isDirectIdpEnabled()) {
+      window.location.href = '/login';
+      return;
+    }
+    openLoginPrompt();
+  };
 
   return (
     <header className="app-header">
@@ -46,7 +44,7 @@ export function Header() {
             </button>
           </>
         ) : (
-          <button type="button" className="btn-ghost" onClick={openLoginPrompt}>
+          <button type="button" className="btn-ghost" onClick={goLogin}>
             登录
           </button>
         )}
@@ -76,9 +74,9 @@ export function Header() {
           <button type="submit" disabled={loading}>
             登录
           </button>
-          <button type="button" className="btn-ghost" onClick={() => startSsoLogin()}>
-            {ssoAvailable ? 'SSO 登录' : '统一登录 ↗'}
-          </button>
+          <a className="btn-ghost" href="/login">
+            统一登录 ↗
+          </a>
           <span className="login-tip">演示：learner1 / learner123</span>
         </form>
       )}
