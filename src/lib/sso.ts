@@ -1,6 +1,5 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
-const EDU_LOGIN_URL =
-  import.meta.env.VITE_EDU_LOGIN_URL ?? 'http://localhost:18082/login';
+const EDU_LOGIN_URL = import.meta.env.VITE_EDU_LOGIN_URL?.trim() ?? '';
 
 export function authCallbackUrl(): string {
   return `${window.location.origin}/auth/callback`;
@@ -40,8 +39,12 @@ export function startOidcLogin(returnUrl = authCallbackUrl()): void {
   window.location.href = `${API_BASE}/auth/login?${params}`;
 }
 
-/** 未配置 OIDC 时：跳转 edu 统一登录页 */
+/** 未配置 OIDC 时：跳转 edu 统一登录页（code-standalone 下禁用） */
 export function startUnifiedLogin(returnUrl = authCallbackUrl()): void {
+  if (!EDU_LOGIN_URL) {
+    startOidcLogin(returnUrl);
+    return;
+  }
   const params = new URLSearchParams({ returnUrl });
   window.location.href = `${EDU_LOGIN_URL}?${params}`;
 }

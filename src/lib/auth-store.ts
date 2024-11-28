@@ -1,8 +1,7 @@
-import { create } from 'zustand';
-import { logoutAndRedirect } from './sso';
-import { idpSignIn, idpSignOut, isDirectIdpEnabled } from './idp';
-
-const BASE = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
+import { create } from "zustand";
+import { httpRequest } from "./http";
+import { idpSignOut, isDirectIdpEnabled } from "./idp";
+import { logoutAndRedirect } from "./sso";
 
 export interface AuthUser {
   id: string;
@@ -16,6 +15,8 @@ export interface AuthUser {
 interface AuthState {
   user: AuthUser | null;
   loading: boolean;
+  /** True after the first auth probe finishes (token missing or /me settled). */
+  initialized: boolean;
   loginPromptOpen: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   fetchMe: () => Promise<void>;
@@ -24,59 +25,77 @@ interface AuthState {
   closeLoginPrompt: () => void;
 }
 
+/** Module-level so Strict Mode remounts share one /me probe. */
+let fetchMeInflight: Promise<void> | null = null;
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: false,
+  initialized: false,
   loginPromptOpen: false,
+
   login: async (username, password) => {
     set({ loading: true });
     try {
-      const res = await fetch(`${BASE}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const data = await httpRequest<{ accessToken: string; user: AuthUser }>("/auth/login", {
+        method: "POST",
         body: JSON.stringify({ username, password }),
+        coalesce: false,
+        skipAuthHandlers: true,
       });
-      if (!res.ok) throw new Error(await res.text());
-      const data = (await res.json()) as { accessToken: string; user: AuthUser };
-      localStorage.setItem('blockyedu_token', data.accessToken);
-      set({ user: data.user, loading: false, loginPromptOpen: false });
+      localStorage.setItem("blockyedu_token", data.accessToken);
+      set({ user: data.user, loading: false, initialized: true, loginPromptOpen: false });
       return true;
     } catch {
-      set({ loading: false });
+      set({ loading: false, initialized: true });
       return false;
     }
   },
+
   fetchMe: async () => {
-    const token = localStorage.getItem('blockyedu_token');
-    if (!token) return;
-    set({ loading: true });
-    try {
-      const res = await fetch(`${BASE}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('unauthorized');
-      set({ user: (await res.json()) as AuthUser, loading: false });
-    } catch {
-      localStorage.removeItem('blockyedu_token');
-      set({ user: null, loading: false });
-    }
+    if (fetchMeInflight) return fetchMeInflight;
+
+    fetchMeInflight = (async () => {
+      const token = localStorage.getItem("blockyedu_token");
+      if (!token) {
+        set({ user: null, loading: false, initialized: true });
+        return;
+      }
+      set({ loading: true });
+      try {
+        const user = await httpRequest<AuthUser>("/auth/me");
+        set({ user, loading: false, initialized: true });
+      } catch {
+        localStorage.removeItem("blockyedu_token");
+        set({ user: null, loading: false, initialized: true });
+      }
+    })().finally(() => {
+      fetchMeInflight = null;
+    });
+
+    return fetchMeInflight;
   },
+
   logout: () => {
-    set({ user: null, loginPromptOpen: false });
+    const loginUrl = `${window.location.origin}/login`;
+    set({ user: null, loginPromptOpen: false, initialized: true });
+    localStorage.removeItem("blockyedu_token");
     if (isDirectIdpEnabled()) {
       idpSignOut().catch(() => {
-        window.location.href = window.location.origin;
+        window.location.href = loginUrl;
       });
       return;
     }
-    logoutAndRedirect(window.location.origin);
+    logoutAndRedirect(loginUrl);
   },
+
   openLoginPrompt: () => {
     if (isDirectIdpEnabled()) {
-      void idpSignIn(`${window.location.origin}/auth/callback`);
+      window.location.href = "/login";
       return;
     }
     set({ loginPromptOpen: true });
   },
+
   closeLoginPrompt: () => set({ loginPromptOpen: false }),
 }));

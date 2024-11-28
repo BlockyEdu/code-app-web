@@ -1,0 +1,83 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.workspace {
+  @include flex-col();
+  width: 100vw;
+  height: 100vh;
+  background: $color-bg-base;
+  overflow: hidden;
+  color: $color-text-primary;
+  font-family: $font-sans;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+}
+
+.hPanelGroup,
+.vPanelGroup {
+  width: 100%;
+  height: 100%;
+}
+
+.panelFull {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.hResizeHandle {
+  width: 4px;
+  background: $color-border;
+  cursor: col-resize;
+  flex-shrink: 0;
+  transition: background $transition-fast;
+
+  &:hover,
+  &[data-separator-active] {
+    background: $color-primary;
+  }
+}
+
+.vResizeHandle {
+  height: 4px;
+  background: $color-border;
+  cursor: row-resize;
+  flex-shrink: 0;
+  transition: background $transition-fast;
+
+  &:hover,
+  &[data-separator-active] {
+    background: $color-primary;
+  }
+}
+
+.editorShell {
+  @include flex-col();
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: $color-bg-surface;
+}
+
+.editorBody {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.consoleShell {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: $color-bg-base;
+}
+

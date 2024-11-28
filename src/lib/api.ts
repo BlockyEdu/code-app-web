@@ -1,47 +1,23 @@
-import type { AiPublicConfig, AiUserSettings } from './ai-settings';
+import type { AiPublicConfig, AiUserSettings } from "./ai-settings";
+import {
+  EntitlementRequiredError,
+  httpRequest,
+  setEntitlementRequiredHandler,
+  setUnauthorizedHandler,
+  UnauthorizedError,
+} from "./http";
+import type { MembershipResponse } from "./membership-types";
 
 export type { AiPublicConfig, AiUserSettings };
+export {
+  EntitlementRequiredError,
+  setEntitlementRequiredHandler,
+  setUnauthorizedHandler,
+  UnauthorizedError,
+};
 
-const BASE = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
-
-type UnauthorizedHandler = () => void;
-let onUnauthorized: UnauthorizedHandler | null = null;
-
-export class UnauthorizedError extends Error {
-  readonly status = 401;
-
-  constructor(message = '请先登录') {
-    super(message);
-    this.name = 'UnauthorizedError';
-  }
-}
-
-export function setUnauthorizedHandler(handler: UnauthorizedHandler) {
-  onUnauthorized = handler;
-}
-
-function headers(): HeadersInit {
-  const token = localStorage.getItem('blockyedu_token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { ...headers(), ...init?.headers },
-    ...init,
-  });
-  if (res.status === 401) {
-    onUnauthorized?.();
-    throw new UnauthorizedError('请先登录后再使用云端功能');
-  }
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || res.statusText);
-  }
-  return res.json() as Promise<T>;
+async function request<T>(path: string, init?: Parameters<typeof httpRequest>[1]): Promise<T> {
+  return httpRequest<T>(path, init);
 }
 
 export interface Project {
@@ -74,7 +50,7 @@ export interface Lesson extends LessonSummary {
 }
 
 export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
 }
 
@@ -95,51 +71,158 @@ export interface ExecuteCodeResult {
   compile?: { stdout: string; stderr: string; exitCode: number };
 }
 
-export type EditorMode = 'blockly' | 'monaco';
+export type EditorMode = "blockly" | "monaco";
 
-type AiOpts = { provider?: string; model?: string };
+export type CreateArtifactKind =
+  | "web"
+  | "miniprogram"
+  | "smarthome"
+  | "iot"
+  | "toy"
+  | "free"
+  | "exercise";
+
+export interface CreateArtifact {
+  id: string;
+  title: string;
+  kind: CreateArtifactKind;
+  summary: string | null;
+  visibility: string;
+  lifecycleState: string;
+  ownerId: string;
+  tenantId: string;
+  currentVersionId: string | null;
+  currentVersion: number;
+  workspaceProjectId?: string | null;
+  exerciseType?: string | null;
+  language?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+type AiOpts = {
+  provider?: string;
+  model?: string;
+  artifactId?: string;
+  kind?: CreateArtifactKind;
+};
+
+export interface PreviewSession {
+  id: string;
+  artifactId: string;
+  kind: string;
+  status: string;
+  isolation?: {
+    mode: string;
+    origin?: string;
+    embedUrl?: string;
+    sandboxFlags?: string[];
+    networkPolicy?: string;
+  };
+  previewUrl?: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface SmarthomeSimSession {
+  id: string;
+  artifactId: string;
+  status: string;
+  world: unknown;
+  createdAt: string;
+  expiresAt: string;
+}
 
 export const api = {
-  health: () => request<{ status: string }>('/health'),
-  aiConfig: () => request<AiPublicConfig>('/ai/config'),
-  listProjects: () => request<Project[]>('/code/projects'),
+  health: () => request<{ status: string }>("/health"),
+  aiConfig: () => request<AiPublicConfig>("/ai/config"),
+  listArtifacts: (params?: { kind?: CreateArtifactKind; limit?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.kind) q.set("kind", params.kind);
+    if (params?.limit) q.set("limit", String(params.limit));
+    const qs = q.toString();
+    return request<{ items: CreateArtifact[] }>(`/create/artifacts${qs ? `?${qs}` : ""}`);
+  },
+  createArtifact: (data: {
+    title: string;
+    kind: CreateArtifactKind;
+    summary?: string;
+    visibility?: string;
+    exerciseType?: "lesson" | "script";
+    language?: string;
+    workspaceProjectId?: string;
+  }) =>
+    request<CreateArtifact>("/create/artifacts", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  getArtifact: (id: string) => request<CreateArtifact>(`/create/artifacts/${id}`),
+  updateArtifact: (
+    id: string,
+    data: {
+      title?: string;
+      summary?: string;
+      visibility?: string;
+      language?: string;
+      workspaceProjectId?: string;
+      exerciseType?: "lesson" | "script";
+    },
+  ) =>
+    request<CreateArtifact>(`/create/artifacts/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  putArtifactFiles: (
+    id: string,
+    body: {
+      files: Array<{ path: string; contentType?: string; content?: string }>;
+      deletePaths?: string[];
+    },
+  ) =>
+    request<{ files: Array<{ path: string; contentType: string; content: string }> }>(
+      `/create/artifacts/${id}/files`,
+      {
+        method: "PUT",
+        body: JSON.stringify(body),
+      },
+    ),
+  listProjects: () => request<Project[]>("/code/projects"),
   getProject: (id: string) => request<Project>(`/code/projects/${id}`),
   createProject: (data: Partial<Project>) =>
-    request<Project>('/code/projects', {
-      method: 'POST',
+    request<Project>("/code/projects", {
+      method: "POST",
       body: JSON.stringify(data),
     }),
   updateProject: (id: string, data: Partial<Project>) =>
     request<Project>(`/code/projects/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(data),
     }),
   deleteProject: (id: string) =>
     request<{ deleted: boolean }>(`/code/projects/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
     }),
-  listLessons: () => request<LessonSummary[]>('/code/lessons'),
+  listLessons: () => request<LessonSummary[]>("/code/lessons"),
   getLesson: (id: string) => request<Lesson>(`/code/lessons/${id}`),
-  codeRuntime: () => request<CodeRuntimeConfig>('/code/runtime'),
+  codeRuntime: () => request<CodeRuntimeConfig>("/code/runtime"),
   executeCode: (body: { languageId: string; code: string; stdin?: string }) =>
-    request<ExecuteCodeResult>('/code/execute', {
-      method: 'POST',
+    request<ExecuteCodeResult>("/code/execute", {
+      method: "POST",
       body: JSON.stringify(body),
     }),
-  aiChat: (
-    messages: ChatMessage[],
-    opts?: AiOpts & { code?: string; editorMode?: EditorMode },
-  ) =>
+  aiChat: (messages: ChatMessage[], opts?: AiOpts & { code?: string; editorMode?: EditorMode }) =>
     request<{ role: string; content: string; mock?: boolean; provider?: string; model?: string }>(
-      '/ai/chat',
+      "/ai/chat",
       {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify({
           messages,
           code: opts?.code,
           editorMode: opts?.editorMode,
           provider: opts?.provider,
           model: opts?.model,
+          artifactId: opts?.artifactId,
+          kind: opts?.kind,
         }),
       },
     ),
@@ -153,29 +236,68 @@ export const api = {
       consoleOutput?: string[];
     },
   ) =>
-    request<{ hint: string; nextAction: string; mock?: boolean }>('/ai/coach/hint', {
-      method: 'POST',
+    request<{ hint: string; nextAction: string; mock?: boolean }>("/ai/coach/hint", {
+      method: "POST",
       body: JSON.stringify(body),
     }),
-  aiUpgradePro: (
-    body: AiOpts & { code: string; blockXml?: string; goal?: string },
-  ) =>
-    request<{ code: string; explanation: string; mock?: boolean }>(
-      '/ai/coach/upgrade-pro',
-      {
-        method: 'POST',
-        body: JSON.stringify(body),
-      },
-    ),
+  aiUpgradePro: (body: AiOpts & { code: string; blockXml?: string; goal?: string }) =>
+    request<{ code: string; explanation: string; mock?: boolean }>("/ai/coach/upgrade-pro", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   aiFixCode: (code: string, error?: string, opts?: AiOpts) =>
-    request<{ explanation: string; fixedCode: string; mock?: boolean }>('/ai/code/fix', {
-      method: 'POST',
+    request<{ explanation: string; fixedCode: string; mock?: boolean }>("/ai/code/fix", {
+      method: "POST",
       body: JSON.stringify({
         code,
         error,
-        language: 'javascript',
+        language: "javascript",
         provider: opts?.provider,
         model: opts?.model,
+        artifactId: opts?.artifactId,
+        kind: opts?.kind,
       }),
+    }),
+  createPreviewSession: (body: {
+    artifactId: string;
+    kind: Exclude<CreateArtifactKind, "exercise" | "free">;
+    htmlDocument?: string;
+    ttlSeconds?: number;
+  }) =>
+    request<PreviewSession>("/preview/sessions", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updatePreviewHtml: (sessionId: string, htmlDocument: string) =>
+    request<PreviewSession>(`/preview/sessions/${sessionId}/html`, {
+      method: "PUT",
+      body: JSON.stringify({ htmlDocument }),
+    }),
+  getArtifactFiles: (artifactId: string) =>
+    request<{ files: Array<{ path: string; contentType: string; content: string }> }>(
+      `/create/artifacts/${artifactId}/files`,
+    ),
+  createSmarthomeSession: (body: { artifactId: string; previewSessionId?: string }) =>
+    request<SmarthomeSimSession>("/smarthome/sessions", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  runSmarthomeSession: (sessionId: string) =>
+    request<SmarthomeSimSession>(`/smarthome/sessions/${sessionId}/run`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
+  publishWeb: (artifactId: string) =>
+    request<{ status: string; artifactId: string; message: string }>("/publish/web", {
+      method: "POST",
+      body: JSON.stringify({ artifactId }),
+    }),
+  getMembership: () => request<MembershipResponse>("/membership"),
+  ensureTrial: (body?: { organizationId?: string }) =>
+    request<unknown>("/membership/trial/ensure", {
+      method: "POST",
+      body: JSON.stringify(body ?? {}),
+      // Strict Mode remounts App effect → avoid duplicate trial ensure
+      coalesce: true,
     }),
 };

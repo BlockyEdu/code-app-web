@@ -1,0 +1,146 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.hub {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(37, 99, 235, 0.22), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(14, 165, 233, 0.12), transparent 50%),
+    $color-bg-base;
+  color: $color-text-primary;
+  font-family: $font-sans;
+}
+
+.topBar {
+  @include flex-row($space-3);
+  justify-content: space-between;
+  height: $header-height;
+  padding: 0 $space-6;
+  border-bottom: 1px solid $color-border;
+  background: rgba($color-bg-surface, 0.85);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: $z-header;
+}
+
+.brand {
+  @include flex-row($space-2);
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-md;
+}
+
+.topActions {
+  @include flex-row($space-3);
+}
+
+.main {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: $space-8 $space-6 $space-10;
+}
+
+.hero {
+  margin-bottom: $space-8;
+}
+
+.heroTitle {
+  margin: 0 0 $space-2;
+  font-size: $font-size-3xl;
+  font-weight: $font-weight-bold;
+  letter-spacing: -0.02em;
+}
+
+.heroSub {
+  margin: 0;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+  max-width: 40rem;
+  line-height: $line-height-base;
+}
+
+.toolbar {
+  @include flex-row($space-3);
+  justify-content: space-between;
+  margin-bottom: $space-5;
+  flex-wrap: wrap;
+  gap: $space-3;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+}
+
+.toolbarActions {
+  @include flex-row($space-2);
+  flex-wrap: wrap;
+}
+
+.filterRow {
+  margin-bottom: $space-5;
+  overflow-x: auto;
+}
+
+.cardLang {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: $space-4;
+}
+
+.card {
+  text-align: left;
+  border: 1px solid $color-border;
+  background: $color-bg-surface;
+  border-radius: $radius-lg;
+  padding: $space-4;
+  cursor: pointer;
+  transition: border-color $transition-fast, background $transition-fast, transform $transition-fast;
+  color: inherit;
+  font-family: inherit;
+
+  &:hover {
+    border-color: #{$color-primary}80;
+    background: $color-bg-elevated;
+    transform: translateY(-1px);
+  }
+}
+
+.cardTop {
+  @include flex-row($space-2);
+  justify-content: space-between;
+  margin-bottom: $space-3;
+}
+
+.kindChip {
+  @include flex-row($space-1);
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  border: 1px solid;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.cardTitle {
+  margin: 0 0 $space-2;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  @include truncate();
+}
+
+.cardMeta {
+  margin: 0;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.emptyWrap {
+  padding: $space-10 0;
+}

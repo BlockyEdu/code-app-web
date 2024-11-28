@@ -1,0 +1,104 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.worksPanel {
+  @include flex-col();
+  height: 100%;
+  min-height: 0;
+}
+
+.header {
+  @include flex-row();
+  justify-content: space-between;
+  align-items: center;
+  padding: $space-2 $space-3;
+  border-bottom: 1px solid $color-border-subtle;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+}
+
+.iconBtn {
+  @include flex-center();
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: $color-text-muted;
+  cursor: pointer;
+  border-radius: $radius-sm;
+
+  &:hover {
+    background: $color-bg-elevated;
+    color: $color-text-primary;
+  }
+}
+
+.loading,
+.empty {
+  padding: $space-6 $space-3;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: $space-2;
+  overflow: auto;
+  @include scrollbar-thin();
+  flex: 1;
+  min-height: 0;
+}
+
+.item {
+  @include flex-row($space-2);
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  background: transparent;
+  color: $color-text-primary;
+  border-radius: $radius-md;
+  padding: $space-2;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: background $transition-fast, border-color $transition-fast;
+
+  &:hover {
+    background: $color-bg-elevated;
+  }
+}
+
+.itemActive {
+  background: $color-bg-active;
+  border-color: $color-border;
+}
+
+.kindDot {
+  width: 8px;
+  height: 8px;
+  border-radius: $radius-full;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.itemBody {
+  @include flex-col(2px);
+  min-width: 0;
+  flex: 1;
+}
+
+.itemTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemMeta {
+  font-size: 11px;
+  color: $color-text-muted;
+}

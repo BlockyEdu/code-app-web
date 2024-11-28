@@ -288,6 +288,62 @@ body {
   color: #8b949e;
 }
 
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(ellipse at top, #161b22 0%, #0d1117 60%);
+}
+
+.login-page__panel {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-page__brand {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.login-page__brand h1 {
+  margin: 0;
+  font-size: 22px;
+  color: #e6edf3;
+}
+
+.login-page__local {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.login-page__local input {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  background: #0d1117;
+  color: #e6edf3;
+}
+
+.login-page__local button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #1677ff;
+  color: #fff;
+  cursor: pointer;
+}
+
 .btn-run:hover {
   background: #2ea043;
 }
@@ -396,20 +452,105 @@ body {
 .blockly-container {
   flex: 1;
   min-height: 0;
-  background: #1e1e1e;
+  width: 100%;
+  background: #151a24;
+}
+
+.blockly-container .injectionDiv,
+.blockly-container .blocklySvg {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .blocklyMainBackground {
-  fill: #1e1e1e !important;
+  fill: #151a24 !important;
 }
 
 .blocklyToolboxDiv {
-  background: #252526 !important;
-  border-right: 1px solid #30363d !important;
+  background: #0f131a !important;
+  border-right: 1px solid #232b38 !important;
+  width: 112px !important;
+  padding: 8px 6px !important;
+  box-sizing: border-box !important;
+}
+
+.blocklyToolboxContents {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  padding: 0 !important;
+}
+
+.blocklyTreeRow {
+  height: auto !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 6px 8px !important;
+  border-radius: 8px !important;
+  border-left: 3px solid transparent !important;
+  background: #161b26 !important;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.blocklyTreeRow:not(.blocklyTreeSelected):hover {
+  background: #1e2533 !important;
+}
+
+.blocklyTreeSelected {
+  background: #1e2a44 !important;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.35);
+}
+
+.blocklyTreeRowContentContainer {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.blocklyTreeIcon {
+  margin: 0 !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: currentColor !important;
+  opacity: 0.9;
+}
+
+.blocklyTreeLabel {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+  color: #e2e8f0 !important;
+  padding: 0 !important;
+}
+
+.blocklyTreeSeparator {
+  margin: 6px 4px !important;
+  border-bottom: 1px solid #232b38 !important;
+}
+
+.blocklyFlyout {
+  border-right: 1px solid #232b38;
 }
 
 .blocklyFlyoutBackground {
-  fill: #252526 !important;
+  fill: #121722 !important;
+}
+
+.blocklyFlyoutLabelText {
+  fill: #94a3b8 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.blocklyZoom > image,
+.blocklyTrash > image {
+  opacity: 0.85;
+}
+
+.blocklyScrollbarHandle {
+  fill: #334155 !important;
+  opacity: 0.7 !important;
 }
 
 .monaco-container {

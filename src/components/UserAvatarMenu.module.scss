@@ -1,0 +1,56 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.trigger {
+  display: inline-flex;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  background: transparent;
+  border-radius: 50%;
+  outline: none;
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px #{$color-primary}80;
+  }
+}
+
+.panel {
+  min-width: 220px;
+  padding: $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-bg-elevated;
+  box-shadow: $shadow-lg;
+}
+
+.identity {
+  @include flex-row($space-3);
+  padding: $space-1 $space-1 $space-3;
+  border-bottom: 1px solid $color-border;
+  margin-bottom: $space-2;
+}
+
+.meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.name {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include truncate();
+}
+
+.username {
+  margin-top: 2px;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  @include truncate();
+}
+
+.logoutBtn {
+  width: 100%;
+  justify-content: flex-start;
+}

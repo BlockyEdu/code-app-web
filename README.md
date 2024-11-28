@@ -1,4 +1,4 @@
-# BlockyEdu Code App Web
+﻿# BlockyEdu Code App Web
 
 编程工作台：Blockly + Monaco、多语言插件、AI 辅导、Pro 代码运行。
 
@@ -32,3 +32,7 @@ npm run dev
 ## 环境变量
 
 见 `.env.example` → 复制为 `.env.local`。
+
+## License
+
+[Polyform Noncommercial License 1.0.0](LICENSE) (Polyform-NC). See BlockyEdu meta repo for commercial licensing.

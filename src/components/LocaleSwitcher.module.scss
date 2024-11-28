@@ -1,0 +1,23 @@
+@use '../styles/variables' as *;
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: color $transition-fast, border-color $transition-fast, background $transition-fast;
+  font-size: 15px;
+  padding: 0;
+
+  &:hover {
+    color: $color-text-primary;
+    border-color: $color-border-strong;
+    background: $color-bg-hover;
+  }
+}
