@@ -1,43 +1,34 @@
 # BlockyEdu Code App Web
 
-编程平台 Web 端：Blockly + Monaco + AI 辅导。
-
-## 依赖服务
-
-- [BlockyEdu/server](https://github.com/BlockyEdu/server) — `http://localhost:3000`
-
-## 工具链
-
-- 构建：**Rsbuild**（`rsbuild.config.ts`）
-- 规范：**Biome**（`npm run lint`）
+编程工作台：Blockly + Monaco、多语言插件、AI 辅导、Pro 代码运行。
 
 ## 快速开始
 
+**推荐**（MetaRepo 根目录）：
+
 ```bash
+npm run bootstrap
+npm run dev:code
+```
+
+打开 http://localhost:18081
+
+## 单独启动
+
+```bash
+cp .env.example .env.local
 npm install
 npm run dev
 ```
 
-打开 http://localhost:5173
+需 `server` 在 http://localhost:13001 运行。
+
+## 演示
+
+- 未登录可使用 **预览运行**（JS / TS / Python）
+- 登录 `learner1` / `learner123` 后可保存项目、使用 AI
+- Pro 运行需 `prolearner` / `pro123` + Piston（`npm run bootstrap -- --with-piston`）
 
 ## 环境变量
 
-```env
-# .env.local（可选）
-VITE_API_BASE_URL=/api/v1
-```
-
-开发时 Rsbuild 将 `/api` 代理到 server（见 `rsbuild.config.ts`）。
-
-## API 路径（server v0.1）
-
-| 功能 | 路径 |
-| --- | --- |
-| 健康检查 | `GET /api/v1/health` |
-| 项目 | `/api/v1/code/projects` |
-| 练习 | `/api/v1/code/lessons` |
-| AI | `/api/v1/ai/chat`, `/api/v1/ai/code/fix` |
-
-## 从 platform 迁移
-
-本仓库自 `VibeEdu/platform/apps/web` 拆出，API 已从 `/api/projects` 升级为 `/api/v1/code/projects`。
+见 `.env.example` → 复制为 `.env.local`。
