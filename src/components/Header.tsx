@@ -3,6 +3,7 @@ import { useAuthStore } from '../lib/auth-store';
 import { startSsoLogin } from '../lib/sso';
 import { appBrandTitle } from '../lib/deploy-profile';
 import { LanguageSelector } from './LanguageSelector';
+import { LogoMark } from './Logo';
 import { RunControls } from './RunControls';
 
 export function Header() {
@@ -31,7 +32,7 @@ export function Header() {
   return (
     <header className="app-header">
       <div className="brand">
-        <span className="brand-icon">🧩</span>
+        <LogoMark size={28} />
         <span>{appBrandTitle()}</span>
         <span className="badge">MVP</span>
       </div>
