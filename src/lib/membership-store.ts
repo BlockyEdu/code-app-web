@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { api } from './api';
-import { FEATURE, type MembershipResponse, type PlanCode } from './membership-types';
+import { create } from "zustand";
+import { api } from "./api";
+import { FEATURE, type MembershipResponse, type PlanCode } from "./membership-types";
 
 interface MembershipState {
   loaded: boolean;
@@ -14,26 +14,41 @@ interface MembershipState {
   canExecutePro: () => boolean;
 }
 
+let fetchMembershipInflight: Promise<void> | null = null;
+let ensureTrialInflight: Promise<void> | null = null;
+
 export const useMembershipStore = create<MembershipState>((set, get) => ({
   loaded: false,
   membership: null,
 
   async fetchMembership() {
-    try {
-      const membership = await api.getMembership();
-      set({ membership, loaded: true });
-    } catch {
-      set({ loaded: true });
-    }
+    if (fetchMembershipInflight) return fetchMembershipInflight;
+    fetchMembershipInflight = (async () => {
+      try {
+        const membership = await api.getMembership();
+        set({ membership, loaded: true });
+      } catch {
+        set({ loaded: true });
+      }
+    })().finally(() => {
+      fetchMembershipInflight = null;
+    });
+    return fetchMembershipInflight;
   },
 
   async ensureTrialOnEntry() {
-    try {
-      await api.ensureTrial();
-    } catch {
-      /* ignore */
-    }
-    await get().fetchMembership();
+    if (ensureTrialInflight) return ensureTrialInflight;
+    ensureTrialInflight = (async () => {
+      try {
+        await api.ensureTrial();
+      } catch {
+        /* ignore */
+      }
+      await get().fetchMembership();
+    })().finally(() => {
+      ensureTrialInflight = null;
+    });
+    return ensureTrialInflight;
   },
 
   clear() {
@@ -41,11 +56,7 @@ export const useMembershipStore = create<MembershipState>((set, get) => ({
   },
 
   effectivePlan() {
-    return (
-      get().membership?.snapshot?.effectivePlan ??
-      get().membership?.effectivePlan ??
-      'none'
-    );
+    return get().membership?.snapshot?.effectivePlan ?? get().membership?.effectivePlan ?? "none";
   },
 
   trialEndsAt() {
@@ -58,16 +69,14 @@ export const useMembershipStore = create<MembershipState>((set, get) => ({
   },
 
   trialActive() {
-    return Boolean(
-      get().membership?.snapshot?.trial?.active ?? get().membership?.trial?.active,
-    );
+    return Boolean(get().membership?.snapshot?.trial?.active ?? get().membership?.trial?.active);
   },
 
   canExecutePro() {
     const mode = get().membership?.mode;
-    if (!mode || mode === 'off') return true;
+    if (!mode || mode === "off") return true;
     const f = get().membership?.snapshot?.features?.[FEATURE.CODE_EXECUTE_PRO];
-    if (!f) return mode !== 'enforce';
+    if (!f) return mode !== "enforce";
     return Boolean(f.allowed);
   },
 }));

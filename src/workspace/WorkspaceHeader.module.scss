@@ -1,0 +1,162 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.header {
+  @include flex-row();
+  justify-content: space-between;
+  height: $header-height;
+  min-height: $header-height;
+  background: $color-bg-surface;
+  border-bottom: 1px solid $color-border;
+  padding: 0 $space-4;
+  z-index: $z-header;
+  flex-shrink: 0;
+  gap: $space-3;
+}
+
+.headerLeft {
+  @include flex-row($space-3);
+  min-width: 0;
+  flex: 1;
+}
+
+.headerCenter {
+  @include flex-center();
+  flex-shrink: 0;
+}
+
+.hubBtn {
+  @include flex-row($space-1);
+  flex-shrink: 0;
+  border: 1px solid $color-border;
+  background: $color-bg-elevated;
+  color: $color-text-primary;
+  border-radius: $radius-md;
+  padding: 2px 8px 2px 4px;
+  cursor: pointer;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+
+  &:hover {
+    border-color: #{$color-primary}80;
+    color: $color-primary;
+  }
+}
+
+.hubLabel {
+  white-space: nowrap;
+}
+
+.layoutBtn {
+  @include flex-row($space-1);
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid $color-border;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+
+  &:hover {
+    background: $color-bg-elevated;
+    color: $color-text-primary;
+  }
+}
+
+.layoutItem {
+  @include flex-row($space-2);
+  min-width: 140px;
+}
+
+.layoutCheck {
+  margin-left: auto;
+  color: $color-primary;
+}
+
+.artifactInfo {
+  @include flex-row($space-2);
+  min-width: 0;
+}
+
+.artifactName {
+  @include truncate();
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  max-width: 220px;
+}
+
+.kindChip {
+  @include flex-row($space-1);
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  border: 1px solid;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.headerRight {
+  @include flex-row($space-1);
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.toggleBtn {
+  @include flex-center();
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid $color-border;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  transition: background $transition-fast, color $transition-fast, border-color $transition-fast;
+
+  &:hover {
+    background: $color-bg-elevated;
+    color: $color-text-primary;
+  }
+}
+
+.toggleBtnActive {
+  background: $color-primary-muted;
+  border-color: #{$color-primary}60;
+  color: $color-primary;
+}
+
+.runBtn {
+  border-radius: $radius-full !important;
+  font-size: $font-size-sm !important;
+  height: 28px !important;
+  padding: 0 14px !important;
+}
+
+.authLabel {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-left: $space-2;
+  max-width: 100px;
+  @include truncate();
+}
+
+.authBtn {
+  @include flex-center();
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid $color-border;
+  background: $color-bg-elevated;
+  color: $color-text-secondary;
+  cursor: pointer;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+
+  &:hover {
+    border-color: $color-primary;
+    color: $color-primary;
+  }
+}

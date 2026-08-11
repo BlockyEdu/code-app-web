@@ -1,0 +1,238 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.dialogHeader {
+  @include flex-row($space-3);
+  justify-content: space-between;
+  width: 100%;
+}
+
+.backBtn {
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  font-size: $font-size-sm;
+
+  &:hover {
+    color: $color-text-primary;
+  }
+}
+
+.dialog {
+  @include flex-col($space-4);
+  padding: $space-2;
+}
+
+.dialogSub {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0;
+}
+
+.kindGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $space-3;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.kindCard {
+  @include flex-col($space-2);
+  align-items: flex-start;
+  position: relative;
+  background: $color-bg-elevated;
+  border: 1.5px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $space-4;
+  cursor: pointer;
+  text-align: left;
+  transition: all $transition-base;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--kind-color, $color-primary);
+    opacity: 0;
+    transition: opacity $transition-base;
+  }
+
+  &:hover {
+    border-color: var(--kind-color, $color-primary);
+    background: $color-bg-overlay;
+
+    &::before {
+      opacity: 1;
+    }
+  }
+}
+
+.kindCardSelected {
+  border-color: var(--kind-color, $color-primary) !important;
+  background: $color-bg-overlay !important;
+
+  &::before {
+    opacity: 1 !important;
+  }
+}
+
+.kindCardIcon {
+  @include flex-center();
+  width: 36px;
+  height: 36px;
+  border-radius: $radius-md;
+  background: color-mix(in srgb, var(--kind-color, $color-primary) 15%, transparent);
+  color: var(--kind-color, $color-primary);
+  font-size: 18px;
+}
+
+.kindCardLabel {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.kindCardDesc {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: $line-height-base;
+}
+
+.kindCardCheck {
+  @include flex-center();
+  position: absolute;
+  top: $space-2;
+  right: $space-2;
+  width: 18px;
+  height: 18px;
+  background: var(--kind-color, $color-primary);
+  border-radius: $radius-full;
+  color: #fff;
+  font-size: 9px;
+}
+
+.templateStepHeader {
+  @include flex-row($space-3);
+  align-items: center;
+}
+
+.kindChip {
+  @include flex-row($space-1);
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: $radius-full;
+  border: 1px solid;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.templateStepSub {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.templateGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $space-2;
+}
+
+.templateCard {
+  @include flex-col($space-2);
+  align-items: center;
+  position: relative;
+  background: $color-bg-elevated;
+  border: 1.5px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $space-3 $space-2;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--kind-color, $color-primary);
+    background: $color-bg-overlay;
+  }
+}
+
+.templateCardSelected {
+  border-color: var(--kind-color, $color-primary) !important;
+  background: $color-bg-overlay !important;
+}
+
+.templateCardIcon {
+  font-size: 20px;
+  color: var(--kind-color, $color-text-secondary);
+}
+
+.templateCardLabel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  text-align: center;
+}
+
+.templateCardCheck {
+  @include flex-center();
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  background: var(--kind-color, $color-primary);
+  border-radius: $radius-full;
+  color: #fff;
+  font-size: 8px;
+}
+
+.nameField {
+  @include flex-col($space-2);
+}
+
+.nameLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+}
+
+.nameInput {
+  background: $color-bg-input;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  color: $color-text-primary;
+  font-size: $font-size-md;
+  font-family: $font-sans;
+  padding: $space-2 $space-3;
+  outline: none;
+  width: 100%;
+
+  &::placeholder {
+    color: $color-text-muted;
+  }
+  &:focus {
+    border-color: $color-primary;
+  }
+}
+
+.modalActions {
+  @include flex-row($space-3);
+  width: 100%;
+  justify-content: flex-end;
+  margin-top: $space-2;
+}
+
+.cancelBtn {
+  background: $color-bg-elevated !important;
+  border-color: $color-border !important;
+  color: $color-text-secondary !important;
+}
+
+.confirmBtn {
+  border-radius: $radius-md !important;
+}

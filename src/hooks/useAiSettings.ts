@@ -1,28 +1,33 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { api, type AiPublicConfig } from '../lib/api';
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  type AiProviderId,
+  type AiUserSettings,
   aiOptionsBody,
   loadAiSettings,
   resolveSettings,
   saveAiSettings,
-  type AiProviderId,
-  type AiUserSettings,
-} from '../lib/ai-settings';
+} from "../lib/ai-settings";
+import { type AiPublicConfig, api } from "../lib/api";
 
 export function useAiSettings() {
   const [config, setConfig] = useState<AiPublicConfig | null>(null);
   const [settings, setSettings] = useState<AiUserSettings | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     api
       .aiConfig()
       .then((c) => {
+        if (cancelled) return;
         setConfig(c);
         const resolved = resolveSettings(c, loadAiSettings());
         setSettings(resolved);
         saveAiSettings(resolved);
       })
       .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const setProvider = useCallback(
@@ -49,10 +54,7 @@ export function useAiSettings() {
     [settings],
   );
 
-  const aiOpts = useMemo(
-    () => (settings ? aiOptionsBody(settings) : {}),
-    [settings],
-  );
+  const aiOpts = useMemo(() => (settings ? aiOptionsBody(settings) : {}), [settings]);
 
   const currentProvider = config?.providers.find((p) => p.id === settings?.provider);
 
