@@ -27,6 +27,10 @@ interface WorkspaceState {
   blockXmlSnapshot: string;
   monacoManuallyEdited: boolean;
   consoleOutput: string[];
+  lastRunError: { message: string; stderr: string; exitCode: number } | null;
+  teachingDepth: "beginner" | "guided" | "normal" | "expert";
+  aiMode: "tutor" | "debug" | "review" | "agent";
+  pendingPatch: { original: string; proposed: string } | null;
   currentProject: Project | null;
   projectName: string;
   lesson: Lesson | null;
@@ -61,6 +65,11 @@ interface WorkspaceState {
   setBlockXml: (xml: string) => void;
   appendConsole: (line: string) => void;
   clearConsole: () => void;
+  setLastRunError: (err: { message: string; stderr: string; exitCode: number } | null) => void;
+  setTeachingDepth: (d: "beginner" | "guided" | "normal" | "expert") => void;
+  setAiMode: (m: "tutor" | "debug" | "review" | "agent") => void;
+  setPendingPatch: (p: { original: string; proposed: string } | null) => void;
+  applyPendingPatch: () => void;
   setCurrentProject: (p: Project | null) => void;
   setProjectName: (name: string) => void;
   setLesson: (lesson: Lesson | null) => void;
@@ -127,6 +136,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   blockXmlSnapshot: "",
   monacoManuallyEdited: false,
   consoleOutput: [],
+  lastRunError: null,
+  teachingDepth: "guided",
+  aiMode: "tutor",
+  pendingPatch: null,
   currentProject: null,
   projectName: "未命名项目",
   lesson: null,
@@ -189,8 +202,30 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   setCode: (code) => set({ code, saveDirty: true, saveStatus: "idle" }),
   setBlockXml: (blockXml) => set({ blockXml, saveDirty: true, saveStatus: "idle" }),
   markDirty: () => set({ saveDirty: true, saveStatus: "idle" }),
-  appendConsole: (line) => set((s) => ({ consoleOutput: [...s.consoleOutput, line] })),
-  clearConsole: () => set({ consoleOutput: [] }),
+  appendConsole: (line) =>
+    set((s) => {
+      const isErr = line.includes("[error]") || line.includes("[stderr]") || line.startsWith("[exit]");
+      return {
+        consoleOutput: [...s.consoleOutput, line],
+        lastRunError: isErr
+          ? {
+              message: line,
+              stderr: s.consoleOutput.filter((l) => l.includes("stderr") || l.includes("error")).concat(line).join("\n"),
+              exitCode: line.includes("[exit]") ? Number(line.replace(/\D/g, "") || 1) : 1,
+            }
+          : s.lastRunError,
+      };
+    }),
+  clearConsole: () => set({ consoleOutput: [], lastRunError: null }),
+  setLastRunError: (lastRunError) => set({ lastRunError }),
+  setTeachingDepth: (teachingDepth) => set({ teachingDepth }),
+  setAiMode: (aiMode) => set({ aiMode }),
+  setPendingPatch: (pendingPatch) => set({ pendingPatch }),
+  applyPendingPatch: () => {
+    const { pendingPatch } = get();
+    if (!pendingPatch) return;
+    set({ code: pendingPatch.proposed, pendingPatch: null, monacoManuallyEdited: true });
+  },
   setCurrentProject: (currentProject) => {
     if (!currentProject) {
       set({ currentProject: null });

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useAiSettings } from "../hooks/useAiSettings";
-import type { AiProviderId } from "../lib/ai-settings";
 import { api } from "../lib/api";
 import { useAuthStore } from "../lib/auth-store";
 import { useWorkspaceStore } from "../stores/workspace";
@@ -22,19 +21,26 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     aiNextHint,
     aiNextAction,
     consoleOutput,
+    lastRunError,
+    teachingDepth,
+    aiMode,
+    pendingPatch,
     artifactKind,
     artifactId,
     addAiMessage,
     setAiLoading,
     setAiCoachHint,
+    setTeachingDepth,
+    setAiMode,
+    setPendingPatch,
+    applyPendingPatch,
     getCurrentGoal,
     lesson,
     lessonStepIndex,
   } = useWorkspaceStore();
   const user = useAuthStore((s) => s.user);
   const openLoginPrompt = useAuthStore((s) => s.openLoginPrompt);
-  const { config, settings, aiOpts, setProvider, setModel, currentProvider, ready } =
-    useAiSettings();
+  const { aiOpts, ready } = useAiSettings();
   const [input, setInput] = useState("");
 
   const goal = getCurrentGoal();
@@ -110,6 +116,10 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
         ...artifactCtx,
         code,
         editorMode,
+        teachingDepth,
+        lastError: lastRunError ?? undefined,
+        consoleOutput,
+        blockXml: editorMode === "blockly" ? blockXml : undefined,
       });
       addAiMessage({ role: "assistant", content: res.content });
     } catch (err) {
@@ -126,16 +136,18 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     if (!requireAuth() || !ready) return;
     setAiLoading(true);
     try {
-      const res = await api.aiFixCode(code, undefined, { ...aiOpts, ...artifactCtx });
+      const res = await api.aiFixCode(code, lastRunError?.message, {
+        ...aiOpts,
+        ...artifactCtx,
+        lastError: lastRunError ?? undefined,
+        teachingDepth,
+      });
       addAiMessage({
         role: "assistant",
-        content: `**代码修复**\n${res.explanation}${res.mock ? "\n\n_(降级/Mock)_" : ""}`,
+        content: `**代码修复建议**\n${res.explanation}\n请确认 diff 后再应用。`,
       });
       if (res.fixedCode && res.fixedCode !== code) {
-        useWorkspaceStore.getState().setCode(res.fixedCode);
-        if (editorMode === "monaco") {
-          useWorkspaceStore.getState().markMonacoEdited();
-        }
+        setPendingPatch({ original: code, proposed: res.fixedCode });
       }
     } catch (err) {
       addAiMessage({
@@ -161,38 +173,29 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
         </div>
       )}
 
-      {ready && settings && config && (
-        <div className="ai-model-picker">
-          <label>
-            模型
-            <select
-              value={settings.provider}
-              onChange={(e) => setProvider(e.target.value as AiProviderId)}
-            >
-              {config.providers.map((p) => (
-                <option key={p.id} value={p.id} disabled={!p.configured}>
-                  {p.name}
-                  {!p.configured ? " (未配置)" : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            版本
-            <select
-              value={settings.model}
-              onChange={(e) => setModel(e.target.value)}
-              disabled={!currentProvider?.configured}
-            >
-              {currentProvider?.models.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      )}
+      <div className="ai-model-picker">
+        <label>
+          模式
+          <select value={aiMode} onChange={(e) => setAiMode(e.target.value as typeof aiMode)}>
+            <option value="tutor">Tutor</option>
+            <option value="debug">Debug</option>
+            <option value="review">Review</option>
+            <option value="agent">Agent</option>
+          </select>
+        </label>
+        <label>
+          教学深度
+          <select
+            value={teachingDepth}
+            onChange={(e) => setTeachingDepth(e.target.value as typeof teachingDepth)}
+          >
+            <option value="beginner">入门</option>
+            <option value="guided">引导</option>
+            <option value="normal">常规</option>
+            <option value="expert">专家</option>
+          </select>
+        </label>
+      </div>
 
       {!hubMode && goal && (
         <div className="ai-goal-card">
@@ -229,8 +232,43 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
             解释代码
           </button>
           <button type="button" className="btn-sm" onClick={() => void fixCode()} disabled={aiLoading}>
-            修复
+            Debug
           </button>
+          <button
+            type="button"
+            className="btn-sm"
+            disabled={aiLoading}
+            onClick={() => {
+              void api.aiReview({
+                ...aiOpts,
+                ...artifactCtx,
+                code,
+                blockXml,
+                teachingDepth,
+              }).then((res) => {
+                addAiMessage({
+                  role: "assistant",
+                  content: res.summary || JSON.stringify(res.dimensions ?? []),
+                });
+              });
+            }}
+          >
+            Review
+          </button>
+        </div>
+      )}
+      {pendingPatch && (
+        <div className="ai-hint-card">
+          <strong>确认式 patch</strong>
+          <pre className="ai-hint-text">{pendingPatch.proposed.slice(0, 400)}</pre>
+          <div className="ai-quick-actions">
+            <button type="button" className="btn-sm" onClick={() => applyPendingPatch()}>
+              应用
+            </button>
+            <button type="button" className="btn-sm" onClick={() => setPendingPatch(null)}>
+              放弃
+            </button>
+          </div>
         </div>
       )}
 

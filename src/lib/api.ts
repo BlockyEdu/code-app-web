@@ -210,7 +210,17 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  aiChat: (messages: ChatMessage[], opts?: AiOpts & { code?: string; editorMode?: EditorMode }) =>
+  aiChat: (
+    messages: ChatMessage[],
+    opts?: AiOpts & {
+      code?: string;
+      editorMode?: EditorMode;
+      teachingDepth?: string;
+      lastError?: { message?: string; stderr?: string; exitCode?: number };
+      consoleOutput?: string[];
+      blockXml?: string;
+    },
+  ) =>
     request<{ role: string; content: string; mock?: boolean; provider?: string; model?: string }>(
       "/ai/chat",
       {
@@ -223,6 +233,10 @@ export const api = {
           model: opts?.model,
           artifactId: opts?.artifactId,
           kind: opts?.kind,
+          teachingDepth: opts?.teachingDepth,
+          lastError: opts?.lastError,
+          consoleOutput: opts?.consoleOutput,
+          blockXml: opts?.blockXml,
         }),
       },
     ),
@@ -245,8 +259,17 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  aiFixCode: (code: string, error?: string, opts?: AiOpts) =>
-    request<{ explanation: string; fixedCode: string; mock?: boolean }>("/ai/code/fix", {
+  aiFixCode: (
+    code: string,
+    error?: string,
+    opts?: AiOpts & { lastError?: { message?: string; stderr?: string; exitCode?: number }; teachingDepth?: string },
+  ) =>
+    request<{
+      explanation: string;
+      fixedCode: string;
+      mock?: boolean;
+      patch?: { original?: string; proposed?: string; requiresConfirm?: boolean };
+    }>("/ai/code/fix", {
       method: "POST",
       body: JSON.stringify({
         code,
@@ -256,7 +279,19 @@ export const api = {
         model: opts?.model,
         artifactId: opts?.artifactId,
         kind: opts?.kind,
+        lastError: opts?.lastError,
+        teachingDepth: opts?.teachingDepth,
       }),
+    }),
+  aiReview: (body: Record<string, unknown>) =>
+    request<{ summary?: string; dimensions?: Array<{ name: string; score: number; comment: string }> }>(
+      "/ai/code/review",
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+  aiAgentStep: (body: Record<string, unknown>) =>
+    request<Record<string, unknown>>("/ai/agent/step", {
+      method: "POST",
+      body: JSON.stringify(body),
     }),
   createPreviewSession: (body: {
     artifactId: string;

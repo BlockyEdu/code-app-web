@@ -15,8 +15,8 @@ importers:
         specifier: ^0.1.0
         version: 0.1.0
       '@luminaryworks/auth-react':
-        specifier: ^0.3.0
-        version: 0.3.0(react@19.2.8)
+        specifier: ^0.3.1
+        version: 0.3.1(react@19.2.8)
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.56.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -260,11 +260,11 @@ packages:
         optional: true
 
   '@luminaryworks/auth-dev-proxy@0.1.0':
-    resolution: {integrity: sha512-tjUuwKW9GiIRFMySTQLdEQhFiavCSR+iL4w58qrJUxXoOXPKWNgKLdRGuagEILBPvA3jBm257/JhOUEZMqKYXg==, tarball: https://npm.pkg.github.com/download/@luminaryworks/auth-dev-proxy/0.1.0/2e6182eff68b14ac78bc4be8d04e3981b209f214}
+    resolution: {integrity: sha512-RLfzZlIXpqxYkpCaMnKLSKe97odFj/ddcQDoRopNJfbs1vZ/8LLCTaX0JYsJaIoONB7Lu+y4RDDsqTLFnaTbLg==}
     engines: {node: '>=24.0.0'}
 
-  '@luminaryworks/auth-react@0.3.0':
-    resolution: {integrity: sha512-ZMyqE3nQGADUSvymVX3GreHmMad5UGo6SUJd88T+48cWEn8duhJcAfVXk0ZTiGarfDdmYZVZ/mnPMipOm8YU7Q==, tarball: https://npm.pkg.github.com/download/@luminaryworks/auth-react/0.3.0/c107a5ac56de320484236dc6386e65eaed12497a}
+  '@luminaryworks/auth-react@0.3.1':
+    resolution: {integrity: sha512-emNsGxpm3NmlXrxbnKX9SU/aTVDJ5w2Bm5r4M+ZrKAYZ8M0aXX/QxRlfIYVJxmFI7JWb4X5DqHZz0Bgu1MZP5g==}
     engines: {node: '>=24.0.0'}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
@@ -1402,7 +1402,7 @@ snapshots:
 
   '@luminaryworks/auth-dev-proxy@0.1.0': {}
 
-  '@luminaryworks/auth-react@0.3.0(react@19.2.8)':
+  '@luminaryworks/auth-react@0.3.1(react@19.2.8)':
     dependencies:
       oidc-client-ts: 3.5.0
       react: 19.2.8
