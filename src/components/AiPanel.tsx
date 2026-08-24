@@ -40,7 +40,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
   } = useWorkspaceStore();
   const user = useAuthStore((s) => s.user);
   const openLoginPrompt = useAuthStore((s) => s.openLoginPrompt);
-  const { aiOpts, ready } = useAiSettings();
+  const { aiOpts, ready, settings } = useAiSettings();
   const [input, setInput] = useState("");
 
   const goal = getCurrentGoal();

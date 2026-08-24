@@ -199,8 +199,16 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       aiNextAction: "",
     });
   },
-  setCode: (code) => set({ code, saveDirty: true, saveStatus: "idle" }),
-  setBlockXml: (blockXml) => set({ blockXml, saveDirty: true, saveStatus: "idle" }),
+  setCode: (code) => {
+    const s = get();
+    if (s.code === code) return;
+    set({ code, saveDirty: true, saveStatus: "idle" });
+  },
+  setBlockXml: (blockXml) => {
+    const s = get();
+    if (s.blockXml === blockXml) return;
+    set({ blockXml, saveDirty: true, saveStatus: "idle" });
+  },
   markDirty: () => set({ saveDirty: true, saveStatus: "idle" }),
   appendConsole: (line) =>
     set((s) => {

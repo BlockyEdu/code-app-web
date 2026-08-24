@@ -23,6 +23,9 @@ export default defineConfig(({ envMode }) => {
       },
       define: publicVars,
     },
+    output: {
+      copy: [{ from: "node_modules/blockly/media", to: "blockly/media" }],
+    },
     server: {
       port: 18081,
       historyApiFallback: true,

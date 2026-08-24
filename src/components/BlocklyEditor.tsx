@@ -7,9 +7,20 @@ import { useWorkspaceStore } from "../stores/workspace";
 import "blockly/blocks";
 import "blockly/javascript";
 
+function serializeWorkspaceXml(workspace: Blockly.WorkspaceSvg): string {
+  return Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
+}
+
+function shouldIgnoreBlocklyEvent(event: Blockly.Events.Abstract): boolean {
+  if (event.isUiEvent) return true;
+  return event.type === Blockly.Events.FINISHED_LOADING;
+}
+
 export function BlocklyEditor() {
   const containerRef = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);
+  const applyingRef = useRef(false);
+  const lastWrittenXmlRef = useRef("");
   const artifactKind = useWorkspaceStore((s) => s.artifactKind);
   const blockXml = useWorkspaceStore((s) => s.blockXml);
   const setBlockXml = useWorkspaceStore((s) => s.setBlockXml);
@@ -47,29 +58,49 @@ export function BlocklyEditor() {
         drag: true,
         wheel: true,
       },
-      media: "https://blockly-demo.appspot.com/static/media/",
+      // Served from /blockly/media (copied from node_modules in rsbuild).
+      media: "/blockly/media/",
     });
 
     workspaceRef.current = workspace;
 
-    const initialXml = blockXmlRef.current;
-    if (initialXml) {
-      try {
-        Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(initialXml), workspace);
-      } catch {
-        /* ignore bad XML */
+    const persistFromWorkspace = () => {
+      if (applyingRef.current) return;
+      const xml = serializeWorkspaceXml(workspace);
+      lastWrittenXmlRef.current = xml;
+      if (xml !== blockXmlRef.current) {
+        setBlockXml(xml);
       }
-    }
+      const generated = javascriptGenerator.workspaceToCode(workspace);
+      const nextCode = generated || "// 拖入积木开始编程";
+      if (nextCode !== useWorkspaceStore.getState().code) {
+        setCode(nextCode);
+      }
+    };
 
-    const onChange = () => {
-      const xml = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
-      setBlockXml(xml);
-      const code = javascriptGenerator.workspaceToCode(workspace);
-      setCode(code || "// 拖入积木开始编程");
+    const onChange = (event: Blockly.Events.Abstract) => {
+      if (shouldIgnoreBlocklyEvent(event)) return;
+      persistFromWorkspace();
     };
 
     workspace.addChangeListener(onChange);
-    onChange();
+
+    const initialXml = blockXmlRef.current;
+    if (initialXml) {
+      applyingRef.current = true;
+      Blockly.Events.disable();
+      try {
+        Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(initialXml), workspace);
+        lastWrittenXmlRef.current = serializeWorkspaceXml(workspace);
+      } catch {
+        /* ignore bad XML */
+      } finally {
+        Blockly.Events.enable();
+        applyingRef.current = false;
+      }
+    }
+
+    persistFromWorkspace();
 
     return () => {
       workspace.dispose();
@@ -80,14 +111,19 @@ export function BlocklyEditor() {
   useEffect(() => {
     const workspace = workspaceRef.current;
     if (!workspace || !blockXml) return;
-    const current = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
-    if (current !== blockXml) {
+    if (blockXml === lastWrittenXmlRef.current) return;
+
+    applyingRef.current = true;
+    Blockly.Events.disable();
+    try {
       workspace.clear();
-      try {
-        Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(blockXml), workspace);
-      } catch {
-        /* ignore */
-      }
+      Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(blockXml), workspace);
+      lastWrittenXmlRef.current = serializeWorkspaceXml(workspace);
+    } catch {
+      /* ignore */
+    } finally {
+      Blockly.Events.enable();
+      applyingRef.current = false;
     }
   }, [blockXml]);
 

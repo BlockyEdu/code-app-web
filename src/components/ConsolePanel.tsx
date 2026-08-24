@@ -1,12 +1,11 @@
 import { useWorkspaceStore } from '../stores/workspace';
 
 export function ConsolePanel() {
-  const { consoleOutput, lastRunError, setAiOpen, setAiMode } = useWorkspaceStore((s) => ({
-    consoleOutput: s.consoleOutput,
-    lastRunError: s.lastRunError,
-    setAiOpen: s.setAiOpen,
-    setAiMode: s.setAiMode,
-  }));
+  // Avoid object selectors: new refs each snapshot → infinite re-render (Zustand v5).
+  const consoleOutput = useWorkspaceStore((s) => s.consoleOutput);
+  const lastRunError = useWorkspaceStore((s) => s.lastRunError);
+  const setAiOpen = useWorkspaceStore((s) => s.setAiOpen);
+  const setAiMode = useWorkspaceStore((s) => s.setAiMode);
 
   return (
     <div className="console-panel">

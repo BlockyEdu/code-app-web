@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { httpRequest } from "./http";
-import { idpSignOut, isDirectIdpEnabled } from "./idp";
+import { idpSignOut, isDirectIdpEnabled, rememberPostLoginPath } from "./idp";
 import { logoutAndRedirect } from "./sso";
 
 export interface AuthUser {
@@ -91,7 +91,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   openLoginPrompt: () => {
     if (isDirectIdpEnabled()) {
-      window.location.href = "/login";
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      rememberPostLoginPath(currentPath);
+      window.history.replaceState({}, "", "/login");
+      window.dispatchEvent(new PopStateEvent("popstate"));
       return;
     }
     set({ loginPromptOpen: true });
