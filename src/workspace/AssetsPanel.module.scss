@@ -286,3 +286,68 @@
   border-bottom: 1px solid $color-border-subtle;
   padding: $space-2;
 }
+
+.mutedPad {
+  padding: $space-3;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-base;
+}
+
+.compatNote {
+  margin: $space-2 $space-3 0;
+  font-size: $font-size-xs;
+  color: $color-accent-amber;
+}
+
+.missionCard {
+  padding: $space-3;
+  border-bottom: 1px solid $color-border-subtle;
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+
+  strong {
+    font-size: $font-size-md;
+  }
+
+  p {
+    margin: 0;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+.phaseChip {
+  align-self: flex-start;
+  font-size: $font-size-xs;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  border: 1px solid $color-border;
+  color: $color-primary;
+}
+
+.checklist {
+  margin: $space-2 0 $space-3;
+  padding-left: $space-5;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  li {
+    margin-bottom: $space-1;
+  }
+}
+
+.launchLink {
+  border: 1px solid $color-primary;
+  background: $color-primary-muted;
+  color: $color-primary;
+  border-radius: $radius-md;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: $font-size-sm;
+
+  &:hover {
+    background: $color-primary-glow;
+  }
+}

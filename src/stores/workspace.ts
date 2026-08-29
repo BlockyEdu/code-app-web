@@ -3,13 +3,23 @@ import { api, type ChatMessage, type Lesson, type Project } from "../lib/api";
 import {
   type ArtifactFileEntry,
   buildSaveFiles,
+  codePathForKind,
   extractEditorBuffers,
+  filesToMap,
 } from "../lib/artifact-files";
+import {
+  DEFAULT_PAIR_MISSION,
+  nextPhaseAfterAction,
+  type PairAction,
+  type PairMission,
+} from "../lib/pair-mission";
 import type { WorldState } from "../lib/targets";
 import { DEFAULT_KIND_CODE, DEFAULT_KIND_XML } from "../lib/targets";
+import { track } from "../lib/telemetry";
+import { boardSkuForTemplate, extraFilesForTemplate } from "../lib/templates";
 import { getDefaultLanguageId, getLanguagePlugin } from "../plugins";
 import type { ArtifactKind, LeftPanelTab } from "../types/artifact";
-import { isConsoleKind, KIND_LABEL } from "../types/artifact";
+import { isConsoleKind, isHardwareKind, KIND_LABEL } from "../types/artifact";
 
 export type EditorMode = "blockly" | "monaco";
 
@@ -45,6 +55,13 @@ interface WorkspaceState {
   artifactId: string | null;
   /** Cached draft file list for merge-on-save */
   artifactFiles: ArtifactFileEntry[];
+  activeFilePath: string;
+  intent?: string;
+  templateId: string | null;
+  boardSku: string | null;
+  verifiedMilestone: string;
+  pairMission: PairMission;
+  firmwareSim: { adapter: string; serialLog: string; status: string; exportHint: string } | null;
   saveDirty: boolean;
   saveStatus: "idle" | "saving" | "saved" | "error";
   leftOpen: boolean;
@@ -105,12 +122,20 @@ interface WorkspaceState {
     kind: ArtifactKind,
     name: string,
     language?: string,
+    opts?: { templateId?: string; intent?: string; boardSku?: string },
   ) => Promise<string | null>;
   openArtifact: (id: string) => Promise<void>;
   /** Open legacy code-workspace Project as exercise (may promote to Artifact on save). */
   openLegacyProject: (projectId: string) => Promise<void>;
   saveCurrentArtifact: () => Promise<boolean>;
   markDirty: () => void;
+  setActiveFile: (path: string) => void;
+  addArtifactFile: (path: string) => void;
+  applyPairAction: (action: PairAction) => void;
+  setPairMission: (mission: PairMission) => void;
+  setFirmwareSim: (
+    sim: { adapter: string; serialLog: string; status: string; exportHint: string } | null,
+  ) => void;
 }
 
 function persistLanguage(id: string) {
@@ -152,11 +177,18 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   artifactName: "我的第一个练习",
   artifactId: null,
   artifactFiles: [],
+  activeFilePath: "main.js",
+  intent: undefined,
+  templateId: null,
+  boardSku: null,
+  verifiedMilestone: "none",
+  pairMission: DEFAULT_PAIR_MISSION,
+  firmwareSim: null,
   saveDirty: false,
   saveStatus: "idle",
-  leftOpen: false,
+  leftOpen: true,
   rightPreviewOpen: false,
-  aiOpen: false,
+  aiOpen: true,
   bottomOpen: true,
   activeLeftTab: "files",
   showNewProjectDialog: false,
@@ -212,13 +244,17 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   markDirty: () => set({ saveDirty: true, saveStatus: "idle" }),
   appendConsole: (line) =>
     set((s) => {
-      const isErr = line.includes("[error]") || line.includes("[stderr]") || line.startsWith("[exit]");
+      const isErr =
+        line.includes("[error]") || line.includes("[stderr]") || line.startsWith("[exit]");
       return {
         consoleOutput: [...s.consoleOutput, line],
         lastRunError: isErr
           ? {
               message: line,
-              stderr: s.consoleOutput.filter((l) => l.includes("stderr") || l.includes("error")).concat(line).join("\n"),
+              stderr: s.consoleOutput
+                .filter((l) => l.includes("stderr") || l.includes("error"))
+                .concat(line)
+                .join("\n"),
               exitCode: line.includes("[exit]") ? Number(line.replace(/\D/g, "") || 1) : 1,
             }
           : s.lastRunError,
@@ -232,7 +268,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   applyPendingPatch: () => {
     const { pendingPatch } = get();
     if (!pendingPatch) return;
-    set({ code: pendingPatch.proposed, pendingPatch: null, monacoManuallyEdited: true });
+    set({
+      code: pendingPatch.proposed,
+      pendingPatch: null,
+      monacoManuallyEdited: true,
+      saveDirty: true,
+    });
+    track("pair.patch.accepted");
   },
   setCurrentProject: (currentProject) => {
     if (!currentProject) {
@@ -283,11 +325,16 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     });
   },
   getCurrentGoal: () => {
-    const { lesson, lessonStepIndex } = get();
-    if (!lesson) return "";
-    const step = lesson.steps[lessonStepIndex];
-    if (step) return `${step.title}：${step.instruction}`;
-    return lesson.title;
+    const { lesson, lessonStepIndex, pairMission, artifactKind } = get();
+    if (lesson) {
+      const step = lesson.steps[lessonStepIndex];
+      if (step) return `${step.title}：${step.instruction}`;
+      return lesson.title;
+    }
+    if (artifactKind === "free" || artifactKind === "exercise") {
+      return `${pairMission.title} — ${pairMission.success}`;
+    }
+    return "";
   },
   getActiveLanguagePlugin: () => getLanguagePlugin(get().languageId),
   setArtifactKind: (artifactKind) => set({ artifactKind }),
@@ -303,6 +350,49 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   setActiveLeftTab: (activeLeftTab) => set({ activeLeftTab }),
   setShowNewProjectDialog: (showNewProjectDialog) => set({ showNewProjectDialog }),
   setPreviewWorld: (previewWorld) => set({ previewWorld }),
+  setFirmwareSim: (firmwareSim) => set({ firmwareSim }),
+  setPairMission: (pairMission) => set({ pairMission }),
+  applyPairAction: (action) => {
+    const current = get().pairMission;
+    const phase = nextPhaseAfterAction(action, current.phase);
+    const next = { ...current, phase };
+    set({ pairMission: next });
+    if (phase === "mission" && current.phase === "diagnose") {
+      track("pair.mission.started", { id: current.id });
+    }
+    if (phase === "complete" && current.phase !== "complete") {
+      track("pair.mission.completed", { id: current.id });
+    }
+  },
+  setActiveFile: (path) => {
+    const s = get();
+    if (!path || s.activeFilePath === path) return;
+    const map = filesToMap(s.artifactFiles);
+    if (s.activeFilePath) map[s.activeFilePath] = s.code;
+    const files = Object.entries(map).map(([p, content]) => ({
+      path: p,
+      contentType: "text",
+      content,
+    }));
+    set({
+      artifactFiles: files,
+      activeFilePath: path,
+      code: map[path] ?? "",
+      saveDirty: true,
+    });
+  },
+  addArtifactFile: (path) => {
+    const trimmed = path.trim().replace(/^\/+/, "");
+    if (!trimmed) return;
+    const s = get();
+    if (s.artifactFiles.some((f) => f.path === trimmed)) {
+      get().setActiveFile(trimmed);
+      return;
+    }
+    const files = [...s.artifactFiles, { path: trimmed, contentType: "text", content: "" }];
+    set({ artifactFiles: files, saveDirty: true });
+    get().setActiveFile(trimmed);
+  },
   setWebPreview: (payload) =>
     set((s) => ({
       webPreviewEmbedUrl: payload.embedUrl !== undefined ? payload.embedUrl : s.webPreviewEmbedUrl,
@@ -310,18 +400,31 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       webPreviewSessionId:
         payload.sessionId !== undefined ? payload.sessionId : s.webPreviewSessionId,
     })),
-  createNewArtifact: async (kind, name, language) => {
+  createNewArtifact: async (kind, name, language, opts) => {
     const consoleKind = isConsoleKind(kind);
+    const hardware = isHardwareKind(kind);
     const nextName = name.trim() || `我的${KIND_LABEL[kind]}`;
+    const extras = extraFilesForTemplate(kind, opts?.templateId);
+    const extraMap = filesToMap(extras);
+    const primaryPath = codePathForKind(kind);
     const nextXml = DEFAULT_KIND_XML[kind];
-    const nextCode = DEFAULT_KIND_CODE[kind];
+    const nextCode = extraMap[primaryPath] || DEFAULT_KIND_CODE[kind];
     const requested = language || get().languageId || "javascript";
     const lang = consoleKind ? requested : requested || "javascript";
     const plugin = getLanguagePlugin(lang);
     persistLanguage(lang);
+    const templateId = opts?.templateId ?? null;
+    const boardSku =
+      opts?.boardSku ||
+      boardSkuForTemplate(templateId) ||
+      (hardware ? "board.espressif.esp32-s3-devkitc-1" : null);
+    const intent = opts?.intent || (consoleKind ? "learn" : hardware ? "ship" : "build");
+    const pairMission = consoleKind
+      ? { ...DEFAULT_PAIR_MISSION, phase: "mission" as const }
+      : get().pairMission;
 
     const defaultEditorMode =
-      kind === "free"
+      kind === "free" || hardware
         ? ("monaco" as const)
         : consoleKind
           ? plugin?.blockly
@@ -329,20 +432,31 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
             : ("monaco" as const)
           : ("blockly" as const);
 
+    const seedFiles: ArtifactFileEntry[] = extras.length
+      ? extras
+      : [{ path: primaryPath, contentType: "text", content: nextCode }];
+
     set({
       artifactKind: kind,
       artifactName: nextName,
       projectName: nextName,
       artifactId: null,
       currentProject: null,
-      artifactFiles: [],
+      artifactFiles: seedFiles,
+      activeFilePath: primaryPath,
+      templateId,
+      boardSku,
+      intent,
+      verifiedMilestone: "none",
+      pairMission,
+      firmwareSim: null,
       saveDirty: true,
       saveStatus: "idle",
-      leftOpen: false,
+      leftOpen: true,
       rightPreviewOpen: !consoleKind,
-      bottomOpen: consoleKind,
-      aiOpen: false,
-      activeLeftTab: consoleKind ? "learn" : "files",
+      bottomOpen: consoleKind || hardware,
+      aiOpen: true,
+      activeLeftTab: consoleKind ? "learn" : hardware ? "modules" : "files",
       editorMode: defaultEditorMode,
       languageId: lang,
       code: nextCode,
@@ -360,7 +474,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       showNewProjectDialog: false,
     });
 
-    // Persist when logged in; exercise also creates legacy Project for bridge.
+    if (consoleKind) track("pair.mission.started", { id: pairMission.id, kind });
+
     try {
       let workspaceProjectId: string | undefined;
       let project: Project | null = null;
@@ -377,6 +492,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         title: nextName,
         kind,
         language: lang,
+        intent,
+        templateId: templateId ?? undefined,
+        boardSku: boardSku ?? undefined,
         ...(kind === "exercise"
           ? {
               exerciseType: "script" as const,
@@ -392,7 +510,6 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       await get().saveCurrentArtifact();
       return created.id;
     } catch {
-      /* offline / unauthenticated: local workspace still usable */
       return null;
     }
   },
@@ -427,13 +544,15 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       persistLanguage(lang);
 
       const editorMode =
-        meta.kind === "free"
+        meta.kind === "free" || isHardwareKind(meta.kind)
           ? ("monaco" as const)
           : consoleKind
             ? plugin?.blockly
               ? ("blockly" as const)
               : ("monaco" as const)
             : ("blockly" as const);
+
+      const primaryPath = codePathForKind(meta.kind);
 
       set({
         artifactId: meta.id,
@@ -442,12 +561,22 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         projectName: meta.title,
         currentProject: project,
         artifactFiles: files,
+        activeFilePath: primaryPath,
+        templateId: meta.templateId ?? null,
+        boardSku:
+          meta.boardSku ??
+          (isHardwareKind(meta.kind) ? "board.espressif.esp32-s3-devkitc-1" : null),
+        intent: meta.intent,
+        verifiedMilestone: meta.verifiedMilestone ?? "none",
+        pairMission: consoleKind ? { ...DEFAULT_PAIR_MISSION } : get().pairMission,
+        firmwareSim: null,
         saveDirty: false,
         saveStatus: "saved",
-        leftOpen: false,
+        leftOpen: true,
         rightPreviewOpen: !consoleKind,
-        bottomOpen: consoleKind,
-        activeLeftTab: consoleKind ? "learn" : "files",
+        bottomOpen: consoleKind || isHardwareKind(meta.kind),
+        aiOpen: true,
+        activeLeftTab: consoleKind ? "learn" : isHardwareKind(meta.kind) ? "modules" : "files",
         editorMode,
         languageId: lang,
         code: nextCode,
@@ -486,7 +615,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       artifactFiles: [],
       saveDirty: false,
       saveStatus: "saved",
+      leftOpen: true,
       rightPreviewOpen: false,
+      aiOpen: true,
       bottomOpen: true,
       activeLeftTab: "learn",
       editorMode: plugin?.blockly ? "blockly" : "monaco",
@@ -537,6 +668,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           title: state.artifactName || state.projectName || "未命名作品",
           kind: state.artifactKind,
           language: state.languageId,
+          intent: state.intent,
+          templateId: state.templateId ?? undefined,
+          boardSku: state.boardSku ?? undefined,
           ...(state.artifactKind === "exercise"
             ? {
                 exerciseType: "script" as const,
@@ -554,6 +688,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         await api.updateArtifact(artifactId, {
           title: state.artifactName,
           language: state.languageId,
+          intent: state.intent,
+          templateId: state.templateId ?? undefined,
+          boardSku: state.boardSku ?? undefined,
           ...(state.artifactKind === "exercise"
             ? {
                 workspaceProjectId: project?.id,
@@ -562,7 +699,14 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         });
       }
 
-      const files = buildSaveFiles(state.artifactKind, state.code, state.blockXml);
+      const map = filesToMap(state.artifactFiles);
+      if (state.activeFilePath) map[state.activeFilePath] = state.code;
+      const primaryPath = codePathForKind(state.artifactKind);
+      const primaryCode = map[primaryPath] ?? state.code;
+      const extras: ArtifactFileEntry[] = Object.entries(map)
+        .filter(([p]) => p !== primaryPath)
+        .map(([path, content]) => ({ path, contentType: "text", content }));
+      const files = buildSaveFiles(state.artifactKind, primaryCode, state.blockXml, extras);
       const res = await api.putArtifactFiles(artifactId, { files });
       set({
         artifactFiles: res.files,

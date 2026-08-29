@@ -22,3 +22,14 @@ export function isWorkspacePath(pathname = window.location.pathname): boolean {
   const path = normalizePath(pathname);
   return path === "/workspace" || path.startsWith("/workspace/");
 }
+
+export function parseLaunchArtifactId(pathname = window.location.pathname): string | null {
+  const path = normalizePath(pathname);
+  const m = path.match(/^\/launch\/([^/]+)$/);
+  return m?.[1] ?? null;
+}
+
+export function isLaunchPath(pathname = window.location.pathname): boolean {
+  const path = normalizePath(pathname);
+  return path === "/launch" || path.startsWith("/launch/");
+}

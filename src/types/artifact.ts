@@ -8,9 +8,9 @@ export type ArtifactKind =
   | "exercise";
 
 /** Preview surface for non-console kinds (console kinds use bottom console). */
-export type PreviewType = "artifact" | "simulation" | "smarthome" | "console";
+export type PreviewType = "artifact" | "simulation" | "smarthome" | "console" | "firmware";
 
-export type LeftPanelTab = "files" | "modules" | "templates" | "learn";
+export type LeftPanelTab = "files" | "modules" | "templates" | "learn" | "launch";
 
 export const ARTIFACT_KIND_ORDER: ArtifactKind[] = [
   "web",
@@ -46,7 +46,7 @@ export const KIND_DEFAULT_PREVIEW: Record<ArtifactKind, PreviewType> = {
   web: "artifact",
   miniprogram: "artifact",
   smarthome: "smarthome",
-  iot: "smarthome",
+  iot: "firmware",
   toy: "simulation",
   free: "console",
   exercise: "console",
@@ -57,6 +57,7 @@ export const PREVIEW_LABEL: Record<PreviewType, string> = {
   simulation: "仿真运行",
   /** UI 固定文案仍为「仿真运行」（spec §5）；面板标题可另写「设备面板」 */
   smarthome: "仿真运行",
+  firmware: "固件仿真",
   console: "控制台运行",
 };
 
@@ -67,12 +68,16 @@ export function isConsoleKind(kind: ArtifactKind): boolean {
 
 /** Kinds that use smarthome simulation preview / APIs. */
 export function isHomeSimKind(kind: ArtifactKind): boolean {
-  return kind === "smarthome" || kind === "iot";
+  return kind === "smarthome";
+}
+
+export function isHardwareKind(kind: ArtifactKind): boolean {
+  return kind === "iot";
 }
 
 /** Create kinds with Blockly target toolboxes (not free/exercise shared-only). */
 export function isTargetBlockKind(
   kind: ArtifactKind,
-): kind is Exclude<ArtifactKind, "exercise" | "free"> {
-  return kind !== "exercise" && kind !== "free";
+): kind is Exclude<ArtifactKind, "exercise" | "free" | "iot"> {
+  return kind !== "exercise" && kind !== "free" && kind !== "iot";
 }

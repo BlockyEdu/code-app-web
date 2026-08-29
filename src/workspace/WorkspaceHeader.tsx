@@ -11,11 +11,15 @@ import {
   RobotOutlined,
   SaveOutlined,
 } from "@ant-design/icons";
-import { Button, Dropdown, Segmented, Tooltip, message, type MenuProps } from "antd";
+import { Button, Dropdown, type MenuProps, message, Segmented, Tooltip } from "antd";
 import { type ReactNode, useState } from "react";
+import { LanguageSelector } from "../components/LanguageSelector";
 import { LayoutIcon } from "../components/LayoutIcon";
+import { LocaleSwitcher } from "../components/LocaleSwitcher";
 import { LogoMark } from "../components/Logo";
 import { ModeSwitchModal } from "../components/ModeSwitchModal";
+import { RunControls } from "../components/RunControls";
+import { UserAvatarMenu } from "../components/UserAvatarMenu";
 import { useAiSettings } from "../hooks/useAiSettings";
 import { api } from "../lib/api";
 import { useAuthStore } from "../lib/auth-store";
@@ -24,13 +28,14 @@ import { navigate } from "../lib/navigate";
 import { type EditorMode, useWorkspaceStore } from "../stores/workspace";
 import type { ArtifactKind } from "../types/artifact";
 import {
+  isConsoleKind,
+  isHardwareKind,
+  isHomeSimKind,
+  isTargetBlockKind,
   KIND_COLOR,
   KIND_DEFAULT_PREVIEW,
   KIND_LABEL,
   PREVIEW_LABEL,
-  isConsoleKind,
-  isHomeSimKind,
-  isTargetBlockKind,
 } from "../types/artifact";
 import styles from "./WorkspaceHeader.module.scss";
 
@@ -85,12 +90,16 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
 
   const color = KIND_COLOR[artifactKind];
   const previewSupported = !isConsoleKind(artifactKind);
+  const hardware = isHardwareKind(artifactKind);
   const isSimKind = isHomeSimKind(artifactKind) || artifactKind === "toy";
-  const runLabel = isSimKind
-    ? "仿真运行"
-    : PREVIEW_LABEL[KIND_DEFAULT_PREVIEW[artifactKind]];
+  const runLabel = hardware
+    ? "Firmware sim"
+    : isSimKind
+      ? PREVIEW_LABEL.smarthome
+      : PREVIEW_LABEL[KIND_DEFAULT_PREVIEW[artifactKind]];
   const plugin = getActiveLanguagePlugin();
-  const supportsBlockly = isTargetBlockKind(artifactKind) || Boolean(plugin?.blockly);
+  const supportsBlockly =
+    !isHardwareKind(artifactKind) && (isTargetBlockKind(artifactKind) || Boolean(plugin?.blockly));
 
   const goLogin = () => {
     if (isDirectIdpEnabled()) {
@@ -196,9 +205,7 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
         <span className={styles.layoutItem}>
           <LayoutIcon showPreview inMenu />
           <span>预览</span>
-          {rightPreviewOpen && previewSupported && (
-            <CheckOutlined className={styles.layoutCheck} />
-          )}
+          {rightPreviewOpen && previewSupported && <CheckOutlined className={styles.layoutCheck} />}
         </span>
       ),
       onClick: () => previewSupported && toggleRightPreviewOpen(),
@@ -292,7 +299,7 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
             </Button>
           </Tooltip>
 
-          {(isSimKind || isConsoleKind(artifactKind)) && (
+          {(isSimKind || hardware) && (
             <Button
               type="primary"
               size="small"
@@ -302,6 +309,15 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
               loading={isRunning}
             >
               {runLabel}
+            </Button>
+          )}
+
+          {isConsoleKind(artifactKind) && <RunControls />}
+          {isConsoleKind(artifactKind) && <LanguageSelector />}
+
+          {hardware && artifactId && (
+            <Button size="small" onClick={() => navigate(`/launch/${artifactId}`)}>
+              Launch
             </Button>
           )}
 
@@ -328,16 +344,12 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
             </button>
           </Dropdown>
 
+          <LocaleSwitcher />
           {user ? (
-            <>
-              <span className={styles.authLabel}>{user.name}</span>
-              <button type="button" className={styles.authBtn} onClick={logout}>
-                退出
-              </button>
-            </>
+            <UserAvatarMenu user={user} onLogout={logout} />
           ) : (
             <button type="button" className={styles.authBtn} onClick={goLogin}>
-              登录
+              Sign in
             </button>
           )}
         </div>
@@ -364,9 +376,7 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
           onConfirm={confirmRestore}
           onCancel={() => setModeModal(null)}
         >
-          <p>
-            专业模式下的手改代码不会同步回积木。确认后将恢复进入专业模式前的积木快照。
-          </p>
+          <p>专业模式下的手改代码不会同步回积木。确认后将恢复进入专业模式前的积木快照。</p>
         </ModeSwitchModal>
       )}
     </>

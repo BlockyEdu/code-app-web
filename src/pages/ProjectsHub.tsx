@@ -12,6 +12,7 @@ import { appBrandTitle } from "../lib/deploy-profile";
 import { rememberPostLoginPath } from "../lib/idp";
 import { type AppLocale, useLocaleStore } from "../lib/locale-store";
 import { navigate } from "../lib/navigate";
+import { profileFeatures } from "../lib/product-profile";
 import type { WorkItem } from "../lib/work-items";
 import { useWorkspaceStore } from "../stores/workspace";
 import type { ArtifactKind } from "../types/artifact";
@@ -35,32 +36,53 @@ const HUB_COPY: Record<
     openFailed: string;
     logout: string;
     all: string;
+    navDiscover: string;
+    navLearn: string;
+    navBuild: string;
+    navLab: string;
+    navLaunch: string;
+    intentLearn: string;
+    intentLearnSub: string;
+    intentBuild: string;
+    intentBuildSub: string;
+    intentShip: string;
+    intentShipSub: string;
   }
 > = {
   "zh-CN": {
-    heroTitle: "我的项目",
-    heroSub:
-      "管理 Web、小程序、智能家居、物联网、玩具与编程练习。新建后进入工作台编辑；AI 可帮你从自然语言创建项目。",
-    sectionTitle: "项目列表",
+    heroTitle: "Learn, Build, Ship",
+    heroSub: "从结对学习到可验证固件，再到开放制造包。仿真不是量产；文件可带走。",
+    sectionTitle: "我的作品",
     refresh: "刷新",
-    newProject: "新建项目",
-    empty: "还没有项目，点击「新建项目」开始",
+    newProject: "新建",
+    empty: "还没有作品。从上方意图开始。",
     updatedAt: "更新于",
-    loadFailed: "加载项目失败",
-    createOk: "项目已创建",
+    loadFailed: "加载失败",
+    createOk: "已创建",
     createFailed: "创建失败",
     openFailed: "打开失败",
     logout: "退出登录",
     all: "全部",
+    navDiscover: "Discover",
+    navLearn: "Learn",
+    navBuild: "Build",
+    navLab: "Lab",
+    navLaunch: "Launch",
+    intentLearn: "Learn a skill",
+    intentLearnSub: "自由编程与 AI 结对",
+    intentBuild: "Build a project",
+    intentBuildSub: "软件、电子、IoT 模板",
+    intentShip: "Ship a product",
+    intentShipSub: "金路径硬件到制造包",
   },
   "en-US": {
-    heroTitle: "My Projects",
+    heroTitle: "Learn, Build, Ship",
     heroSub:
-      "Manage web, mini programs, smart home, IoT, toys, and coding practice. Create a project to open the workspace; AI can help you start from natural language.",
-    sectionTitle: "Projects",
+      "From pair-learning to verified firmware to an open manufacturing pack. Simulation is not mass production. Files leave with you.",
+    sectionTitle: "Your artifacts",
     refresh: "Refresh",
-    newProject: "New project",
-    empty: "No projects yet. Click “New project” to start.",
+    newProject: "New",
+    empty: "No artifacts yet. Start from an intent above.",
     updatedAt: "Updated",
     loadFailed: "Failed to load projects",
     createOk: "Project created",
@@ -68,6 +90,17 @@ const HUB_COPY: Record<
     openFailed: "Failed to open",
     logout: "Sign out",
     all: "All",
+    navDiscover: "Discover",
+    navLearn: "Learn",
+    navBuild: "Build",
+    navLab: "Lab",
+    navLaunch: "Launch",
+    intentLearn: "Learn a skill",
+    intentLearnSub: "Free coding with an AI pair",
+    intentBuild: "Build a project",
+    intentBuildSub: "Software, electronics, IoT templates",
+    intentShip: "Ship a product",
+    intentShipSub: "Golden-path hardware to a manufacturing pack",
   },
 };
 
@@ -97,9 +130,14 @@ function ProjectsHubInner() {
   const toggleAiOpen = useWorkspaceStore((s) => s.toggleAiOpen);
 
   const [kindFilter, setKindFilter] = useState<string>("all");
+  const [hubSection, setHubSection] = useState<"discover" | "learn" | "build" | "lab" | "launch">(
+    "discover",
+  );
   const [creating, setCreating] = useState(false);
   const [prefillKind, setPrefillKind] = useState<ArtifactKind | null>(null);
   const [prefillName, setPrefillName] = useState("");
+  const [prefillIntent, setPrefillIntent] = useState<string | undefined>();
+  const features = profileFeatures();
 
   const { items, loading, refresh } = useWorkItems({
     enabled: Boolean(user),
@@ -116,9 +154,15 @@ function ProjectsHubInner() {
   }, [authInitialized, user]);
 
   const filtered = useMemo(() => {
-    if (kindFilter === "all") return items;
-    return items.filter((i) => i.kind === kindFilter);
-  }, [items, kindFilter]);
+    let next = items;
+    if (hubSection === "learn")
+      next = next.filter((i) => i.kind === "free" || i.kind === "exercise");
+    if (hubSection === "lab")
+      next = next.filter((i) => i.kind === "iot" || i.kind === "smarthome" || i.kind === "toy");
+    if (hubSection === "launch") next = next.filter((i) => i.kind === "iot");
+    if (kindFilter !== "all") next = next.filter((i) => i.kind === kindFilter);
+    return next;
+  }, [items, kindFilter, hubSection]);
 
   const filterOptions = useMemo(
     () => [
@@ -131,7 +175,7 @@ function ProjectsHubInner() {
     [items, t.all],
   );
 
-  const openCreate = (kind?: ArtifactKind, name?: string) => {
+  const openCreate = (kind?: ArtifactKind, name?: string, intent?: string) => {
     if (!user) {
       rememberPostLoginPath("/");
       navigate("/login");
@@ -139,13 +183,22 @@ function ProjectsHubInner() {
     }
     setPrefillKind(kind ?? null);
     setPrefillName(name ?? "");
+    setPrefillIntent(intent);
     setShowNewProjectDialog(true);
   };
 
-  const handleCreate = async (kind: ArtifactKind, name: string, language: string) => {
+  const handleCreate = async (
+    kind: ArtifactKind,
+    name: string,
+    language: string,
+    extras: { templateId: string; intent?: string },
+  ) => {
     setCreating(true);
     try {
-      const id = await createNewArtifact(kind, name, language);
+      const id = await createNewArtifact(kind, name, language, {
+        templateId: extras.templateId,
+        intent: extras.intent || prefillIntent,
+      });
       message.success(t.createOk);
       setShowNewProjectDialog(false);
       if (id) navigate(`/workspace/${id}`);
@@ -160,6 +213,10 @@ function ProjectsHubInner() {
   const handleOpen = async (item: WorkItem) => {
     try {
       if (item.source === "artifact") {
+        if (hubSection === "launch" && item.kind === "iot") {
+          navigate(`/launch/${item.id}`);
+          return;
+        }
         await openArtifact(item.id);
         navigate(`/workspace/${item.id}`);
       } else {
@@ -191,6 +248,26 @@ function ProjectsHubInner() {
           <LogoMark size={26} />
           <span>{appBrandTitle()}</span>
         </div>
+        <nav className={styles.topNav} aria-label="Primary">
+          {(
+            [
+              ["discover", t.navDiscover],
+              ["learn", t.navLearn],
+              ["build", t.navBuild],
+              ["lab", t.navLab],
+              ...(features.showLaunchNav ? ([["launch", t.navLaunch]] as const) : []),
+            ] as Array<[typeof hubSection, string]>
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              className={`${styles.navBtn} ${hubSection === id ? styles.navBtnActive : ""}`}
+              onClick={() => setHubSection(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
         <div className={styles.topActions}>
           <LocaleSwitcher />
           <UserAvatarMenu user={user} onLogout={logout} logoutLabel={t.logout} />
@@ -201,6 +278,34 @@ function ProjectsHubInner() {
         <section className={styles.hero}>
           <h1 className={styles.heroTitle}>{t.heroTitle}</h1>
           <p className={styles.heroSub}>{t.heroSub}</p>
+          <div className={styles.intentGrid}>
+            <button
+              type="button"
+              className={styles.intentCard}
+              onClick={() => openCreate("free", "", "learn")}
+            >
+              <strong>{t.intentLearn}</strong>
+              <span>{t.intentLearnSub}</span>
+            </button>
+            <button
+              type="button"
+              className={styles.intentCard}
+              onClick={() => openCreate(undefined, "", "build")}
+            >
+              <strong>{t.intentBuild}</strong>
+              <span>{t.intentBuildSub}</span>
+            </button>
+            {features.showLaunchNav && (
+              <button
+                type="button"
+                className={styles.intentCard}
+                onClick={() => openCreate("iot", "", "ship")}
+              >
+                <strong>{t.intentShip}</strong>
+                <span>{t.intentShipSub}</span>
+              </button>
+            )}
+          </div>
         </section>
 
         <div className={styles.toolbar}>
@@ -289,11 +394,15 @@ function ProjectsHubInner() {
         open={showNewProjectDialog}
         initialKind={prefillKind}
         initialName={prefillName}
-        onConfirm={(kind, name, language) => void handleCreate(kind, name, language)}
+        initialIntent={prefillIntent}
+        onConfirm={(kind, name, language, extras) =>
+          void handleCreate(kind, name, language, extras)
+        }
         onCancel={() => {
           setShowNewProjectDialog(false);
           setPrefillKind(null);
           setPrefillName("");
+          setPrefillIntent(undefined);
         }}
       />
     </div>

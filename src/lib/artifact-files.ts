@@ -14,7 +14,9 @@ export function codePathForKind(kind: ArtifactKind): string {
     case "miniprogram":
       return "pages/index/index.js";
     case "smarthome":
+      return "behavior.js";
     case "iot":
+      return "firmware/main.cpp";
     case "toy":
       return "behavior.js";
     case "free":
@@ -91,6 +93,7 @@ export function buildSaveFiles(
   kind: ArtifactKind,
   code: string,
   blockXml: string,
+  extra: ArtifactFileEntry[] = [],
 ): ArtifactFileEntry[] {
   const files: ArtifactFileEntry[] = [
     {
@@ -105,6 +108,9 @@ export function buildSaveFiles(
       contentType: "text",
       content: blockXml,
     });
+  }
+  for (const f of extra) {
+    if (f.path !== codePathForKind(kind)) files.push(f);
   }
   return files;
 }

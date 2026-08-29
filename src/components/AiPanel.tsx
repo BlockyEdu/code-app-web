@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useAiSettings } from "../hooks/useAiSettings";
 import { api } from "../lib/api";
 import { useAuthStore } from "../lib/auth-store";
+import { PAIR_PHASE_LABEL, type PairAction } from "../lib/pair-mission";
+import { requestWorkspaceRun, track } from "../lib/telemetry";
 import { useWorkspaceStore } from "../stores/workspace";
 
 interface AiPanelProps {
@@ -34,13 +36,15 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     setAiMode,
     setPendingPatch,
     applyPendingPatch,
+    pairMission,
+    applyPairAction,
     getCurrentGoal,
     lesson,
     lessonStepIndex,
   } = useWorkspaceStore();
   const user = useAuthStore((s) => s.user);
   const openLoginPrompt = useAuthStore((s) => s.openLoginPrompt);
-  const { aiOpts, ready, settings } = useAiSettings();
+  const { aiOpts, ready } = useAiSettings();
   const [input, setInput] = useState("");
 
   const goal = getCurrentGoal();
@@ -73,22 +77,20 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
       });
       setAiCoachHint(res.hint, res.nextAction);
     } catch (e) {
-      setAiCoachHint(
-        "无法获取提示，请检查登录与网络",
-        e instanceof Error ? e.message : "重试",
-      );
+      setAiCoachHint("无法获取提示，请检查登录与网络", e instanceof Error ? e.message : "重试");
     } finally {
       setAiLoading(false);
     }
   };
 
+  // Fetch once when the session/goal is ready; avoid refetch loops on hint text.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: session bootstrap only
   useEffect(() => {
     if (hubMode) return;
     if (goal && user && ready && !aiNextHint) {
       void fetchHint();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch when goal/session ready
-  }, [goal, stepTitle, editorMode, user, ready, settings?.provider, settings?.model, hubMode]);
+  }, [goal, user, ready, hubMode]);
 
   const send = async () => {
     if (!input.trim() || aiLoading) return;
@@ -98,8 +100,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
       addAiMessage(userMsg);
       addAiMessage({
         role: "assistant",
-        content:
-          "已识别创作意图。请在弹出的新建项目对话框中确认名称与语言，或继续告诉我项目名称。",
+        content: "已识别创作意图。请在弹出的新建项目对话框中确认名称与语言，或继续告诉我项目名称。",
       });
       setInput("");
       return;
@@ -159,9 +160,84 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     }
   };
 
-  const explain = () => {
+  const runPairAction = (action: PairAction) => {
+    applyPairAction(action);
+  };
+
+  const explain = async () => {
     if (!requireAuth()) return;
-    setInput("请用简单中文解释我当前的代码在做什么");
+    runPairAction("explain");
+    setInput("");
+    const prompt =
+      "Explain the current code and the active mission in simple language. Do not write a patch.";
+    addAiMessage({ role: "user", content: "Explain" });
+    if (!ready) return;
+    setAiLoading(true);
+    try {
+      const res = await api.aiChat([...aiMessages, { role: "user", content: prompt }], {
+        ...aiOpts,
+        ...artifactCtx,
+        code,
+        editorMode,
+        teachingDepth,
+        lastError: lastRunError ?? undefined,
+        consoleOutput,
+        blockXml: editorMode === "blockly" ? blockXml : undefined,
+      });
+      addAiMessage({ role: "assistant", content: res.content });
+    } catch (err) {
+      addAiMessage({
+        role: "assistant",
+        content: `Explain failed: ${err instanceof Error ? err.message : String(err)}`,
+      });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const hint = async () => {
+    runPairAction("hint");
+    await fetchHint();
+  };
+
+  const implement = async () => {
+    runPairAction("implement");
+    await fixCode();
+  };
+
+  const test = () => {
+    runPairAction("test");
+    addAiMessage({
+      role: "assistant",
+      content: "Running tests/preview. Publish, flash, and factory order are not in this action.",
+    });
+    requestWorkspaceRun();
+  };
+
+  const review = async () => {
+    if (!requireAuth() || !ready) return;
+    runPairAction("review");
+    setAiLoading(true);
+    try {
+      const res = await api.aiReview({
+        ...aiOpts,
+        ...artifactCtx,
+        code,
+        blockXml,
+        teachingDepth,
+      });
+      addAiMessage({
+        role: "assistant",
+        content: res.summary || JSON.stringify(res.dimensions ?? []),
+      });
+    } catch (err) {
+      addAiMessage({
+        role: "assistant",
+        content: `Review failed: ${err instanceof Error ? err.message : String(err)}`,
+      });
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   return (
@@ -180,7 +256,12 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
             <option value="tutor">Tutor</option>
             <option value="debug">Debug</option>
             <option value="review">Review</option>
-            <option value="agent">Agent</option>
+            <option
+              value="agent"
+              disabled={teachingDepth === "beginner" || teachingDepth === "guided"}
+            >
+              Agent
+            </option>
           </select>
         </label>
         <label>
@@ -197,19 +278,26 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
         </label>
       </div>
 
-      {!hubMode && goal && (
+      {!hubMode && (
         <div className="ai-goal-card">
-          <div className="ai-goal-label">当前目标</div>
-          <p>{goal}</p>
+          <div className="ai-goal-label">Mission · {PAIR_PHASE_LABEL[pairMission.phase]}</div>
+          <p>
+            {pairMission.title}: {pairMission.success}
+          </p>
         </div>
       )}
 
       {!hubMode && (
         <div className="ai-hint-card">
           <div className="ai-hint-head">
-            <strong>下一步提示</strong>
-            <button type="button" className="btn-sm" onClick={() => void fetchHint()} disabled={aiLoading}>
-              刷新
+            <strong>Hint</strong>
+            <button
+              type="button"
+              className="btn-sm"
+              onClick={() => void hint()}
+              disabled={aiLoading}
+            >
+              Refresh
             </button>
           </div>
           {aiNextHint ? (
@@ -218,40 +306,40 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
               {aiNextAction && <p className="ai-next-action">👉 {aiNextAction}</p>}
             </>
           ) : (
-            <p className="muted">登录后获取 AI 提示</p>
+            <p className="muted">Sign in to get a Socratic hint</p>
           )}
         </div>
       )}
 
       {!hubMode && (
         <div className="ai-quick-actions">
-          <button type="button" className="btn-sm" onClick={() => void fetchHint()} disabled={aiLoading}>
-            下一步
+          <button
+            type="button"
+            className="btn-sm"
+            onClick={() => void explain()}
+            disabled={aiLoading}
+          >
+            Explain
           </button>
-          <button type="button" className="btn-sm" onClick={explain} disabled={aiLoading}>
-            解释代码
-          </button>
-          <button type="button" className="btn-sm" onClick={() => void fixCode()} disabled={aiLoading}>
-            Debug
+          <button type="button" className="btn-sm" onClick={() => void hint()} disabled={aiLoading}>
+            Hint
           </button>
           <button
             type="button"
             className="btn-sm"
+            onClick={() => void implement()}
             disabled={aiLoading}
-            onClick={() => {
-              void api.aiReview({
-                ...aiOpts,
-                ...artifactCtx,
-                code,
-                blockXml,
-                teachingDepth,
-              }).then((res) => {
-                addAiMessage({
-                  role: "assistant",
-                  content: res.summary || JSON.stringify(res.dimensions ?? []),
-                });
-              });
-            }}
+          >
+            Implement
+          </button>
+          <button type="button" className="btn-sm" onClick={test} disabled={aiLoading}>
+            Test
+          </button>
+          <button
+            type="button"
+            className="btn-sm"
+            onClick={() => void review()}
+            disabled={aiLoading}
           >
             Review
           </button>
@@ -259,14 +347,21 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
       )}
       {pendingPatch && (
         <div className="ai-hint-card">
-          <strong>确认式 patch</strong>
+          <strong>Confirm patch — will not publish, flash, or order</strong>
           <pre className="ai-hint-text">{pendingPatch.proposed.slice(0, 400)}</pre>
           <div className="ai-quick-actions">
             <button type="button" className="btn-sm" onClick={() => applyPendingPatch()}>
-              应用
+              Apply
             </button>
-            <button type="button" className="btn-sm" onClick={() => setPendingPatch(null)}>
-              放弃
+            <button
+              type="button"
+              className="btn-sm"
+              onClick={() => {
+                setPendingPatch(null);
+                track("pair.patch.rejected");
+              }}
+            >
+              Reject
             </button>
           </div>
         </div>
@@ -275,13 +370,11 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
       <div className="ai-messages">
         {aiMessages.length === 0 && (
           <p className="muted">
-            {hubMode
-              ? "用自然语言描述想创建的项目类型…"
-              : "问我编程问题，或使用上方快捷按钮"}
+            {hubMode ? "用自然语言描述想创建的项目类型…" : "问我编程问题，或使用上方快捷按钮"}
           </p>
         )}
-        {aiMessages.map((m, i) => (
-          <div key={i} className={`ai-msg ai-msg--${m.role}`}>
+        {aiMessages.map((m) => (
+          <div key={`${m.role}:${m.content}`} className={`ai-msg ai-msg--${m.role}`}>
             <strong>{m.role === "user" ? "你" : "AI"}：</strong>
             <span>{m.content}</span>
           </div>

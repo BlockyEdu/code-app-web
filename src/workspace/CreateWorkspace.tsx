@@ -12,9 +12,10 @@ import { api } from "../lib/api";
 import { runPreview } from "../lib/execute";
 import { parseWorkspaceArtifactId } from "../lib/navigate";
 import { type RuntimeKind, runTargetProgram } from "../lib/targets";
+import { track } from "../lib/telemetry";
 import { buildHtmlFromWorld, composeStaticSiteClient } from "../lib/web-preview";
 import { useWorkspaceStore } from "../stores/workspace";
-import { isConsoleKind, isHomeSimKind, isTargetBlockKind } from "../types/artifact";
+import { isConsoleKind, isHardwareKind, isHomeSimKind, isTargetBlockKind } from "../types/artifact";
 import { AssetsPanel } from "./AssetsPanel";
 import styles from "./CreateWorkspace.module.scss";
 import { PreviewPanel } from "./PreviewPanel";
@@ -38,6 +39,7 @@ function EditorArea() {
 export function CreateWorkspace() {
   const rightPreviewOpen = useWorkspaceStore((s) => s.rightPreviewOpen);
   const bottomOpen = useWorkspaceStore((s) => s.bottomOpen);
+  const leftOpen = useWorkspaceStore((s) => s.leftOpen);
   const aiOpen = useWorkspaceStore((s) => s.aiOpen);
   const setAiOpen = useWorkspaceStore((s) => s.setAiOpen);
   const toggleAiOpen = useWorkspaceStore((s) => s.toggleAiOpen);
@@ -45,12 +47,15 @@ export function CreateWorkspace() {
   const languageId = useWorkspaceStore((s) => s.languageId);
   const code = useWorkspaceStore((s) => s.code);
   const artifactId = useWorkspaceStore((s) => s.artifactId);
+  const boardSku = useWorkspaceStore((s) => s.boardSku);
   const clearConsole = useWorkspaceStore((s) => s.clearConsole);
   const appendConsole = useWorkspaceStore((s) => s.appendConsole);
   const setBottomOpen = useWorkspaceStore((s) => s.setBottomOpen);
   const setPreviewWorld = useWorkspaceStore((s) => s.setPreviewWorld);
   const setRightPreviewOpen = useWorkspaceStore((s) => s.setRightPreviewOpen);
   const setWebPreview = useWorkspaceStore((s) => s.setWebPreview);
+  const setFirmwareSim = useWorkspaceStore((s) => s.setFirmwareSim);
+  const saveCurrentArtifact = useWorkspaceStore((s) => s.saveCurrentArtifact);
   const webPreviewSessionId = useWorkspaceStore((s) => s.webPreviewSessionId);
   const openArtifact = useWorkspaceStore((s) => s.openArtifact);
 
@@ -112,6 +117,55 @@ export function CreateWorkspace() {
   );
 
   const handleRun = useCallback(async () => {
+    if (isHardwareKind(artifactKind)) {
+      setIsRunning(true);
+      setRightPreviewOpen(true);
+      setBottomOpen(true);
+      clearConsole();
+      try {
+        if (!artifactId) {
+          appendConsole("[error] Save the artifact before firmware sim");
+          return;
+        }
+        await saveCurrentArtifact();
+        const sku = boardSku || "board.espressif.esp32-s3-devkitc-1";
+        appendConsole("[info] Isolated MCU build (not Piston)…");
+        const toolchain =
+          sku.includes("nucleo") || sku.includes(".st.") ? "stm32cube" : "arduino-esp32";
+        const build = await api.createFirmwareBuild({
+          artifactId,
+          boardSku: sku,
+          toolchain,
+          firmwarePath: "firmware/main.cpp",
+        });
+        appendConsole(
+          `[build] ${build.status} digest=${build.imageDigest} reproducible=${build.reproducible}`,
+        );
+        if (build.logExcerpt) appendConsole(build.logExcerpt);
+        track("hardware.sim.started", { artifactId, boardSku: sku });
+        const sim = await api.createHardwareSim({
+          artifactId,
+          boardSku: sku,
+          buildId: build.id,
+          adapter: "auto",
+        });
+        appendConsole(`[sim] adapter=${sim.adapter} ${sim.exportHint}`);
+        const ran = await api.runHardwareSim(sim.id);
+        appendConsole(ran.serialLog || "[sim] no serial output");
+        setFirmwareSim({
+          adapter: sim.adapter,
+          serialLog: ran.serialLog,
+          status: ran.status,
+          exportHint: sim.exportHint,
+        });
+        track("hardware.sim.completed", { artifactId, adapter: sim.adapter, status: ran.status });
+      } catch (err) {
+        appendConsole(`[error] ${err instanceof Error ? err.message : String(err)}`);
+      } finally {
+        setIsRunning(false);
+      }
+      return;
+    }
     if (!isConsoleKind(artifactKind)) {
       setIsRunning(true);
       setRightPreviewOpen(true);
@@ -191,6 +245,7 @@ export function CreateWorkspace() {
   }, [
     artifactKind,
     artifactId,
+    boardSku,
     languageId,
     code,
     clearConsole,
@@ -198,8 +253,18 @@ export function CreateWorkspace() {
     setBottomOpen,
     setPreviewWorld,
     setRightPreviewOpen,
+    setFirmwareSim,
+    saveCurrentArtifact,
     publishWebIframe,
   ]);
+
+  useEffect(() => {
+    const onRun = () => {
+      void handleRun();
+    };
+    window.addEventListener("workspace:run", onRun);
+    return () => window.removeEventListener("workspace:run", onRun);
+  }, [handleRun]);
 
   return (
     <AppProviders>
@@ -209,7 +274,16 @@ export function CreateWorkspace() {
 
         <div className={styles.body}>
           <PanelGroup orientation="horizontal" className={styles.hPanelGroup}>
-            <Panel minSize="20" className={styles.panelFull}>
+            {leftOpen && (
+              <>
+                <Panel defaultSize="18" minSize="14" maxSize="32" className={styles.panelFull}>
+                  <AssetsPanel />
+                </Panel>
+                <PanelResizeHandle className={styles.hResizeHandle} />
+              </>
+            )}
+
+            <Panel minSize="28" className={styles.panelFull}>
               <PanelGroup orientation="vertical" className={styles.vPanelGroup}>
                 <Panel minSize="30" className={styles.panelFull}>
                   <div className={styles.editorShell}>
@@ -236,22 +310,28 @@ export function CreateWorkspace() {
             {showPreview && (
               <>
                 <PanelResizeHandle className={styles.hResizeHandle} />
-                <Panel defaultSize="28" minSize="18" maxSize="50" className={styles.panelFull}>
+                <Panel defaultSize="26" minSize="18" maxSize="46" className={styles.panelFull}>
                   <PreviewPanel kind={artifactKind} onRefresh={() => void handleRun()} />
+                </Panel>
+              </>
+            )}
+
+            {aiOpen && (
+              <>
+                <PanelResizeHandle className={styles.hResizeHandle} />
+                <Panel defaultSize="22" minSize="16" maxSize="36" className={styles.panelFull}>
+                  <FloatingAiPanel
+                    variant="dock"
+                    open={aiOpen}
+                    onOpenChange={setAiOpen}
+                    onToggle={toggleAiOpen}
+                    mode="workspace"
+                  />
                 </Panel>
               </>
             )}
           </PanelGroup>
         </div>
-
-        <AssetsPanel />
-
-        <FloatingAiPanel
-          open={aiOpen}
-          onOpenChange={setAiOpen}
-          onToggle={toggleAiOpen}
-          mode="workspace"
-        />
       </div>
     </AppProviders>
   );

@@ -2,256 +2,227 @@ import {
   AppstoreOutlined,
   CaretDownOutlined,
   CaretRightOutlined,
-  CloseOutlined,
   FileOutlined,
-  FileTextOutlined,
   FolderOutlined,
-  Html5Outlined,
-  PictureOutlined,
   PlusOutlined,
   ReadOutlined,
-  SettingOutlined,
+  RocketOutlined,
 } from "@ant-design/icons";
-import { FloatButton, Tooltip } from "antd";
-import { type ReactNode, useState } from "react";
+import { Tooltip } from "antd";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { LessonPanel } from "../components/LessonPanel";
 import { ProjectPanel } from "../components/ProjectPanel";
+import { api } from "../lib/api";
+import { navigate } from "../lib/navigate";
+import { PAIR_PHASE_LABEL } from "../lib/pair-mission";
+import { profileFeatures } from "../lib/product-profile";
 import { useWorkspaceStore } from "../stores/workspace";
 import type { ArtifactKind, LeftPanelTab } from "../types/artifact";
-import { isConsoleKind } from "../types/artifact";
+import { isConsoleKind, isHardwareKind } from "../types/artifact";
 import styles from "./AssetsPanel.module.scss";
 
 type TreeNode = {
   name: string;
-  icon: ReactNode;
-  children?: { name: string; icon: ReactNode }[];
+  path: string;
+  children?: TreeNode[];
 };
 
-const FILE_TREES: Record<ArtifactKind, TreeNode[]> = {
-  web: [
-    {
-      name: "src",
-      icon: <FolderOutlined />,
-      children: [
-        { name: "index.html", icon: <Html5Outlined style={{ color: "#e44d26" }} /> },
-        { name: "styles.css", icon: <FileOutlined style={{ color: "#2965f1" }} /> },
-        { name: "app.js", icon: <FileOutlined style={{ color: "#f7df1e" }} /> },
-      ],
-    },
-    {
-      name: "assets",
-      icon: <FolderOutlined />,
-      children: [{ name: "logo.png", icon: <PictureOutlined style={{ color: "#8b5cf6" }} /> }],
-    },
-    { name: "README.md", icon: <FileTextOutlined style={{ color: "#6b7280" }} /> },
-  ],
-  miniprogram: [
-    {
-      name: "pages",
-      icon: <FolderOutlined />,
-      children: [
-        { name: "index.js", icon: <FileOutlined style={{ color: "#f7df1e" }} /> },
-        { name: "index.wxml", icon: <Html5Outlined style={{ color: "#07c160" }} /> },
-        { name: "index.wxss", icon: <FileOutlined style={{ color: "#07c160" }} /> },
-      ],
-    },
-    { name: "app.json", icon: <FileOutlined style={{ color: "#94a3b8" }} /> },
-    { name: "app.js", icon: <FileOutlined style={{ color: "#f7df1e" }} /> },
-  ],
-  smarthome: [
-    { name: "home.json", icon: <SettingOutlined style={{ color: "#0ea5e9" }} /> },
-    {
-      name: "rooms",
-      icon: <FolderOutlined />,
-      children: [
-        { name: "livingroom.json", icon: <FileOutlined style={{ color: "#0ea5e9" }} /> },
-        { name: "bedroom.json", icon: <FileOutlined style={{ color: "#0ea5e9" }} /> },
-      ],
-    },
-    { name: "scenes.json", icon: <FileOutlined style={{ color: "#38bdf8" }} /> },
-    { name: "behavior.blocks", icon: <FileOutlined style={{ color: "#6366f1" }} /> },
-  ],
-  iot: [
-    { name: "home.json", icon: <SettingOutlined style={{ color: "#14b8a6" }} /> },
-    { name: "devices.json", icon: <FileOutlined style={{ color: "#14b8a6" }} /> },
-    { name: "behavior.blocks", icon: <FileOutlined style={{ color: "#6366f1" }} /> },
-  ],
-  toy: [
-    { name: "toy.json", icon: <SettingOutlined style={{ color: "#d97706" }} /> },
-    { name: "ui.dsl.json", icon: <FileOutlined style={{ color: "#d97706" }} /> },
-    { name: "behavior.blocks", icon: <FileOutlined style={{ color: "#6366f1" }} /> },
-  ],
-  free: [
-    { name: "main.js", icon: <FileOutlined style={{ color: "#f7df1e" }} /> },
-    { name: "helpers.js", icon: <FileOutlined style={{ color: "#94a3b8" }} /> },
-  ],
-  exercise: [
-    { name: "main.js", icon: <FileOutlined style={{ color: "#f7df1e" }} /> },
-    { name: "helpers.js", icon: <FileOutlined style={{ color: "#94a3b8" }} /> },
-  ],
-};
-
-const MODULES: Record<ArtifactKind, { label: string; desc: string; color: string }[]> = {
-  web: [
-    { label: "导航栏", desc: "Navigation bar", color: "#2563eb" },
-    { label: "页面布局", desc: "Page layout grid", color: "#2563eb" },
-    { label: "表单", desc: "Form inputs", color: "#7c3aed" },
-    { label: "用户登录", desc: "Auth & session", color: "#16a34a" },
-  ],
-  miniprogram: [
-    { label: "页面", desc: "Page component", color: "#07c160" },
-    { label: "导航", desc: "Tab bar", color: "#07c160" },
-    { label: "弹窗", desc: "Modal & toast", color: "#fa541c" },
-  ],
-  smarthome: [
-    { label: "灯光", desc: "home.setLight", color: "#0ea5e9" },
-    { label: "温控", desc: "home.setTemperature", color: "#38bdf8" },
-    { label: "传感器", desc: "home.readSensor", color: "#06b6d4" },
-    { label: "场景", desc: "home.runScene", color: "#0284c7" },
-  ],
-  iot: [
-    { label: "传感器", desc: "home.readSensor", color: "#14b8a6" },
-    { label: "执行器", desc: "home.setDevice", color: "#0d9488" },
-    { label: "场景", desc: "home.runScene", color: "#0f766e" },
-  ],
-  toy: [
-    { label: "主控板", desc: "Controller SKU", color: "#d97706" },
-    { label: "传感器", desc: "Sensor modules", color: "#d97706" },
-    { label: "执行器", desc: "Actuator modules", color: "#f59e0b" },
-  ],
-  free: [
-    { label: "逻辑", desc: "If / loops", color: "#64748b" },
-    { label: "数据", desc: "Variables", color: "#94a3b8" },
-  ],
-  exercise: [
-    { label: "逻辑", desc: "If / loops", color: "#d97706" },
-    { label: "界面", desc: "DOM", color: "#2563eb" },
-    { label: "数据", desc: "Variables", color: "#7c3aed" },
-  ],
-};
-
-const TEMPLATES: Record<ArtifactKind, string[]> = {
-  web: ["落地页", "作品集", "博客", "管理后台"],
-  miniprogram: ["资讯小程序", "活动报名", "商城"],
-  smarthome: ["灯光场景", "温控联动", "安防演示"],
-  iot: ["温湿度监测", "设备联动"],
-  toy: ["互动玩具", "传感器演示"],
-  free: ["空白项目", "脚本草稿"],
-  exercise: ["空白练习", "Hello World", "排序算法"],
-};
+function filesToTree(paths: string[]): TreeNode[] {
+  type Draft = { name: string; path: string; children: Record<string, Draft>; file?: boolean };
+  const root: Record<string, Draft> = {};
+  for (const full of paths) {
+    const parts = full.split("/").filter(Boolean);
+    let cur = root;
+    let acc = "";
+    for (let i = 0; i < parts.length; i++) {
+      const name = parts[i];
+      acc = acc ? `${acc}/${name}` : name;
+      if (!cur[name]) cur[name] = { name, path: acc, children: {} };
+      if (i === parts.length - 1) cur[name].file = true;
+      cur = cur[name].children;
+    }
+  }
+  const toList = (obj: Record<string, Draft>): TreeNode[] =>
+    Object.values(obj)
+      .sort(
+        (a, b) => Number(Boolean(a.file)) - Number(Boolean(b.file)) || a.name.localeCompare(b.name),
+      )
+      .map((n) => ({
+        name: n.name,
+        path: n.path,
+        children: n.file ? undefined : toList(n.children),
+      }));
+  return toList(root);
+}
 
 function getActivityTabs(
   kind: ArtifactKind,
 ): { id: LeftPanelTab; icon: ReactNode; label: string }[] {
   const base: { id: LeftPanelTab; icon: ReactNode; label: string }[] = [
-    { id: "files", icon: <FolderOutlined />, label: "文件" },
-    { id: "modules", icon: <AppstoreOutlined />, label: "模组" },
-    { id: "templates", icon: <FileTextOutlined />, label: "模板" },
+    { id: "files", icon: <FolderOutlined />, label: "Files" },
   ];
+  if (isHardwareKind(kind) || kind === "smarthome" || kind === "toy") {
+    base.push({ id: "modules", icon: <AppstoreOutlined />, label: "Modules" });
+  }
   if (isConsoleKind(kind)) {
-    base.push({ id: "learn", icon: <ReadOutlined />, label: "课程" });
+    base.push({ id: "learn", icon: <ReadOutlined />, label: "Learn" });
+  }
+  if (isHardwareKind(kind) && profileFeatures().showLaunchNav) {
+    base.push({ id: "launch", icon: <RocketOutlined />, label: "Launch" });
   }
   return base;
 }
 
-function FileTree({ kind }: { kind: ArtifactKind }) {
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({
-    src: true,
-    pages: true,
-    rooms: true,
-    assets: true,
-  });
-  const tree = FILE_TREES[kind];
+function FileTree() {
+  const files = useWorkspaceStore((s) => s.artifactFiles);
+  const activeFilePath = useWorkspaceStore((s) => s.activeFilePath);
+  const setActiveFile = useWorkspaceStore((s) => s.setActiveFile);
+  const addArtifactFile = useWorkspaceStore((s) => s.addArtifactFile);
+  const kind = useWorkspaceStore((s) => s.artifactKind);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const paths = files.map((f) => f.path);
+  const tree = useMemo(
+    () => filesToTree(paths.length ? paths : [activeFilePath || "main.js"]),
+    [paths, activeFilePath],
+  );
+
+  const addFile = () => {
+    const path = window.prompt("New file path", kind === "iot" ? "firmware/notes.txt" : "notes.md");
+    if (path) addArtifactFile(path);
+  };
+
+  const renderNode = (node: TreeNode, depth: number) => {
+    if (node.children) {
+      const open = expanded[node.path] ?? depth < 2;
+      return (
+        <div key={node.path}>
+          <button
+            type="button"
+            className={styles.treeFolder}
+            onClick={() => setExpanded((p) => ({ ...p, [node.path]: !open }))}
+          >
+            <span className={styles.treeChevron}>
+              {open ? <CaretDownOutlined /> : <CaretRightOutlined />}
+            </span>
+            <span className={styles.treeIcon}>
+              <FolderOutlined />
+            </span>
+            <span className={styles.treeName}>{node.name}</span>
+          </button>
+          {open && node.children.map((c) => renderNode(c, depth + 1))}
+        </div>
+      );
+    }
+    return (
+      <button
+        key={node.path}
+        type="button"
+        className={`${styles.treeFile} ${activeFilePath === node.path ? styles.treeFileActive : ""}`}
+        onClick={() => setActiveFile(node.path)}
+      >
+        <span className={styles.treeIcon} style={{ marginLeft: 8 + depth * 8 }}>
+          <FileOutlined />
+        </span>
+        <span className={styles.treeName}>{node.name}</span>
+      </button>
+    );
+  };
 
   return (
     <div className={styles.fileTree}>
       <div className={styles.sectionHeader}>
-        <span className={styles.sectionTitle}>文件</span>
-        <button type="button" className={styles.sectionAction} aria-label="新建文件">
+        <span className={styles.sectionTitle}>Files</span>
+        <button
+          type="button"
+          className={styles.sectionAction}
+          aria-label="New file"
+          onClick={addFile}
+        >
           <PlusOutlined />
         </button>
       </div>
-      {tree.map((node) =>
-        node.children ? (
-          <div key={node.name}>
-            <button
-              type="button"
-              className={styles.treeFolder}
-              onClick={() => setExpanded((p) => ({ ...p, [node.name]: !p[node.name] }))}
-            >
-              <span className={styles.treeChevron}>
-                {expanded[node.name] ? <CaretDownOutlined /> : <CaretRightOutlined />}
-              </span>
-              <span className={styles.treeIcon}>{node.icon}</span>
-              <span className={styles.treeName}>{node.name}</span>
-            </button>
-            {expanded[node.name] &&
-              node.children.map((child) => (
-                <button key={child.name} type="button" className={styles.treeFile}>
-                  <span className={styles.treeIcon} style={{ marginLeft: 16 }}>
-                    {child.icon}
-                  </span>
-                  <span className={styles.treeName}>{child.name}</span>
-                </button>
-              ))}
-          </div>
-        ) : (
-          <button key={node.name} type="button" className={styles.treeFile}>
-            <span className={styles.treeIcon} style={{ marginLeft: 16 }}>
-              {node.icon}
-            </span>
-            <span className={styles.treeName}>{node.name}</span>
-          </button>
-        ),
-      )}
+      {tree.map((n) => renderNode(n, 0))}
     </div>
   );
 }
 
 function ModulesPanel({ kind }: { kind: ArtifactKind }) {
-  return (
-    <div>
-      <div className={styles.sectionHeader}>
-        <span className={styles.sectionTitle}>可用模组</span>
-      </div>
-      <div className={styles.modulesGrid}>
-        {MODULES[kind].map((m) => (
-          <button
-            key={m.label}
-            type="button"
-            className={styles.moduleCard}
-            style={{ borderLeftColor: m.color }}
-          >
-            <span className={styles.moduleLabel}>{m.label}</span>
-            <span className={styles.moduleDesc}>{m.desc}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
+  const [items, setItems] = useState<
+    Array<{ sku: string; name: string; bus: string; voltage: string }>
+  >([]);
+  const [compat, setCompat] = useState<string | null>(null);
+  const boardSku = useWorkspaceStore((s) => s.boardSku);
 
-function TemplatesPanel({ kind }: { kind: ArtifactKind }) {
+  useEffect(() => {
+    if (!isHardwareKind(kind)) return;
+    void api
+      .listHardwareModules(boardSku ?? undefined)
+      .then((r) => setItems(r.items))
+      .catch(() => setItems([]));
+  }, [kind, boardSku]);
+
+  if (!isHardwareKind(kind)) {
+    return (
+      <div className={styles.mutedPad}>
+        Modules for this kind are edited as project files. Open Files to continue.
+      </div>
+    );
+  }
+
+  const check = async (sku: string) => {
+    if (!boardSku) return;
+    try {
+      const res = await api.checkHardwareCompat(boardSku, [sku]);
+      setCompat(res.ok ? `${sku} compatible` : res.issues.map((i) => i.message).join("; "));
+    } catch (err) {
+      setCompat(err instanceof Error ? err.message : "Compatibility check failed");
+    }
+  };
+
   return (
     <div>
       <div className={styles.sectionHeader}>
-        <span className={styles.sectionTitle}>模板</span>
+        <span className={styles.sectionTitle}>Catalog {boardSku ? `· ${boardSku}` : ""}</span>
       </div>
-      <div className={styles.templateList}>
-        {TEMPLATES[kind].map((t) => (
-          <button key={t} type="button" className={styles.templateItem}>
-            <FileTextOutlined />
-            <span>{t}</span>
-          </button>
-        ))}
+      {compat && <p className={styles.compatNote}>{compat}</p>}
+      <div className={styles.modulesGrid}>
+        {items.length === 0 ? (
+          <p className={styles.mutedPad}>Sign in to load ESP32 / STM32 modules.</p>
+        ) : (
+          items.map((m) => (
+            <button
+              key={m.sku}
+              type="button"
+              className={styles.moduleCard}
+              onClick={() => void check(m.sku)}
+            >
+              <span className={styles.moduleLabel}>{m.name}</span>
+              <span className={styles.moduleDesc}>
+                {m.sku} · {m.bus} · {m.voltage}
+              </span>
+            </button>
+          ))
+        )}
       </div>
     </div>
   );
 }
 
 function LearnPanel() {
+  const pairMission = useWorkspaceStore((s) => s.pairMission);
+  const kind = useWorkspaceStore((s) => s.artifactKind);
+
   return (
     <div className={styles.learnStack}>
+      {(kind === "free" || kind === "exercise") && (
+        <div className={styles.missionCard}>
+          <div className={styles.sectionTitle}>Mission</div>
+          <strong>{pairMission.title}</strong>
+          <p>{pairMission.success}</p>
+          <span className={styles.phaseChip}>{PAIR_PHASE_LABEL[pairMission.phase]}</span>
+        </div>
+      )}
       <div className={styles.learnSection}>
         <LessonPanel />
       </div>
@@ -262,26 +233,46 @@ function LearnPanel() {
   );
 }
 
+function LaunchChecklist() {
+  const artifactId = useWorkspaceStore((s) => s.artifactId);
+  const features = profileFeatures();
+
+  return (
+    <div className={styles.mutedPad}>
+      <div className={styles.sectionTitle}>Ship checklist</div>
+      <ol className={styles.checklist}>
+        <li>Firmware sim assertions pass</li>
+        <li>BOM / ERC / DFM (rule engine)</li>
+        <li>Export KiCad / Gerber pack</li>
+        <li>Quote or vendor deeplink</li>
+        <li>Launch Pack — not ready-to-sell until review</li>
+      </ol>
+      {artifactId && features.showLaunchNav ? (
+        <button
+          type="button"
+          className={styles.launchLink}
+          onClick={() => navigate(`/launch/${artifactId}`)}
+        >
+          Open Launch desk
+        </button>
+      ) : (
+        <p>Save the project first to open manufacturing.</p>
+      )}
+    </div>
+  );
+}
+
 function AssetsDrawerBody() {
   const kind = useWorkspaceStore((s) => s.artifactKind);
   const activeTab = useWorkspaceStore((s) => s.activeLeftTab);
   const setActiveLeftTab = useWorkspaceStore((s) => s.setActiveLeftTab);
-  const setLeftOpen = useWorkspaceStore((s) => s.setLeftOpen);
   const tabs = getActivityTabs(kind);
   const resolvedTab = tabs.some((t) => t.id === activeTab) ? activeTab : tabs[0].id;
 
   return (
     <aside className={styles.leftPanel}>
       <div className={styles.drawerHead}>
-        <span className={styles.drawerTitle}>资源</span>
-        <button
-          type="button"
-          className={styles.drawerClose}
-          aria-label="关闭资源面板"
-          onClick={() => setLeftOpen(false)}
-        >
-          <CloseOutlined />
-        </button>
+        <span className={styles.drawerTitle}>Context</span>
       </div>
       <div className={styles.drawerBody}>
         <div className={styles.activityBar}>
@@ -298,44 +289,17 @@ function AssetsDrawerBody() {
           ))}
         </div>
         <div className={styles.panelContent}>
-          {resolvedTab === "files" && <FileTree kind={kind} />}
+          {resolvedTab === "files" && <FileTree />}
           {resolvedTab === "modules" && <ModulesPanel kind={kind} />}
-          {resolvedTab === "templates" && <TemplatesPanel kind={kind} />}
           {resolvedTab === "learn" && <LearnPanel />}
+          {resolvedTab === "launch" && <LaunchChecklist />}
         </div>
       </div>
     </aside>
   );
 }
 
-/** Floating assets entry: collapsed = FloatButton; expanded = overlay drawer. */
+/** Resident left context panel (not an overlay drawer). */
 export function AssetsPanel() {
-  const leftOpen = useWorkspaceStore((s) => s.leftOpen);
-  const setLeftOpen = useWorkspaceStore((s) => s.setLeftOpen);
-
-  return (
-    <>
-      {!leftOpen && (
-        <FloatButton
-          icon={<FolderOutlined />}
-          tooltip="资源面板"
-          onClick={() => setLeftOpen(true)}
-          style={{ left: 24, bottom: 24 }}
-        />
-      )}
-      {leftOpen && (
-        <>
-          <button
-            type="button"
-            className={styles.backdrop}
-            aria-label="关闭资源面板"
-            onClick={() => setLeftOpen(false)}
-          />
-          <div className={styles.overlay}>
-            <AssetsDrawerBody />
-          </div>
-        </>
-      )}
-    </>
-  );
+  return <AssetsDrawerBody />;
 }

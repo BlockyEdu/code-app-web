@@ -1,6 +1,16 @@
 @use '../styles/variables' as *;
 @use '../styles/mixins' as *;
 
+.dock {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: $color-bg-surface;
+  border-left: 1px solid $color-border;
+  overflow: hidden;
+}
+
 .shell {
   position: fixed;
   right: $space-4;

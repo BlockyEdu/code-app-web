@@ -96,6 +96,10 @@ export interface CreateArtifact {
   workspaceProjectId?: string | null;
   exerciseType?: string | null;
   language?: string | null;
+  intent?: string;
+  verifiedMilestone?: string;
+  boardSku?: string | null;
+  templateId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -151,6 +155,9 @@ export const api = {
     exerciseType?: "lesson" | "script";
     language?: string;
     workspaceProjectId?: string;
+    intent?: string;
+    templateId?: string;
+    boardSku?: string;
   }) =>
     request<CreateArtifact>("/create/artifacts", {
       method: "POST",
@@ -166,6 +173,10 @@ export const api = {
       language?: string;
       workspaceProjectId?: string;
       exerciseType?: "lesson" | "script";
+      intent?: string;
+      templateId?: string;
+      boardSku?: string;
+      verifiedMilestone?: string;
     },
   ) =>
     request<CreateArtifact>(`/create/artifacts/${id}`, {
@@ -326,6 +337,86 @@ export const api = {
     request<{ status: string; artifactId: string; message: string }>("/publish/web", {
       method: "POST",
       body: JSON.stringify({ artifactId }),
+    }),
+  listHardwareBoards: (goldenPath = true) =>
+    request<{ items: Array<{ sku: string; name: string; familyId: string; goldenPath: boolean }> }>(
+      `/hardware/boards${goldenPath ? "?goldenPath=true" : ""}`,
+    ),
+  listHardwareModules: (boardSku?: string) => {
+    const q = boardSku ? `?boardSku=${encodeURIComponent(boardSku)}` : "";
+    return request<{ items: Array<{ sku: string; name: string; bus: string; voltage: string }> }>(
+      `/hardware/modules${q}`,
+    );
+  },
+  listHeroProjects: () =>
+    request<{
+      items: Array<{ id: string; name: string; boardSku: string; moduleSkus: string[]; toolchain: string }>;
+    }>("/hardware/heroes"),
+  checkHardwareCompat: (boardSku: string, moduleSkus: string[]) =>
+    request<{ ok: boolean; issues: Array<{ code: string; message: string }> }>(
+      "/hardware/compatibility/check",
+      { method: "POST", body: JSON.stringify({ boardSku, moduleSkus }) },
+    ),
+  createFirmwareBuild: (body: {
+    artifactId: string;
+    boardSku: string;
+    toolchain: string;
+    firmwarePath?: string;
+  }) =>
+    request<{
+      id: string;
+      status: string;
+      logExcerpt: string;
+      imageDigest: string;
+      reproducible: boolean;
+    }>("/hardware/builds", { method: "POST", body: JSON.stringify(body) }),
+  createHardwareSim: (body: { artifactId: string; boardSku: string; buildId?: string; adapter?: string }) =>
+    request<{ id: string; status: string; adapter: string; exportHint: string; serialLog: string }>(
+      "/hardware/sim/sessions",
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+  runHardwareSim: (id: string) =>
+    request<{ id: string; status: string; serialLog: string }>(`/hardware/sim/sessions/${id}/run`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
+  getManufacturingPack: (artifactId: string) =>
+    request<{
+      artifactId: string;
+      gate: string;
+      watermark: boolean;
+      files: Array<{ path: string; kind: string }>;
+    }>(`/manufacturing/artifacts/${artifactId}/pack`),
+  validateManufacturing: (artifactId: string) =>
+    request<{
+      ok: boolean;
+      engine: string;
+      issues: Array<{ severity: string; code: string; message: string }>;
+    }>(`/manufacturing/artifacts/${artifactId}/validate`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
+  createManufacturingQuote: (artifactId: string, vendor = "deeplink") =>
+    request<{
+      id: string;
+      mode: string;
+      deeplinkUrl?: string;
+      blockedReason?: string;
+      amountUsd?: number;
+    }>(`/manufacturing/artifacts/${artifactId}/quotes`, {
+      method: "POST",
+      body: JSON.stringify({ vendor }),
+    }),
+  createLaunchPack: (artifactId: string, channels: string[] = ["markdown", "tindie"]) =>
+    request<{
+      artifactId: string;
+      readyToSell: boolean;
+      channels: string[];
+      checklist: Array<{ id: string; label: string; done: boolean }>;
+      markdown: string;
+    }>(`/launch/artifacts/${artifactId}/pack`, {
+      method: "POST",
+      body: JSON.stringify({ channels }),
     }),
   getMembership: () => request<MembershipResponse>("/membership"),
   ensureTrial: (body?: { organizationId?: string }) =>

@@ -785,13 +785,15 @@ if (home.readSensor('motion') > 0) {
   home.runScene('home');
 }
 `,
-  iot: `// 物联网示例：传感器采集 + 设备联动（复用家居仿真 API）
-home.setLight('living', 'on');
-home.setBrightness('living', 70);
-const temp = home.readSensor('temperature');
-if (temp > 28) {
-  home.setTemperature(26);
-  home.runScene('home');
+  iot: `// HP-01 Air Beacon — ESP32-S3 Arduino stub
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Air Beacon boot");
+}
+
+void loop() {
+  Serial.println("BME280 mock T=24.1 H=48");
+  delay(2000);
 }
 `,
   toy: `// 智能玩具示例：动作序列 + 传感器

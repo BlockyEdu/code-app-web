@@ -16,10 +16,7 @@ import type { ArtifactKind } from "../types/artifact";
 import { ARTIFACT_KIND_ORDER, KIND_COLOR, KIND_LABEL } from "../types/artifact";
 import styles from "./NewProjectDialog.module.scss";
 
-const KIND_META: Record<
-  ArtifactKind,
-  { icon: ReactNode; desc: string; templates: string[] }
-> = {
+const KIND_META: Record<ArtifactKind, { icon: ReactNode; desc: string; templates: string[] }> = {
   web: {
     icon: <GlobalOutlined />,
     desc: "落地页 / 作品集 / 博客 / 管理后台",
@@ -37,8 +34,8 @@ const KIND_META: Record<
   },
   iot: {
     icon: <ApiOutlined />,
-    desc: "传感器采集与设备联动（物联网）",
-    templates: ["温湿度监测", "设备联动", "网关演示"],
+    desc: "ESP32-S3 / STM32 golden paths · firmware + catalog",
+    templates: ["HP-01 Air Beacon", "HP-02 Desk Rover", "HP-03 Room Node"],
   },
   toy: {
     icon: <RobotOutlined />,
@@ -47,7 +44,7 @@ const KIND_META: Record<
   },
   free: {
     icon: <ExperimentOutlined />,
-    desc: "自由编程，默认专业模式",
+    desc: "Pair programming · Monaco first",
     templates: ["空白项目", "脚本草稿"],
   },
   exercise: {
@@ -65,12 +62,18 @@ const LANGUAGE_OPTIONS = [
 
 export interface NewProjectDialogProps {
   open: boolean;
-  onConfirm: (kind: ArtifactKind, name: string, language: string) => void;
+  onConfirm: (
+    kind: ArtifactKind,
+    name: string,
+    language: string,
+    extras: { templateId: string; intent?: string },
+  ) => void;
   onCancel: () => void;
   /** Prefill when opened from AI or hub. */
   initialKind?: ArtifactKind | null;
   initialName?: string;
   initialLanguage?: string;
+  initialIntent?: string;
 }
 
 export function NewProjectDialog({
@@ -80,6 +83,7 @@ export function NewProjectDialog({
   initialKind = null,
   initialName = "",
   initialLanguage = "javascript",
+  initialIntent,
 }: NewProjectDialogProps) {
   const [step, setStep] = useState<"kind" | "template">("kind");
   const [selectedKind, setSelectedKind] = useState<ArtifactKind | null>(null);
@@ -95,12 +99,20 @@ export function NewProjectDialog({
       setSelectedKind(initialKind);
       setSelectedTemplate(KIND_META[initialKind].templates[0] ?? null);
       setStep("template");
+    } else if (initialIntent === "learn") {
+      setSelectedKind("free");
+      setSelectedTemplate(KIND_META.free.templates[0] ?? null);
+      setStep("template");
+    } else if (initialIntent === "ship") {
+      setSelectedKind("iot");
+      setSelectedTemplate(KIND_META.iot.templates[0] ?? null);
+      setStep("template");
     } else {
       setSelectedKind(null);
       setSelectedTemplate(null);
       setStep("kind");
     }
-  }, [open, initialKind, initialName, initialLanguage]);
+  }, [open, initialKind, initialName, initialLanguage, initialIntent]);
 
   const kindMeta = selectedKind ? KIND_META[selectedKind] : null;
 
@@ -126,7 +138,10 @@ export function NewProjectDialog({
   const handleCreate = () => {
     if (!selectedKind || !selectedTemplate) return;
     const name = projectName.trim() || `我的${KIND_LABEL[selectedKind]}`;
-    onConfirm(selectedKind, name, language);
+    onConfirm(selectedKind, name, language, {
+      templateId: selectedTemplate,
+      intent: initialIntent,
+    });
     reset();
   };
 
@@ -216,19 +231,21 @@ export function NewProjectDialog({
             ))}
           </div>
 
-          <div className={styles.nameField}>
-            <label className={styles.nameLabel} htmlFor="artifact-language">
-              编程语言
-            </label>
-            <Select
-              id="artifact-language"
-              value={language}
-              onChange={setLanguage}
-              options={LANGUAGE_OPTIONS}
-              style={{ width: "100%" }}
-              size="large"
-            />
-          </div>
+          {selectedKind !== "iot" && (
+            <div className={styles.nameField}>
+              <label className={styles.nameLabel} htmlFor="artifact-language">
+                编程语言
+              </label>
+              <Select
+                id="artifact-language"
+                value={language}
+                onChange={setLanguage}
+                options={LANGUAGE_OPTIONS}
+                style={{ width: "100%" }}
+                size="large"
+              />
+            </div>
+          )}
 
           <div className={styles.nameField}>
             <label className={styles.nameLabel} htmlFor="artifact-name">

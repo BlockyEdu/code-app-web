@@ -1,4 +1,4 @@
-import { ArrowRightOutlined, ExpandAltOutlined, ReloadOutlined } from "@ant-design/icons";
+import { ArrowRightOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useCallback } from "react";
 import type { WorldState } from "../lib/targets";
 import { WEB_IFRAME_SANDBOX } from "../lib/web-preview";
@@ -25,13 +25,7 @@ const ROOM_LABELS: Record<string, string> = {
   kitchen: "厨房",
 };
 
-function WebPreview({
-  world,
-  onRefresh,
-}: {
-  world: WorldState | null;
-  onRefresh?: () => void;
-}) {
+function WebPreview({ world, onRefresh }: { world: WorldState | null; onRefresh?: () => void }) {
   const embedUrl = useWorkspaceStore((s) => s.webPreviewEmbedUrl);
   const srcDoc = useWorkspaceStore((s) => s.webPreviewSrcDoc);
   const title = world?.web.title || "我的第一个网站";
@@ -251,6 +245,31 @@ function SmarthomePreview({ world }: { world: WorldState | null }) {
   );
 }
 
+function FirmwarePreview() {
+  const sim = useWorkspaceStore((s) => s.firmwareSim);
+  const lines = (sim?.serialLog || "Click Firmware sim — this is an MCU adapter, not Piston.")
+    .split("\n")
+    .filter(Boolean)
+    .slice(-16);
+
+  return (
+    <div className={styles.homePreview}>
+      <div className={styles.homeNotice}>
+        Firmware lab · adapter {sim?.adapter || "idle"}
+        {sim?.status ? ` · ${sim.status}` : ""} — not mass production
+      </div>
+      {sim?.exportHint && <div className={styles.homeNotice}>{sim.exportHint}</div>}
+      <div className={styles.homeLog}>
+        {lines.map((line) => (
+          <div key={line} className={styles.homeLogLine}>
+            {line}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function PreviewPanel({ kind, onRefresh }: PreviewPanelProps & { onRefresh?: () => void }) {
   const previewType = KIND_DEFAULT_PREVIEW[kind];
   const label = PREVIEW_LABEL[previewType];
@@ -265,29 +284,26 @@ export function PreviewPanel({ kind, onRefresh }: PreviewPanelProps & { onRefres
       <div className={styles.previewHeader}>
         <span className={styles.previewTitle}>
           {label}
-          {(kind === "smarthome" || kind === "iot") && (
-            <span className={styles.previewBadge}>设备面板</span>
-          )}
+          {kind === "smarthome" && <span className={styles.previewBadge}>device panel</span>}
+          {kind === "iot" && <span className={styles.previewBadge}>MCU adapter</span>}
           {kind === "web" && <span className={styles.previewBadge}>sandbox</span>}
         </span>
         <div className={styles.previewActions}>
           <button
             type="button"
             className={styles.previewBtn}
-            aria-label="刷新"
+            aria-label="Refresh preview"
             onClick={handleReload}
           >
             <ReloadOutlined />
-          </button>
-          <button type="button" className={styles.previewBtn} aria-label="展开">
-            <ExpandAltOutlined />
           </button>
         </div>
       </div>
       <div className={styles.previewContent}>
         {kind === "web" && <WebPreview world={world} onRefresh={onRefresh} />}
         {kind === "miniprogram" && <MiniprogramPreview world={world} />}
-        {(kind === "smarthome" || kind === "iot") && <SmarthomePreview world={world} />}
+        {kind === "smarthome" && <SmarthomePreview world={world} />}
+        {kind === "iot" && <FirmwarePreview />}
         {kind === "toy" && <ToyPreview world={world} />}
       </div>
     </div>

@@ -24,6 +24,68 @@
   z-index: $z-header;
 }
 
+.topNav {
+  @include flex-row($space-1);
+  flex: 1;
+  justify-content: center;
+}
+
+.navBtn {
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  padding: 6px 12px;
+  border-radius: $radius-md;
+  cursor: pointer;
+  font-size: $font-size-md;
+  font-family: inherit;
+
+  &:hover {
+    color: $color-text-primary;
+    background: $color-bg-elevated;
+  }
+}
+
+.navBtnActive {
+  color: $color-text-primary;
+  background: $color-primary-muted;
+}
+
+.intentGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: $space-3;
+  margin-top: $space-6;
+}
+
+.intentCard {
+  text-align: left;
+  border: 1px solid $color-border;
+  background: $color-bg-surface;
+  border-radius: $radius-lg;
+  padding: $space-4;
+  cursor: pointer;
+  color: inherit;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+
+  strong {
+    font-size: $font-size-lg;
+  }
+
+  span {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+
+  &:hover {
+    border-color: #{$color-primary}80;
+    background: $color-bg-elevated;
+  }
+}
+
 .brand {
   @include flex-row($space-2);
   font-weight: $font-weight-semibold;

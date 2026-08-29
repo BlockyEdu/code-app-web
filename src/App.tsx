@@ -7,8 +7,9 @@ import {
 } from "./lib/api";
 import { useAuthStore } from "./lib/auth-store";
 import { useMembershipStore } from "./lib/membership-store";
-import { isWorkspacePath } from "./lib/navigate";
+import { isLaunchPath, isWorkspacePath } from "./lib/navigate";
 import { AuthCallbackPage } from "./pages/AuthCallbackPage";
+import { LaunchPage } from "./pages/LaunchPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProjectsHub } from "./pages/ProjectsHub";
 import { CreateWorkspace } from "./workspace/CreateWorkspace";
@@ -22,6 +23,7 @@ export default function App() {
   const isAuthCallback = path === "/auth/callback";
   const isLogin = path === "/login";
   const isWorkspace = isWorkspacePath(path);
+  const isLaunch = isLaunchPath(path);
 
   useEffect(() => {
     setUnauthorizedHandler(openLoginPrompt);
@@ -46,6 +48,10 @@ export default function App() {
 
   if (isLogin) {
     return <LoginPage />;
+  }
+
+  if (isLaunch) {
+    return <LaunchPage />;
   }
 
   if (isWorkspace) {

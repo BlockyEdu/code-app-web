@@ -10,6 +10,7 @@ export interface FloatingAiPanelProps {
   onOpenChange: (open: boolean) => void;
   onToggle: () => void;
   mode?: "workspace" | "hub";
+  variant?: "float" | "dock";
   /** Hub: open create modal prefilled from NL parse. */
   onHubCreateRequest?: (kind: ArtifactKind | undefined, name?: string) => void;
 }
@@ -19,11 +20,13 @@ export function parseKindFromText(text: string): ArtifactKind | null {
   const t = text.toLowerCase();
   if (/小程序|miniprogram|mini\s*program|微信/.test(t)) return "miniprogram";
   if (/智能家居|家居|smarthome|smart\s*home/.test(t)) return "smarthome";
+  if (/esp32|stm32|firmware|pcb|hardware|beacon|rover/.test(t)) return "iot";
   if (/物联网|iot|传感器网/.test(t)) return "iot";
+  if (/网站|网页|web|落地页|博客|landing/.test(t)) return "web";
+  if (/learn|结对|pair programming/.test(t)) return "free";
   if (/玩具|toy|机器人/.test(t)) return "toy";
   if (/练习|课程|exercise|lesson/.test(t)) return "exercise";
   if (/自由|free\s*code|随便写/.test(t)) return "free";
-  if (/网站|网页|web|落地页|博客/.test(t)) return "web";
   return null;
 }
 
@@ -32,6 +35,7 @@ export function FloatingAiPanel({
   onOpenChange,
   onToggle,
   mode = "workspace",
+  variant = "float",
   onHubCreateRequest,
 }: FloatingAiPanelProps) {
   const [hubPendingKind, setHubPendingKind] = useState<ArtifactKind | null>(null);
@@ -56,47 +60,52 @@ export function FloatingAiPanel({
     return false;
   };
 
+  const panel = (
+    <aside className={variant === "dock" ? styles.dock : styles.shell} aria-label="AI pair dock">
+      <div className={styles.header}>
+        <div className={styles.title}>
+          <AnthropicFilled />
+          <span>AI pair</span>
+        </div>
+        <button
+          type="button"
+          className={styles.closeBtn}
+          aria-label="Close AI dock"
+          onClick={() => onOpenChange(false)}
+        >
+          <CloseOutlined />
+        </button>
+      </div>
+      {mode === "hub" && (
+        <p className={styles.hubHint}>
+          Try: “help me learn JavaScript”, “ESP32 air quality node”, “create a landing page”.
+        </p>
+      )}
+      <div className={styles.body}>
+        <AiPanel
+          hideHeader
+          hubMode={mode === "hub"}
+          onHubIntercept={mode === "hub" ? handleHubUserMessage : undefined}
+        />
+      </div>
+    </aside>
+  );
+
+  if (variant === "dock") {
+    return open ? panel : null;
+  }
+
   return (
     <>
       {!open && (
         <FloatButton
           icon={<AnthropicFilled />}
-          tooltip="AI 助手"
+          tooltip="AI pair"
           onClick={onToggle}
           style={{ right: 24, bottom: 24 }}
         />
       )}
-
-      {open && (
-        <aside className={styles.shell} aria-label="AI 助手面板">
-          <div className={styles.header}>
-            <div className={styles.title}>
-              <AnthropicFilled />
-              <span>AI 助手</span>
-            </div>
-            <button
-              type="button"
-              className={styles.closeBtn}
-              aria-label="关闭"
-              onClick={() => onOpenChange(false)}
-            >
-              <CloseOutlined />
-            </button>
-          </div>
-          {mode === "hub" && (
-            <p className={styles.hubHint}>
-              试试：「帮我做一个网站」「创建小程序」「智能家居灯光场景」。识别类型后可继续告诉我项目名称。
-            </p>
-          )}
-          <div className={styles.body}>
-            <AiPanel
-              hideHeader
-              hubMode={mode === "hub"}
-              onHubIntercept={mode === "hub" ? handleHubUserMessage : undefined}
-            />
-          </div>
-        </aside>
-      )}
+      {open && panel}
     </>
   );
 }

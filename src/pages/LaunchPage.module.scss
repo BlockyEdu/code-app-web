@@ -1,0 +1,82 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-base;
+  color: $color-text-primary;
+  font-family: $font-sans;
+}
+
+.topBar {
+  @include flex-row($space-3);
+  height: $header-height;
+  padding: 0 $space-6;
+  border-bottom: 1px solid $color-border;
+  background: $color-bg-surface;
+}
+
+.back {
+  @include flex-row($space-1);
+  border: 1px solid $color-border;
+  background: $color-bg-elevated;
+  color: inherit;
+  border-radius: $radius-md;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: $font-size-sm;
+}
+
+.title {
+  flex: 1;
+  font-size: $font-size-md;
+}
+
+.actions {
+  @include flex-row($space-2);
+}
+
+.main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: $space-8 $space-6;
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.banner {
+  padding: $space-3 $space-4;
+  border-radius: $radius-md;
+  border: 1px solid $color-accent-amber;
+  color: $color-accent-amber;
+  font-size: $font-size-sm;
+}
+
+.card {
+  border: 1px solid $color-border;
+  background: $color-bg-surface;
+  border-radius: $radius-lg;
+  padding: $space-5;
+
+  h2 {
+    margin: 0 0 $space-3;
+    font-size: $font-size-lg;
+  }
+
+  ul {
+    padding-left: $space-5;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+.muted {
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+}
+
+.sell {
+  color: $color-accent-green;
+  font-weight: $font-weight-semibold;
+}
