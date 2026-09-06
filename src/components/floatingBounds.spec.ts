@@ -28,10 +28,10 @@ test("never exceeds the viewport so the composer stays visible", () => {
   expect(next.height).toBe(500);
 });
 
-test("default rect sits on the right edge", () => {
+test("default rect sits on the right edge, vertically centered", () => {
   const next = defaultFloatingRect({ width: 1280, height: 800 });
   expect(next.width).toBe(FLOAT_DEFAULT_WIDTH);
   expect(next.height).toBe(FLOAT_DEFAULT_HEIGHT);
   expect(next.x).toBe(1280 - FLOAT_DEFAULT_WIDTH - 24);
-  expect(next.y).toBeGreaterThan(0);
+  expect(next.y).toBe(Math.round((800 - FLOAT_DEFAULT_HEIGHT) / 2));
 });

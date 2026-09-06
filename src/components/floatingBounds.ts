@@ -37,13 +37,14 @@ export function clampFloatingRect(rect: FloatingRect, viewport: ViewportSize): F
   };
 }
 
+/** Default open position: right edge, vertically centered. */
 export function defaultFloatingRect(viewport: ViewportSize): FloatingRect {
-  const width = Math.min(FLOAT_DEFAULT_WIDTH, Math.max(FLOAT_MIN_WIDTH, viewport.width));
-  const height = Math.min(FLOAT_DEFAULT_HEIGHT, Math.max(FLOAT_MIN_HEIGHT, viewport.height));
+  const width = Math.min(FLOAT_DEFAULT_WIDTH, viewport.width);
+  const height = Math.min(FLOAT_DEFAULT_HEIGHT, viewport.height);
   return clampFloatingRect(
     {
       x: Math.max(0, viewport.width - width - 24),
-      y: Math.max(24, Math.round((viewport.height - height) / 2)),
+      y: Math.round((viewport.height - height) / 2),
       width,
       height,
     },
