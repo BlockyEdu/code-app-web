@@ -1,6 +1,6 @@
-import Editor from '@monaco-editor/react';
-import { useEffect, useRef } from 'react';
-import { useWorkspaceStore } from '../stores/workspace';
+import Editor from "@monaco-editor/react";
+import { useEffect, useRef } from "react";
+import { useWorkspaceStore } from "../stores/workspace";
 
 export function MonacoEditorPanel() {
   const { code, setCode, markMonacoEdited, languageId, getActiveLanguagePlugin, activeFilePath } =
@@ -8,14 +8,21 @@ export function MonacoEditorPanel() {
   const skipEditMark = useRef(false);
   const plugin = getActiveLanguagePlugin();
   const monacoLang =
-    activeFilePath?.endsWith(".cpp") || activeFilePath?.endsWith(".c") || activeFilePath?.endsWith(".h")
+    activeFilePath?.endsWith(".cpp") ||
+    activeFilePath?.endsWith(".c") ||
+    activeFilePath?.endsWith(".h")
       ? "cpp"
-      : activeFilePath?.endsWith(".json")
-        ? "json"
-        : activeFilePath?.endsWith(".md")
-          ? "markdown"
-          : (plugin?.monacoLanguageId ?? "javascript");
+      : activeFilePath?.endsWith(".css")
+        ? "css"
+        : activeFilePath?.endsWith(".js")
+          ? "javascript"
+          : activeFilePath?.endsWith(".json")
+            ? "json"
+            : activeFilePath?.endsWith(".md")
+              ? "markdown"
+              : (plugin?.monacoLanguageId ?? "javascript");
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: skip first onChange after buffer swap
   useEffect(() => {
     skipEditMark.current = true;
   }, [code, languageId]);
@@ -29,7 +36,7 @@ export function MonacoEditorPanel() {
         theme="vs-dark"
         value={code}
         onChange={(v) => {
-          setCode(v ?? '');
+          setCode(v ?? "");
           if (skipEditMark.current) {
             skipEditMark.current = false;
             return;
@@ -42,7 +49,7 @@ export function MonacoEditorPanel() {
           scrollBeyondLastLine: false,
           automaticLayout: true,
           padding: { top: 12 },
-          lineNumbers: 'on',
+          lineNumbers: "on",
           roundedSelection: true,
         }}
       />

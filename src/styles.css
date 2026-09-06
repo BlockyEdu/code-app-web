@@ -596,8 +596,15 @@ body {
   flex: 1;
 }
 
+.ai-panel {
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
 .ai-panel-header {
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .ai-mode-tag {
@@ -615,6 +622,7 @@ body {
   gap: 8px;
   padding: 8px 12px;
   border-bottom: 1px solid #30363d;
+  flex-shrink: 0;
 }
 
 .ai-model-picker label {
@@ -941,9 +949,9 @@ body {
 
 .ai-messages {
   flex: 1;
-  overflow-y: auto;
+  overflow: visible;
   padding: 8px 12px;
-  min-height: 120px;
+  min-height: 0;
 }
 
 .ai-msg {
@@ -963,8 +971,7 @@ body {
 .ai-input-row {
   display: flex;
   gap: 8px;
-  padding: 8px 12px;
-  border-top: 1px solid #30363d;
+  padding: 8px 12px 8px;
 }
 
 .ai-input-row input {
@@ -983,6 +990,40 @@ body {
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ai-panel-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.ai-composer {
+  flex-shrink: 0;
+  border-top: 1px solid #30363d;
+  background: #111318;
+  padding: 0 18px 12px 0;
+}
+
+.ai-composer-model {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px 0;
+  font-size: 11px;
+  color: #8b949e;
+}
+
+.ai-composer-model select {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  background: #0d1117;
+  color: #e6edf3;
+  font-size: 12px;
 }
 
 .muted {

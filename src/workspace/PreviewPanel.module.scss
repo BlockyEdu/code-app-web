@@ -189,6 +189,24 @@
   box-shadow: $shadow-xl;
 }
 
+.phoneScreenStudio {
+  width: 280px;
+  height: 520px;
+  background: $color-bg-surface;
+  border-radius: 28px;
+  border: 2px solid $color-border;
+  overflow: hidden;
+  @include flex-col();
+  box-shadow: $shadow-xl;
+
+  .webFrame,
+  .webIframe {
+    height: 100%;
+    min-height: 0;
+    background: #fff;
+  }
+}
+
 .mpHeader {
   @include flex-center();
   background: #07c160;

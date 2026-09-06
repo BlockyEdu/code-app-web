@@ -41,6 +41,7 @@ const HUB_COPY: Record<
     navBuild: string;
     navLab: string;
     navLaunch: string;
+    launchHint: string;
     intentLearn: string;
     intentLearnSub: string;
     intentBuild: string;
@@ -67,7 +68,8 @@ const HUB_COPY: Record<
     navLearn: "Learn",
     navBuild: "Build",
     navLab: "Lab",
-    navLaunch: "Launch",
+    navLaunch: "发布",
+    launchHint: "以下为可走向制造包的硬件作品。点击打开工作台；在工作台点「发布台」可做制造检查。",
     intentLearn: "Learn a skill",
     intentLearnSub: "自由编程与 AI 结对",
     intentBuild: "Build a project",
@@ -95,6 +97,8 @@ const HUB_COPY: Record<
     navBuild: "Build",
     navLab: "Lab",
     navLaunch: "Launch",
+    launchHint:
+      "These are hardware artifacts that can go to a manufacturing pack. Open the workspace, then use Launch desk for checks.",
     intentLearn: "Learn a skill",
     intentLearnSub: "Free coding with an AI pair",
     intentBuild: "Build a project",
@@ -213,10 +217,6 @@ function ProjectsHubInner() {
   const handleOpen = async (item: WorkItem) => {
     try {
       if (item.source === "artifact") {
-        if (hubSection === "launch" && item.kind === "iot") {
-          navigate(`/launch/${item.id}`);
-          return;
-        }
         await openArtifact(item.id);
         navigate(`/workspace/${item.id}`);
       } else {
@@ -324,6 +324,8 @@ function ProjectsHubInner() {
             </Button>
           </div>
         </div>
+
+        {hubSection === "launch" ? <p className={styles.sectionHint}>{t.launchHint}</p> : null}
 
         <div className={styles.filterRow}>
           <Segmented

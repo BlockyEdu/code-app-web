@@ -1,0 +1,273 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.studio {
+  @include flex-row();
+  align-items: stretch;
+  height: 100%;
+  min-height: 0;
+  background: $color-bg-surface;
+}
+
+.tree {
+  width: 200px;
+  min-width: 180px;
+  border-right: 1px solid $color-border;
+  overflow-y: auto;
+  @include scrollbar-thin();
+  padding: $space-2 0 $space-4;
+}
+
+.treeHead {
+  padding: $space-2 $space-3;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.treePage {
+  padding: $space-1 $space-3 2px;
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.treeNode {
+  @include flex-row($space-2);
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  padding: 6px $space-3 6px $space-5;
+  font-size: $font-size-sm;
+  text-align: left;
+
+  &:hover {
+    background: $color-bg-elevated;
+    color: $color-text-primary;
+  }
+}
+
+.treeNodeActive {
+  background: $color-primary-muted;
+  color: $color-primary !important;
+}
+
+.inspector {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  @include scrollbar-thin();
+  padding: $space-4;
+}
+
+.inspectorTitle {
+  margin: 0 0 $space-3;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.field {
+  @include flex-col($space-1);
+  margin-bottom: $space-3;
+}
+
+.fieldLabel {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.colorRow {
+  @include flex-row($space-2);
+}
+
+.hint {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  margin: 0 0 $space-3;
+}
+
+.split {
+  @include flex-row();
+  align-items: stretch;
+  height: 100%;
+  min-height: 0;
+}
+
+.listPane {
+  width: 240px;
+  min-width: 200px;
+  border-right: 1px solid $color-border;
+  overflow-y: auto;
+  @include scrollbar-thin();
+}
+
+.listHead {
+  @include flex-row();
+  justify-content: space-between;
+  padding: $space-3;
+  border-bottom: 1px solid $color-border-subtle;
+}
+
+.listTitle {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.postItem {
+  @include flex-col($space-1);
+  align-items: flex-start;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  padding: $space-2 $space-3;
+  text-align: left;
+  border-bottom: 1px solid $color-border-subtle;
+
+  &:hover {
+    background: $color-bg-elevated;
+    color: $color-text-primary;
+  }
+}
+
+.postItemActive {
+  background: $color-primary-muted;
+  color: $color-primary !important;
+}
+
+.postMeta {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.formPane {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  @include scrollbar-thin();
+  padding: $space-4;
+}
+
+.shareBox {
+  @include flex-col($space-3);
+  margin-bottom: $space-3;
+}
+
+.shareUrlRow {
+  @include flex-row($space-2);
+}
+
+.shareQr {
+  @include flex-row($space-4);
+  align-items: flex-start;
+}
+
+.shareCopyMsg {
+  margin-top: $space-2;
+}
+
+.formActions {
+  @include flex-row($space-2);
+  margin-top: $space-3;
+  flex-wrap: wrap;
+}
+
+.logic {
+  height: 100%;
+  overflow-y: auto;
+  @include scrollbar-thin();
+  padding: $space-4;
+}
+
+.chain {
+  @include flex-col($space-2);
+  margin-bottom: $space-4;
+  padding: $space-3;
+  background: $color-bg-elevated;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+}
+
+.chainStep {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.chainArrow {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+  padding-left: $space-2;
+}
+
+.logicJson {
+  margin: 0;
+  padding: $space-3;
+  background: $color-bg-base;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-family: $font-mono;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.missionList {
+  @include flex-col($space-2);
+  padding: $space-3;
+}
+
+.missionItem {
+  @include flex-row($space-2);
+  align-items: flex-start;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.missionDone {
+  color: $color-accent-green;
+}
+
+.missionCheck {
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+
+.issues {
+  @include flex-col($space-1);
+  margin: $space-2 0;
+}
+
+.issue {
+  font-size: $font-size-sm;
+  color: $color-accent-red;
+}
+
+.releaseRow {
+  @include flex-row($space-2);
+  justify-content: space-between;
+  padding: $space-2 0;
+  border-bottom: 1px solid $color-border-subtle;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.previewSwitch {
+  @include flex-row($space-1);
+  margin-right: $space-2;
+}
+
+.empty {
+  padding: $space-4;
+  font-size: $font-size-sm;
+  color: $color-text-muted;
+}

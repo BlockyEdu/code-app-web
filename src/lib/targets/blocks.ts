@@ -4,6 +4,7 @@
  */
 import * as Blockly from "blockly";
 import type { ArtifactKind } from "../../types/artifact";
+import { starterIotCode, starterIotXml } from "./iot-lab";
 
 export interface BlockSpec {
   type: string;
@@ -608,12 +609,136 @@ const TOY_BLOCKS: BlockSpec[] = [
   },
 ];
 
+const COLOR_IOT = 165;
+
+const ALL_IOT_CHANNELS: Array<[string, string]> = [
+  ["雨量", "rain"],
+  ["温度", "temperature"],
+  ["开度", "position"],
+  ["开限位", "limit_open"],
+  ["关限位", "limit_close"],
+  ["土壤湿度", "soil"],
+  ["流量", "flow"],
+  ["泵", "pump"],
+  ["分区", "zone"],
+  ["溶氧", "do_mgl"],
+  ["水位", "level_pct"],
+  ["水温", "temp"],
+  ["增氧", "aerator"],
+  ["喷淋", "spray"],
+];
+
+const ALL_IOT_COMMANDS: Array<[string, string]> = [
+  ["开窗", "open"],
+  ["关窗", "close"],
+  ["停止", "stop"],
+  ["设定开度", "setPosition"],
+  ["开阀", "zoneOn"],
+  ["关阀", "zoneOff"],
+  ["开泵", "pumpOn"],
+  ["停泵", "pumpOff"],
+  ["增氧开", "aerateOn"],
+  ["增氧关", "aerateOff"],
+  ["喷淋开", "sprayOn"],
+  ["喷淋关", "sprayOff"],
+];
+
+const ALL_IOT_SCENES: Array<[string, string]> = [
+  ["下雨关窗", "win-rain-close"],
+  ["高温开缝", "win-heat-vent"],
+  ["手动窗控", "win-manual"],
+  ["土壤干燥浇水", "irr-soil"],
+  ["下雨跳过", "irr-rain-skip"],
+  ["无流量停泵", "irr-dry-run"],
+  ["低溶氧增氧", "pond-aerate"],
+  ["高温喷水", "pond-spray"],
+  ["低水位禁喷", "pond-level"],
+  ["整包策略", "pack"],
+];
+
+const IOT_BLOCKS: BlockSpec[] = [
+  {
+    type: "iot_read_channel",
+    json: {
+      message0: "读取通道 %1",
+      args0: [{ type: "field_dropdown", name: "CHANNEL", options: ALL_IOT_CHANNELS }],
+      output: "Number",
+      colour: COLOR_IOT,
+      tooltip: "读取当前仿真/遥测通道",
+    },
+    generator: (block) => `iot.readChannel('${block.getFieldValue("CHANNEL")}')`,
+  },
+  {
+    type: "iot_set_channel",
+    json: {
+      message0: "注入传感器 %1 为 %2",
+      args0: [
+        { type: "field_dropdown", name: "CHANNEL", options: ALL_IOT_CHANNELS },
+        { type: "input_value", name: "VALUE", check: "Number" },
+      ],
+      previousStatement: null,
+      nextStatement: null,
+      colour: COLOR_IOT,
+      tooltip: "仅仿真：写入传感器读数",
+    },
+    generator: (block, readValue) =>
+      `iot.setChannel('${block.getFieldValue("CHANNEL")}', ${readValue(block, "VALUE", "0")});\n`,
+  },
+  {
+    type: "iot_command",
+    json: {
+      message0: "执行命令 %1",
+      args0: [{ type: "field_dropdown", name: "COMMAND", options: ALL_IOT_COMMANDS }],
+      previousStatement: null,
+      nextStatement: null,
+      colour: COLOR_IOT,
+      tooltip: "提交 Kit 允许的命令（受互锁约束）",
+    },
+    generator: (block) => `iot.command('${block.getFieldValue("COMMAND")}');\n`,
+  },
+  {
+    type: "iot_evaluate_scene",
+    json: {
+      message0: "运行场景 %1",
+      args0: [{ type: "field_dropdown", name: "SCENE", options: ALL_IOT_SCENES }],
+      previousStatement: null,
+      nextStatement: null,
+      colour: COLOR_IOT,
+      tooltip: "评估场景配方，不绕过互锁",
+    },
+    generator: (block) => `iot.evaluateScene('${block.getFieldValue("SCENE")}');\n`,
+  },
+  {
+    type: "iot_wait",
+    json: {
+      message0: "等待 %1 秒",
+      args0: [{ type: "input_value", name: "SECONDS", check: "Number" }],
+      previousStatement: null,
+      nextStatement: null,
+      colour: COLOR_IOT,
+      tooltip: "仿真时钟等待",
+    },
+    generator: (block, readValue) => `iot.wait(${readValue(block, "SECONDS", "1")});\n`,
+  },
+  {
+    type: "iot_emergency_stop",
+    json: {
+      message0: "紧急停止",
+      previousStatement: null,
+      nextStatement: null,
+      colour: 0,
+      tooltip: "本地 kill switch，立即停止执行器",
+    },
+    generator: () => `iot.emergencyStop();\n`,
+  },
+];
+
 /** Custom blocks per create kind (exercise/free use shared categories only). */
 export const KIND_BLOCK_SPECS: Record<Exclude<ArtifactKind, "exercise" | "free">, BlockSpec[]> = {
   web: WEBSITE_BLOCKS,
   miniprogram: MINIAPP_BLOCKS,
   smarthome: SMARTHOME_BLOCKS,
-  iot: SMARTHOME_BLOCKS,
+  iot: IOT_BLOCKS,
   toy: TOY_BLOCKS,
 };
 
@@ -621,6 +746,7 @@ export const ALL_BLOCK_SPECS: BlockSpec[] = [
   ...WEBSITE_BLOCKS,
   ...MINIAPP_BLOCKS,
   ...SMARTHOME_BLOCKS,
+  ...IOT_BLOCKS,
   ...TOY_BLOCKS,
 ];
 
@@ -729,22 +855,7 @@ export const DEFAULT_KIND_XML: Record<ArtifactKind, string> = {
     </next>
   </block>
 </xml>`,
-  iot: `<xml xmlns="https://developers.google.com/blockly/xml">
-  <block type="home_light_switch" x="30" y="30">
-    <field name="ROOM">living</field>
-    <field name="STATE">on</field>
-    <next>
-      <block type="home_read_sensor">
-        <field name="SENSOR">temperature</field>
-        <next>
-          <block type="home_run_scene">
-            <field name="SCENE">home</field>
-          </block>
-        </next>
-      </block>
-    </next>
-  </block>
-</xml>`,
+  iot: starterIotXml("smart-window"),
   free: `<xml xmlns="https://developers.google.com/blockly/xml">
   <block type="text_print" x="30" y="30">
     <value name="TEXT"><block type="text"><field name="TEXT">自由编程</field></block></value>
@@ -785,17 +896,7 @@ if (home.readSensor('motion') > 0) {
   home.runScene('home');
 }
 `,
-  iot: `// HP-01 Air Beacon — ESP32-S3 Arduino stub
-void setup() {
-  Serial.begin(115200);
-  Serial.println("Air Beacon boot");
-}
-
-void loop() {
-  Serial.println("BME280 mock T=24.1 H=48");
-  delay(2000);
-}
-`,
+  iot: starterIotCode("smart-window"),
   toy: `// 智能玩具示例：动作序列 + 传感器
 toy.setLed('green');
 toy.move('forward', 60, 2);

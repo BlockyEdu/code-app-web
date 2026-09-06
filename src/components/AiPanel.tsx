@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAiSettings } from "../hooks/useAiSettings";
-import { api } from "../lib/api";
+import { encodeProviderModel, parseProviderModel } from "../lib/ai-settings";
+import { type AppSchemaPatch, api } from "../lib/api";
+import { applySchemaPatch } from "../lib/app-studio/app-schema";
 import { useAuthStore } from "../lib/auth-store";
 import { PAIR_PHASE_LABEL, type PairAction } from "../lib/pair-mission";
 import { requestWorkspaceRun, track } from "../lib/telemetry";
-import { useWorkspaceStore } from "../stores/workspace";
+import { isAppStudioKind, useWorkspaceStore } from "../stores/workspace";
 
 interface AiPanelProps {
   hideHeader?: boolean;
@@ -41,11 +43,16 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     getCurrentGoal,
     lesson,
     lessonStepIndex,
+    templateId,
+    appSchema,
+    updateAppSchema,
   } = useWorkspaceStore();
   const user = useAuthStore((s) => s.user);
   const openLoginPrompt = useAuthStore((s) => s.openLoginPrompt);
-  const { aiOpts, ready } = useAiSettings();
+  const { aiOpts, ready, config, settings, selectProviderModel } = useAiSettings();
   const [input, setInput] = useState("");
+  const [pendingAppPatch, setPendingAppPatch] = useState<AppSchemaPatch | null>(null);
+  const blogStudio = isAppStudioKind(artifactKind, templateId);
 
   const goal = getCurrentGoal();
   const stepTitle = lesson?.steps[lessonStepIndex]?.title;
@@ -53,6 +60,17 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     kind: artifactKind,
     ...(artifactId ? { artifactId } : {}),
   };
+  const modelOptions = useMemo(() => {
+    if (!config) return [];
+    return config.providers.flatMap((provider) =>
+      provider.models.map((model) => ({
+        value: encodeProviderModel(provider.id, model.id),
+        label: `${provider.name} / ${model.name}${provider.configured ? "" : " · 未配置"}`,
+        disabled: !provider.configured,
+      })),
+    );
+  }, [config]);
+  const modelValue = settings ? encodeProviderModel(settings.provider, settings.model) : "";
 
   const requireAuth = () => {
     if (user) return true;
@@ -107,6 +125,10 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     }
     if (!ready) return;
     if (!requireAuth()) return;
+    if (blogStudio && !hubMode) {
+      await proposeAppPatch();
+      return;
+    }
     const userMsg = { role: "user" as const, content: text };
     addAiMessage(userMsg);
     setInput("");
@@ -162,6 +184,12 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
 
   const runPairAction = (action: PairAction) => {
     applyPairAction(action);
+  };
+
+  const onModelChange = (value: string) => {
+    const parsed = parseProviderModel(value);
+    if (!parsed) return;
+    selectProviderModel(parsed.provider, parsed.model);
   };
 
   const explain = async () => {
@@ -240,12 +268,82 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     }
   };
 
+  const proposeAppPatch = async () => {
+    if (!requireAuth() || !ready) return;
+    const instruction = input.trim();
+    if (!instruction || !artifactId || !appSchema) {
+      addAiMessage({
+        role: "assistant",
+        content: "请先打开博客作品，并在输入框写下要改的页面。",
+      });
+      return;
+    }
+    const userMsg = { role: "user" as const, content: instruction };
+    addAiMessage(userMsg);
+    setInput("");
+    setAiLoading(true);
+    try {
+      const res = await api.aiProposeAppPatch({
+        artifactId,
+        instruction,
+        schema: appSchema,
+      });
+      setPendingAppPatch(res);
+      addAiMessage({
+        role: "assistant",
+        content: `**页面修改建议（不会自动发布）**\n${res.summary ?? ""}\n\`\`\`json\n${JSON.stringify(res.operations, null, 2)}\n\`\`\``,
+      });
+    } catch (err) {
+      addAiMessage({
+        role: "assistant",
+        content: `propose-patch 失败：${err instanceof Error ? err.message : String(err)}`,
+      });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const applyAppPatch = async () => {
+    if (!pendingAppPatch || !appSchema) return;
+    const next =
+      pendingAppPatch.schema && (!pendingAppPatch.issues || pendingAppPatch.issues.length === 0)
+        ? { schema: pendingAppPatch.schema, issues: [] as Array<{ message: string }> }
+        : applySchemaPatch(appSchema, pendingAppPatch.operations);
+    if (next.issues.length) {
+      addAiMessage({
+        role: "assistant",
+        content: `无法应用：${next.issues.map((i) => i.message).join("; ")}`,
+      });
+      return;
+    }
+    updateAppSchema(next.schema);
+    if (artifactId) {
+      try {
+        await api.putAppSchema(artifactId, next.schema);
+      } catch (err) {
+        addAiMessage({
+          role: "assistant",
+          content: `已写入本地 Schema，云端 PUT 失败：${err instanceof Error ? err.message : String(err)}`,
+        });
+        setPendingAppPatch(null);
+        return;
+      }
+    }
+    setPendingAppPatch(null);
+    addAiMessage({
+      role: "assistant",
+      content: "已应用页面补丁。未调用 publish。",
+    });
+  };
+
   return (
     <div className="ai-panel">
       {!hideHeader && (
         <div className="panel-header ai-panel-header">
           <span>AI 编程助手</span>
-          <span className="ai-mode-tag">{editorMode === "blockly" ? "积木" : "专业"}</span>
+          <span className="ai-mode-tag">
+            {blogStudio ? "App Studio" : editorMode === "blockly" ? "积木" : "专业"}
+          </span>
         </div>
       )}
 
@@ -278,121 +376,179 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
         </label>
       </div>
 
-      {!hubMode && (
-        <div className="ai-goal-card">
-          <div className="ai-goal-label">Mission · {PAIR_PHASE_LABEL[pairMission.phase]}</div>
-          <p>
-            {pairMission.title}: {pairMission.success}
-          </p>
-        </div>
-      )}
+      <div className="ai-panel-scroll">
+        {!hubMode && (
+          <div className="ai-goal-card">
+            <div className="ai-goal-label">Mission · {PAIR_PHASE_LABEL[pairMission.phase]}</div>
+            <p>
+              {pairMission.title}: {pairMission.success}
+            </p>
+          </div>
+        )}
 
-      {!hubMode && (
-        <div className="ai-hint-card">
-          <div className="ai-hint-head">
-            <strong>Hint</strong>
+        {!hubMode && (
+          <div className="ai-hint-card">
+            <div className="ai-hint-head">
+              <strong>Hint</strong>
+              <button
+                type="button"
+                className="btn-sm"
+                onClick={() => void hint()}
+                disabled={aiLoading}
+              >
+                Refresh
+              </button>
+            </div>
+            {aiNextHint ? (
+              <>
+                <p className="ai-hint-text">{aiNextHint}</p>
+                {aiNextAction && <p className="ai-next-action">👉 {aiNextAction}</p>}
+              </>
+            ) : (
+              <p className="muted">Sign in to get a Socratic hint</p>
+            )}
+          </div>
+        )}
+
+        {!hubMode && (
+          <div className="ai-quick-actions">
+            <button
+              type="button"
+              className="btn-sm"
+              onClick={() => void explain()}
+              disabled={aiLoading}
+            >
+              Explain
+            </button>
             <button
               type="button"
               className="btn-sm"
               onClick={() => void hint()}
               disabled={aiLoading}
             >
-              Refresh
-            </button>
-          </div>
-          {aiNextHint ? (
-            <>
-              <p className="ai-hint-text">{aiNextHint}</p>
-              {aiNextAction && <p className="ai-next-action">👉 {aiNextAction}</p>}
-            </>
-          ) : (
-            <p className="muted">Sign in to get a Socratic hint</p>
-          )}
-        </div>
-      )}
-
-      {!hubMode && (
-        <div className="ai-quick-actions">
-          <button
-            type="button"
-            className="btn-sm"
-            onClick={() => void explain()}
-            disabled={aiLoading}
-          >
-            Explain
-          </button>
-          <button type="button" className="btn-sm" onClick={() => void hint()} disabled={aiLoading}>
-            Hint
-          </button>
-          <button
-            type="button"
-            className="btn-sm"
-            onClick={() => void implement()}
-            disabled={aiLoading}
-          >
-            Implement
-          </button>
-          <button type="button" className="btn-sm" onClick={test} disabled={aiLoading}>
-            Test
-          </button>
-          <button
-            type="button"
-            className="btn-sm"
-            onClick={() => void review()}
-            disabled={aiLoading}
-          >
-            Review
-          </button>
-        </div>
-      )}
-      {pendingPatch && (
-        <div className="ai-hint-card">
-          <strong>Confirm patch — will not publish, flash, or order</strong>
-          <pre className="ai-hint-text">{pendingPatch.proposed.slice(0, 400)}</pre>
-          <div className="ai-quick-actions">
-            <button type="button" className="btn-sm" onClick={() => applyPendingPatch()}>
-              Apply
+              Hint
             </button>
             <button
               type="button"
               className="btn-sm"
-              onClick={() => {
-                setPendingPatch(null);
-                track("pair.patch.rejected");
-              }}
+              onClick={() => void implement()}
+              disabled={aiLoading}
             >
-              Reject
+              Implement
+            </button>
+            <button type="button" className="btn-sm" onClick={test} disabled={aiLoading}>
+              Test
+            </button>
+            <button
+              type="button"
+              className="btn-sm"
+              onClick={() => void review()}
+              disabled={aiLoading}
+            >
+              Review
             </button>
           </div>
-        </div>
-      )}
-
-      <div className="ai-messages">
-        {aiMessages.length === 0 && (
-          <p className="muted">
-            {hubMode ? "用自然语言描述想创建的项目类型…" : "问我编程问题，或使用上方快捷按钮"}
-          </p>
         )}
-        {aiMessages.map((m) => (
-          <div key={`${m.role}:${m.content}`} className={`ai-msg ai-msg--${m.role}`}>
-            <strong>{m.role === "user" ? "你" : "AI"}：</strong>
-            <span>{m.content}</span>
+        {!hubMode && blogStudio && (
+          <div className="ai-quick-actions">
+            <button
+              type="button"
+              className="btn-sm"
+              onClick={() => void proposeAppPatch()}
+              disabled={aiLoading || !input.trim()}
+            >
+              按这句话改页面
+            </button>
           </div>
-        ))}
-        {aiLoading && <p className="muted">思考中…</p>}
+        )}
+        {pendingAppPatch && (
+          <div className="ai-hint-card">
+            <strong>确认页面补丁 — 不会发布站点</strong>
+            <pre className="ai-hint-text">
+              {JSON.stringify(pendingAppPatch.operations, null, 2).slice(0, 800)}
+            </pre>
+            <div className="ai-quick-actions">
+              <button type="button" className="btn-sm" onClick={() => void applyAppPatch()}>
+                Apply
+              </button>
+              <button
+                type="button"
+                className="btn-sm"
+                onClick={() => {
+                  setPendingAppPatch(null);
+                  track("pair.patch.rejected");
+                }}
+              >
+                Reject
+              </button>
+            </div>
+          </div>
+        )}
+        {pendingPatch && (
+          <div className="ai-hint-card">
+            <strong>Confirm patch — will not publish, flash, or order</strong>
+            <pre className="ai-hint-text">{pendingPatch.proposed.slice(0, 400)}</pre>
+            <div className="ai-quick-actions">
+              <button type="button" className="btn-sm" onClick={() => applyPendingPatch()}>
+                Apply
+              </button>
+              <button
+                type="button"
+                className="btn-sm"
+                onClick={() => {
+                  setPendingPatch(null);
+                  track("pair.patch.rejected");
+                }}
+              >
+                Reject
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="ai-messages">
+          {aiMessages.length === 0 && (
+            <p className="muted">
+              {hubMode ? "用自然语言描述想创建的项目类型…" : "问我编程问题，或使用上方快捷按钮"}
+            </p>
+          )}
+          {aiMessages.map((m) => (
+            <div key={`${m.role}:${m.content}`} className={`ai-msg ai-msg--${m.role}`}>
+              <strong>{m.role === "user" ? "你" : "AI"}：</strong>
+              <span>{m.content}</span>
+            </div>
+          ))}
+          {aiLoading && <p className="muted">思考中…</p>}
+        </div>
       </div>
 
-      <div className="ai-input-row">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && void send()}
-          placeholder={hubMode ? "例如：帮我做一个网站…" : "输入问题…"}
-          disabled={aiLoading}
-        />
-        <button type="button" onClick={() => void send()} disabled={aiLoading || !input.trim()}>
-          发送
-        </button>
+      <div className="ai-composer">
+        <label className="ai-composer-model">
+          模型
+          <select
+            value={modelValue}
+            onChange={(e) => onModelChange(e.target.value)}
+            disabled={!ready || modelOptions.length === 0}
+          >
+            {modelOptions.map((opt) => (
+              <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="ai-input-row">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && void send()}
+            placeholder={hubMode ? "例如：帮我做一个网站…" : "输入问题…"}
+            disabled={aiLoading}
+          />
+          <button type="button" onClick={() => void send()} disabled={aiLoading || !input.trim()}>
+            发送
+          </button>
+        </div>
       </div>
     </div>
   );

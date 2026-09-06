@@ -10,47 +10,139 @@
 
 .topBar {
   @include flex-row($space-3);
-  height: $header-height;
-  padding: 0 $space-6;
+  justify-content: space-between;
+  min-height: $header-height;
+  padding: 8px $space-6;
   border-bottom: 1px solid $color-border;
-  background: $color-bg-surface;
+  background: rgba($color-bg-surface, 0.92);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: $z-header;
+  flex-wrap: wrap;
+  row-gap: $space-2;
 }
 
-.back {
+.headerLeft {
+  @include flex-row($space-3);
+  min-width: 0;
+  flex: 1;
+}
+
+.hubBtn {
   @include flex-row($space-1);
+  flex-shrink: 0;
   border: 1px solid $color-border;
   background: $color-bg-elevated;
-  color: inherit;
+  color: $color-text-primary;
   border-radius: $radius-md;
-  padding: 4px 10px;
+  padding: 4px 10px 4px 8px;
   cursor: pointer;
   font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  font-family: inherit;
+
+  &:hover {
+    border-color: #{$color-primary}80;
+    color: $color-primary;
+  }
 }
 
-.title {
-  flex: 1;
-  font-size: $font-size-md;
+.backIcon {
+  font-size: 12px;
+  color: $color-text-secondary;
+
+  .hubBtn:hover & {
+    color: $color-primary;
+  }
+}
+
+.hubLabel {
+  white-space: nowrap;
+}
+
+.crumb {
+  @include flex-row($space-2);
+  min-width: 0;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.crumbLink {
+  @include truncate();
+  max-width: 220px;
+  border: none;
+  background: none;
+  padding: 0;
+  color: $color-text-secondary;
+  cursor: pointer;
+  font: inherit;
+
+  &:hover {
+    color: $color-text-link;
+  }
+}
+
+.crumbSep {
+  color: $color-text-muted;
+  flex-shrink: 0;
+}
+
+.crumbCurrent {
+  @include truncate();
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  flex-shrink: 0;
 }
 
 .actions {
   @include flex-row($space-2);
+  flex-shrink: 0;
 }
 
 .main {
   max-width: 860px;
   margin: 0 auto;
-  padding: $space-8 $space-6;
+  padding: $space-8 $space-6 $space-10;
   display: flex;
   flex-direction: column;
   gap: $space-4;
 }
 
+.pageHead {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.heading {
+  margin: 0;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-bold;
+  letter-spacing: -0.02em;
+}
+
+.lede {
+  margin: 0;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+  line-height: $line-height-base;
+}
+
 .banner {
-  padding: $space-3 $space-4;
-  border-radius: $radius-md;
-  border: 1px solid $color-accent-amber;
-  color: $color-accent-amber;
-  font-size: $font-size-sm;
+  background: rgba($color-accent-amber, 0.08) !important;
+  border-color: rgba($color-accent-amber, 0.35) !important;
+}
+
+.loading {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+}
+
+.errorActions {
+  @include flex-row($space-2);
+  justify-content: center;
 }
 
 .card {
@@ -58,25 +150,65 @@
   background: $color-bg-surface;
   border-radius: $radius-lg;
   padding: $space-5;
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
 
   h2 {
-    margin: 0 0 $space-3;
+    margin: 0;
     font-size: $font-size-lg;
   }
 
   ul {
+    margin: 0;
     padding-left: $space-5;
     font-size: $font-size-sm;
     color: $color-text-secondary;
   }
 }
 
+.cardHead {
+  @include flex-row($space-2);
+  justify-content: space-between;
+}
+
+.meta {
+  margin: 0;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
 .muted {
   color: $color-text-muted;
   font-size: $font-size-sm;
+  margin: 0;
+}
+
+.okChip,
+.badChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  border: 1px solid;
+}
+
+.okChip {
+  color: $color-accent-green;
+  border-color: rgba($color-accent-green, 0.35);
+  background: rgba($color-accent-green, 0.12);
+}
+
+.badChip {
+  color: $color-accent-red;
+  border-color: rgba($color-accent-red, 0.35);
+  background: rgba($color-accent-red, 0.12);
 }
 
 .sell {
   color: $color-accent-green;
   font-weight: $font-weight-semibold;
+  margin: 0;
 }

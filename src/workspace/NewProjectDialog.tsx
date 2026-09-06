@@ -19,12 +19,12 @@ import styles from "./NewProjectDialog.module.scss";
 const KIND_META: Record<ArtifactKind, { icon: ReactNode; desc: string; templates: string[] }> = {
   web: {
     icon: <GlobalOutlined />,
-    desc: "落地页 / 作品集 / 博客 / 管理后台",
+    desc: "做完就能发给别人：落地页 / 作品集 / 博客",
     templates: ["落地页", "作品集", "博客", "管理后台"],
   },
   miniprogram: {
     icon: <MobileOutlined />,
-    desc: "原生小程序工程结构",
+    desc: "资讯小程序：家长打开网页，你还能下载微信工程",
     templates: ["资讯小程序", "活动报名", "商城小程序"],
   },
   smarthome: {
@@ -34,8 +34,8 @@ const KIND_META: Record<ArtifactKind, { icon: ReactNode; desc: string; templates
   },
   iot: {
     icon: <ApiOutlined />,
-    desc: "ESP32-S3 / STM32 golden paths · firmware + catalog",
-    templates: ["HP-01 Air Beacon", "HP-02 Desk Rover", "HP-03 Room Node"],
+    desc: "智慧窗控 / 灌溉 / 鱼塘 · 先仿真再选 ESP32 真机",
+    templates: ["智慧窗控", "智慧灌溉", "鱼塘增氧", "HP-01 Air Beacon", "HP-02 Desk Rover", "HP-03 Room Node"],
   },
   toy: {
     icon: <RobotOutlined />,

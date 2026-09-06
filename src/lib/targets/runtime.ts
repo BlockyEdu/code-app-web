@@ -3,6 +3,14 @@
  * Simplified from BlockyEdu Platform Specs `runtime.ts`.
  */
 import type { ArtifactKind } from "../../types/artifact";
+import {
+  createIotWorld,
+  evaluateIotAssertions,
+  iotApi,
+  isIotLabPack,
+  type IotPackSlug,
+  type IotWorldState,
+} from "./iot-lab";
 
 export type StepStatus = "success" | "error" | "timeout" | "step_limit";
 
@@ -71,6 +79,7 @@ export interface WorldState {
   };
   home: HomeState;
   toy: ToyState;
+  iot: IotWorldState | null;
 }
 
 export interface RunResult {
@@ -139,7 +148,7 @@ function cloneState(state: WorldState): WorldState {
   return JSON.parse(JSON.stringify(state)) as WorldState;
 }
 
-export function createWorldState(kind: ArtifactKind): WorldState {
+export function createWorldState(kind: ArtifactKind, packSlug?: IotPackSlug): WorldState {
   return {
     kind,
     web: {
@@ -187,6 +196,7 @@ export function createWorldState(kind: ArtifactKind): WorldState {
       speech: "",
       timeline: [],
     },
+    iot: kind === "iot" && packSlug ? createIotWorld(packSlug) : null,
   };
 }
 
@@ -197,6 +207,8 @@ interface RunOptions {
   kind: RuntimeKind;
   timeoutMs?: number;
   maxSteps?: number;
+  packSlug?: IotPackSlug | string | null;
+  telemetry?: Record<string, unknown>;
 }
 
 /** Strip generator `__step('…')` markers — unused in Phase 3 light replay. */
@@ -206,13 +218,22 @@ function stripStepMarkers(code: string): string {
 
 /**
  * Execute generated create-kind code against a sandboxed world.
- * Only `web` / `mp` / `home` / `toy` / `console` are exposed — no network/DOM.
+ * Only `web` / `mp` / `home` / `toy` / `iot` / `console` are exposed — no network/DOM.
  */
 export function runTargetProgram(options: RunOptions): RunResult {
   const startedAt = performance.now();
   const timeoutMs = options.timeoutMs ?? 2000;
   const maxSteps = options.maxSteps ?? 500;
-  const state = createWorldState(options.kind);
+  const packSlug: IotPackSlug | undefined =
+    options.kind === "iot"
+      ? isIotLabPack(options.packSlug ?? "")
+        ? (options.packSlug as IotPackSlug)
+        : "smart-window"
+      : undefined;
+  const state = createWorldState(options.kind, packSlug);
+  if (state.iot && options.telemetry) {
+    state.iot = createIotWorld(state.iot.packSlug, options.telemetry);
+  }
   const lines: ConsoleLine[] = [];
   let stepCount = 0;
   let aborted: StepStatus | null = null;
@@ -514,6 +535,18 @@ export function runTargetProgram(options: RunOptions): RunResult {
     },
   };
 
+  const iot =
+    state.iot != null
+      ? iotApi(state.iot, guard, (text) => pushLine("log", text))
+      : {
+          readChannel: () => 0,
+          setChannel: () => undefined,
+          command: () => ({ decision: "deny" as const }),
+          evaluateScene: () => ({ decision: "noop" as const }),
+          wait: () => undefined,
+          emergencyStop: () => undefined,
+        };
+
   const sandboxConsole = {
     log: (...args: unknown[]) => {
       guard();
@@ -543,11 +576,12 @@ export function runTargetProgram(options: RunOptions): RunResult {
       "mp",
       "home",
       "toy",
+      "iot",
       "console",
       "__step",
       `"use strict";\n${code}`,
     );
-    runner(web, mp, home, toy, sandboxConsole, setBlock);
+    runner(web, mp, home, toy, iot, sandboxConsole, setBlock);
   } catch (error) {
     if (aborted === "timeout") {
       status = "timeout";
@@ -568,6 +602,8 @@ export function runTargetProgram(options: RunOptions): RunResult {
   if (status === "success" && lines.length === 0) {
     pushLine("system", "程序执行完成，但没有产生任何可预览的动作。");
   }
+
+  if (state.iot) evaluateIotAssertions(state.iot);
 
   return {
     status,

@@ -1,4 +1,4 @@
-export type AiProviderId = 'deepseek' | 'doubao' | 'gemini';
+export type AiProviderId = "deepseek" | "doubao" | "gemini";
 
 export interface AiModelOption {
   id: string;
@@ -25,7 +25,7 @@ export interface AiUserSettings {
   model: string;
 }
 
-const STORAGE_KEY = 'blockyedu_ai_settings';
+const STORAGE_KEY = "blockyedu_ai_settings";
 
 export function loadAiSettings(): AiUserSettings | null {
   try {
@@ -51,8 +51,7 @@ export function resolveSettings(
       : config.defaultProvider;
   const providerDef = config.providers.find((p) => p.id === provider);
   const model =
-    saved?.model &&
-    providerDef?.models.some((m) => m.id === saved.model)
+    saved?.model && providerDef?.models.some((m) => m.id === saved.model)
       ? saved.model
       : (providerDef?.defaultModel ?? config.defaultModel);
   return { provider, model };
@@ -60,4 +59,21 @@ export function resolveSettings(
 
 export function aiOptionsBody(settings: AiUserSettings) {
   return { provider: settings.provider, model: settings.model };
+}
+
+const PROVIDER_MODEL_SEP = "::";
+
+export function encodeProviderModel(provider: AiProviderId, model: string) {
+  return `${provider}${PROVIDER_MODEL_SEP}${model}`;
+}
+
+export function parseProviderModel(
+  value: string,
+): { provider: AiProviderId; model: string } | null {
+  const i = value.indexOf(PROVIDER_MODEL_SEP);
+  if (i < 0) return null;
+  const provider = value.slice(0, i) as AiProviderId;
+  const model = value.slice(i + PROVIDER_MODEL_SEP.length);
+  if (!provider || !model) return null;
+  return { provider, model };
 }

@@ -1,4 +1,4 @@
-import { useWorkspaceStore } from "../stores/workspace";
+import { isAppStudioKind, useWorkspaceStore } from "../stores/workspace";
 
 /**
  * Compact mode hint under WorkspaceHeader.
@@ -8,8 +8,30 @@ export function EditorToolbar() {
   const editorMode = useWorkspaceStore((s) => s.editorMode);
   const monacoManuallyEdited = useWorkspaceStore((s) => s.monacoManuallyEdited);
   const getActiveLanguagePlugin = useWorkspaceStore((s) => s.getActiveLanguagePlugin);
+  const artifactKind = useWorkspaceStore((s) => s.artifactKind);
+  const templateId = useWorkspaceStore((s) => s.templateId);
+  const surfaceMode = useWorkspaceStore((s) => s.surfaceMode);
   const langPlugin = getActiveLanguagePlugin();
   const isBlockly = editorMode === "blockly";
+  const blogStudio = isAppStudioKind(artifactKind, templateId);
+
+  if (blogStudio) {
+    const copy: Record<string, { badge: string; desc: string }> = {
+      design: { badge: "Design", desc: "页面树与组件属性 · 写回 app.schema.json" },
+      data: { badge: "Data", desc: "文章 CRUD · draft / published" },
+      logic: { badge: "Logic", desc: "事件链路只读 · 点击卡片打开详情" },
+      code: { badge: "Code", desc: "编辑 styles.css / extensions.js" },
+    };
+    const cur = copy[surfaceMode] ?? copy.design;
+    return (
+      <div className={`editor-toolbar editor-toolbar--${surfaceMode}`}>
+        <div className="editor-toolbar-mode">
+          <span className={`mode-badge mode-badge--monaco`}>{cur.badge}</span>
+          <span className="mode-desc">{cur.desc}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`editor-toolbar editor-toolbar--${editorMode}`}>

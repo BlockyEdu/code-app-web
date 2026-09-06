@@ -1,5 +1,8 @@
 import type { AiPublicConfig, AiUserSettings } from "./ai-settings";
+import type { AppSchema } from "./app-studio/app-schema";
 import {
+  API_BASE,
+  authHeaders,
   EntitlementRequiredError,
   httpRequest,
   setEntitlementRequiredHandler,
@@ -135,6 +138,91 @@ export interface SmarthomeSimSession {
   world: unknown;
   createdAt: string;
   expiresAt: string;
+}
+
+export type BlogPostStatus = "draft" | "published";
+
+export interface BlogPostData {
+  title: string;
+  excerpt: string;
+  content: string;
+  cover?: string;
+}
+
+export interface BlogPostRecord {
+  id: string;
+  artifactId: string;
+  collection: string;
+  slug: string;
+  status: BlogPostStatus;
+  data: BlogPostData;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BlogPostInput = Partial<{
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  cover: string;
+  status: BlogPostStatus;
+}>;
+
+export interface AppValidateReport {
+  ok: boolean;
+  issues?: Array<{ code?: string; message?: string }>;
+}
+
+export interface WebRelease {
+  id: string;
+  artifactId: string;
+  artifactVersionNumber?: number;
+  status: string;
+  publicUrl?: string;
+  contentDigest?: string;
+  createdAt: string;
+  createdBy?: string;
+  liveAt?: string;
+  errorCode?: string;
+}
+
+export interface WebPublishStatus {
+  artifactId: string;
+  lifecycle: string;
+  liveRelease?: WebRelease;
+  lastFailedRelease?: WebRelease;
+  publicUrl?: string;
+}
+
+export interface AppSchemaPatch {
+  summary?: string;
+  affectedLayers?: Array<"page" | "data" | "logic">;
+  operations: Array<{
+    op: string;
+    pageId?: string;
+    nodeId?: string;
+    field?: string;
+    value?: unknown;
+  }>;
+  schema?: AppSchema;
+  issues?: Array<{ code?: string; message?: string }>;
+  requiresConfirm?: boolean;
+}
+
+async function requestText(path: string): Promise<string> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: authHeaders({ Accept: "text/html" }),
+  });
+  if (res.status === 401) {
+    throw new UnauthorizedError("请先登录后再使用云端功能");
+  }
+  if (!res.ok) {
+    const raw = await res.text().catch(() => res.statusText);
+    throw new Error(raw.trim() || res.statusText);
+  }
+  return res.text();
 }
 
 export const api = {
@@ -273,7 +361,10 @@ export const api = {
   aiFixCode: (
     code: string,
     error?: string,
-    opts?: AiOpts & { lastError?: { message?: string; stderr?: string; exitCode?: number }; teachingDepth?: string },
+    opts?: AiOpts & {
+      lastError?: { message?: string; stderr?: string; exitCode?: number };
+      teachingDepth?: string;
+    },
   ) =>
     request<{
       explanation: string;
@@ -295,10 +386,10 @@ export const api = {
       }),
     }),
   aiReview: (body: Record<string, unknown>) =>
-    request<{ summary?: string; dimensions?: Array<{ name: string; score: number; comment: string }> }>(
-      "/ai/code/review",
-      { method: "POST", body: JSON.stringify(body) },
-    ),
+    request<{
+      summary?: string;
+      dimensions?: Array<{ name: string; score: number; comment: string }>;
+    }>("/ai/code/review", { method: "POST", body: JSON.stringify(body) }),
   aiAgentStep: (body: Record<string, unknown>) =>
     request<Record<string, unknown>>("/ai/agent/step", {
       method: "POST",
@@ -333,10 +424,73 @@ export const api = {
       method: "POST",
       body: JSON.stringify({}),
     }),
-  publishWeb: (artifactId: string) =>
-    request<{ status: string; artifactId: string; message: string }>("/publish/web", {
+  publishWeb: (artifactId: string, note?: string) =>
+    request<WebRelease>("/publish/web", {
       method: "POST",
-      body: JSON.stringify({ artifactId }),
+      body: JSON.stringify({ artifactId, note }),
+    }),
+  getAppSchema: (artifactId: string) =>
+    request<{ schema: AppSchema }>(`/app-runtime/artifacts/${artifactId}/schema`),
+  putAppSchema: (artifactId: string, schema: AppSchema) =>
+    request<{ schema: AppSchema }>(`/app-runtime/artifacts/${artifactId}/schema`, {
+      method: "PUT",
+      body: JSON.stringify({ schema }),
+    }),
+  validateAppArtifact: (artifactId: string) =>
+    request<AppValidateReport>(`/app-runtime/artifacts/${artifactId}/validate`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
+  getAppPreviewHtml: (artifactId: string, page: "home" | "post", slug?: string) => {
+    const q = new URLSearchParams({ page });
+    if (page === "post" && slug) q.set("slug", slug);
+    return requestText(`/app-runtime/artifacts/${artifactId}/preview-html?${q.toString()}`);
+  },
+  listPosts: (artifactId: string) =>
+    request<{ items: BlogPostRecord[] }>(`/app-runtime/artifacts/${artifactId}/records/posts`),
+  createPost: (artifactId: string, body: BlogPostInput) =>
+    request<BlogPostRecord>(`/app-runtime/artifacts/${artifactId}/records/posts`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updatePost: (artifactId: string, recordId: string, body: BlogPostInput) =>
+    request<BlogPostRecord>(`/app-runtime/artifacts/${artifactId}/records/posts/${recordId}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  deletePost: (artifactId: string, recordId: string) =>
+    request<void>(`/app-runtime/artifacts/${artifactId}/records/posts/${recordId}`, {
+      method: "DELETE",
+    }),
+  getWebPublish: (artifactId: string) => request<WebPublishStatus>(`/publish/web/${artifactId}`),
+  listWebReleases: (artifactId: string) =>
+    request<{ items: WebRelease[] }>(`/publish/web/${artifactId}/releases`),
+  rollbackWeb: (artifactId: string, targetReleaseId: string) =>
+    request<WebPublishStatus>(`/publish/web/${artifactId}/rollback`, {
+      method: "POST",
+      body: JSON.stringify({ targetReleaseId }),
+    }),
+  exportPublishZip: async (artifactId: string, kind: "web" | "miniprogram") => {
+    const path =
+      kind === "miniprogram"
+        ? `/publish/miniprogram/${artifactId}/export`
+        : `/publish/web/${artifactId}/export`;
+    const res = await fetch(`${API_BASE}${path}`, {
+      headers: authHeaders({ Accept: "application/zip" }),
+    });
+    if (res.status === 401) {
+      throw new UnauthorizedError("请先登录后再使用云端功能");
+    }
+    if (!res.ok) {
+      const raw = await res.text().catch(() => res.statusText);
+      throw new Error(raw.trim() || res.statusText);
+    }
+    return res.blob();
+  },
+  aiProposeAppPatch: (body: { artifactId: string; instruction: string; schema?: AppSchema }) =>
+    request<AppSchemaPatch>("/ai/app/propose-patch", {
+      method: "POST",
+      body: JSON.stringify(body),
     }),
   listHardwareBoards: (goldenPath = true) =>
     request<{ items: Array<{ sku: string; name: string; familyId: string; goldenPath: boolean }> }>(
@@ -350,7 +504,13 @@ export const api = {
   },
   listHeroProjects: () =>
     request<{
-      items: Array<{ id: string; name: string; boardSku: string; moduleSkus: string[]; toolchain: string }>;
+      items: Array<{
+        id: string;
+        name: string;
+        boardSku: string;
+        moduleSkus: string[];
+        toolchain: string;
+      }>;
     }>("/hardware/heroes"),
   checkHardwareCompat: (boardSku: string, moduleSkus: string[]) =>
     request<{ ok: boolean; issues: Array<{ code: string; message: string }> }>(
@@ -370,16 +530,55 @@ export const api = {
       imageDigest: string;
       reproducible: boolean;
     }>("/hardware/builds", { method: "POST", body: JSON.stringify(body) }),
-  createHardwareSim: (body: { artifactId: string; boardSku: string; buildId?: string; adapter?: string }) =>
-    request<{ id: string; status: string; adapter: string; exportHint: string; serialLog: string }>(
-      "/hardware/sim/sessions",
-      { method: "POST", body: JSON.stringify(body) },
-    ),
+  createHardwareSim: (body: {
+    artifactId: string;
+    boardSku: string;
+    buildId?: string;
+    adapter?: string;
+  }) =>
+    request<{
+      id: string;
+      status: string;
+      adapter: string;
+      exportHint: string;
+      serialLog: string;
+    }>("/hardware/sim/sessions", { method: "POST", body: JSON.stringify(body) }),
   runHardwareSim: (id: string) =>
-    request<{ id: string; status: string; serialLog: string }>(`/hardware/sim/sessions/${id}/run`, {
+    request<{
+      id: string;
+      status: string;
+      adapter: string;
+      serialLog: string;
+      exportHint: string;
+      assertions?: Array<{ id: string; name: string; ok: boolean; detail: string }>;
+      exportFiles?: Array<{ path: string; content: string }>;
+    }>(`/hardware/sim/sessions/${id}/run`, {
       method: "POST",
       body: JSON.stringify({}),
     }),
+  listHardwareSimAdapters: () =>
+    request<{ items: Array<{ id: string; available: boolean; reason?: string }> }>(
+      "/hardware/sim/adapters",
+    ),
+  runIotLabSim: (body: {
+    packSlug: string;
+    code: string;
+    telemetry?: Record<string, unknown>;
+    boardSku?: string;
+  }) =>
+    request<{
+      status: string;
+      assertions: Array<{ id: string; ok: boolean; detail: string }>;
+      events: Array<{ text: string }>;
+    }>("/iot-lab/run", { method: "POST", body: JSON.stringify(body) }),
+  runIotLabLive: (body: { packSlug: string; code: string; boardSku?: string; sessionId?: string }) =>
+    request<{
+      decision?: string;
+      reason?: string;
+      status?: string;
+      command?: unknown;
+      exportOnly?: boolean;
+    }>("/iot-lab/live/intent", { method: "POST", body: JSON.stringify(body) }),
   getManufacturingPack: (artifactId: string) =>
     request<{
       artifactId: string;

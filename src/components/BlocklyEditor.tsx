@@ -22,6 +22,7 @@ export function BlocklyEditor() {
   const applyingRef = useRef(false);
   const lastWrittenXmlRef = useRef("");
   const artifactKind = useWorkspaceStore((s) => s.artifactKind);
+  const iotPackSlug = useWorkspaceStore((s) => s.iotPackSlug);
   const blockXml = useWorkspaceStore((s) => s.blockXml);
   const setBlockXml = useWorkspaceStore((s) => s.setBlockXml);
   const setCode = useWorkspaceStore((s) => s.setCode);
@@ -106,7 +107,7 @@ export function BlocklyEditor() {
       workspace.dispose();
       workspaceRef.current = null;
     };
-  }, [artifactKind, setBlockXml, setCode]);
+  }, [artifactKind, iotPackSlug, setBlockXml, setCode]);
 
   useEffect(() => {
     const workspace = workspaceRef.current;

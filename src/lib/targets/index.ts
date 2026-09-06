@@ -16,4 +16,10 @@ export {
   type ToyState,
   type WorldState,
 } from "./runtime";
+export {
+  isIotLabPack,
+  packSlugFromTemplate,
+  type IotPackSlug,
+  type IotRunMode,
+} from "./iot-lab";
 export { buildToolbox } from "./toolbox";

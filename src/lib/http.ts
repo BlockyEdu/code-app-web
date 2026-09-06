@@ -78,11 +78,34 @@ function coalesceKey(path: string, init?: HttpRequestInit): string | null {
 }
 
 async function parseErrorBody(res: Response): Promise<string> {
+  let raw = "";
   try {
-    return await res.text();
+    raw = await res.text();
   } catch {
     return res.statusText;
   }
+  try {
+    const json = JSON.parse(raw) as { message?: unknown; error?: unknown };
+    if (typeof json.message === "string" && json.message.trim()) return json.message;
+    if (json.message && typeof json.message === "object") {
+      const nested = json.message as { message?: unknown };
+      if (typeof nested.message === "string" && nested.message.trim()) return nested.message;
+    }
+    if (
+      typeof json.error === "string" &&
+      json.error.trim() &&
+      json.error !== "Service Unavailable"
+    ) {
+      return json.error;
+    }
+    if (json.error && typeof json.error === "object") {
+      const nested = json.error as { message?: unknown };
+      if (typeof nested.message === "string" && nested.message.trim()) return nested.message;
+    }
+  } catch {
+    /* not JSON */
+  }
+  return raw.trim() || res.statusText;
 }
 
 async function execute<T>(path: string, init?: HttpRequestInit): Promise<T> {

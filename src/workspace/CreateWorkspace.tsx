@@ -9,22 +9,39 @@ import { EditorToolbar } from "../components/EditorToolbar";
 import { FloatingAiPanel } from "../components/FloatingAiPanel";
 import { MonacoEditorPanel } from "../components/MonacoEditorPanel";
 import { api } from "../lib/api";
+import { type BlogPostView, usesHostedPosts } from "../lib/app-studio/app-schema";
+import { renderBlogHtml } from "../lib/app-studio/blog-html";
+import { filesToMap } from "../lib/artifact-files";
 import { runPreview } from "../lib/execute";
 import { parseWorkspaceArtifactId } from "../lib/navigate";
 import { type RuntimeKind, runTargetProgram } from "../lib/targets";
 import { track } from "../lib/telemetry";
 import { buildHtmlFromWorld, composeStaticSiteClient } from "../lib/web-preview";
-import { useWorkspaceStore } from "../stores/workspace";
+import { isAppStudioKind, useWorkspaceStore } from "../stores/workspace";
 import { isConsoleKind, isHardwareKind, isHomeSimKind, isTargetBlockKind } from "../types/artifact";
 import { AssetsPanel } from "./AssetsPanel";
+import { BlogDataPanel } from "./BlogDataPanel";
+import { BlogLogicPanel } from "./BlogLogicPanel";
 import styles from "./CreateWorkspace.module.scss";
+import { DesignStudio } from "./DesignStudio";
 import { PreviewPanel } from "./PreviewPanel";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 
 function EditorArea() {
   const editorMode = useWorkspaceStore((s) => s.editorMode);
   const artifactKind = useWorkspaceStore((s) => s.artifactKind);
+  const templateId = useWorkspaceStore((s) => s.templateId);
+  const surfaceMode = useWorkspaceStore((s) => s.surfaceMode);
   const plugin = useWorkspaceStore((s) => s.getActiveLanguagePlugin());
+
+  if (isAppStudioKind(artifactKind, templateId)) {
+    if (surfaceMode === "design") return <DesignStudio />;
+    if (surfaceMode === "data") {
+      return usesHostedPosts(templateId) ? <BlogDataPanel /> : <DesignStudio />;
+    }
+    if (surfaceMode === "logic") return <BlogLogicPanel />;
+    return <MonacoEditorPanel />;
+  }
 
   if (editorMode === "blockly") {
     // Create kinds always use Blockly + JS generators; console kinds need language plugin support.
@@ -58,6 +75,14 @@ export function CreateWorkspace() {
   const saveCurrentArtifact = useWorkspaceStore((s) => s.saveCurrentArtifact);
   const webPreviewSessionId = useWorkspaceStore((s) => s.webPreviewSessionId);
   const openArtifact = useWorkspaceStore((s) => s.openArtifact);
+  const templateId = useWorkspaceStore((s) => s.templateId);
+  const appSchema = useWorkspaceStore((s) => s.appSchema);
+  const blogPosts = useWorkspaceStore((s) => s.blogPosts);
+  const blogPreviewPage = useWorkspaceStore((s) => s.blogPreviewPage);
+  const blogPreviewSlug = useWorkspaceStore((s) => s.blogPreviewSlug);
+  const blogStudio = isAppStudioKind(artifactKind, templateId);
+
+  const createNewArtifact = useWorkspaceStore((s) => s.createNewArtifact);
 
   const [isRunning, setIsRunning] = useState(false);
   const showPreview = rightPreviewOpen && !isConsoleKind(artifactKind);
@@ -72,6 +97,14 @@ export function CreateWorkspace() {
   }, [artifactId, openArtifact]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const kind = params.get("kind");
+    const template = params.get("template");
+    if (kind !== "iot" || !template || parseWorkspaceArtifactId() || artifactId) return;
+    void createNewArtifact("iot", template, "javascript", { templateId: template, intent: "learn" });
+  }, [artifactId, createNewArtifact]);
+
+  useEffect(() => {
     const onPop = () => {
       const id = parseWorkspaceArtifactId();
       if (id && id !== useWorkspaceStore.getState().artifactId) {
@@ -83,7 +116,7 @@ export function CreateWorkspace() {
   }, [openArtifact]);
 
   const publishWebIframe = useCallback(
-    async (htmlDocument: string) => {
+    async (htmlDocument: string, silent = false) => {
       if (artifactId) {
         try {
           if (webPreviewSessionId) {
@@ -91,7 +124,7 @@ export function CreateWorkspace() {
             const url = updated.isolation?.embedUrl;
             if (url) {
               setWebPreview({ embedUrl: url, srcDoc: null, sessionId: updated.id });
-              appendConsole("[info] 已刷新隔离预览会话");
+              if (!silent) appendConsole("[info] 已刷新隔离预览会话");
               return;
             }
           }
@@ -103,21 +136,114 @@ export function CreateWorkspace() {
           const url = session.isolation?.embedUrl;
           if (url) {
             setWebPreview({ embedUrl: url, srcDoc: null, sessionId: session.id });
-            appendConsole("[info] 已创建隔离 iframe 预览（opaque origin / sandbox）");
+            if (!silent) appendConsole("[info] 已创建隔离 iframe 预览（opaque origin / sandbox）");
             return;
           }
         } catch {
-          appendConsole("[warn] 预览会话不可用，回退到本地 srcdoc 沙箱");
+          if (!silent) appendConsole("[warn] 预览会话不可用，回退到本地 srcdoc 沙箱");
         }
       }
       setWebPreview({ embedUrl: null, srcDoc: htmlDocument, sessionId: null });
-      appendConsole("[info] 本地 srcdoc 沙箱预览（未登录或不走服务端）");
+      if (!silent) appendConsole("[info] 本地 srcdoc 沙箱预览（未登录或不走服务端）");
     },
     [artifactId, webPreviewSessionId, setWebPreview, appendConsole],
   );
 
+  const refreshBlogPreview = useCallback(async () => {
+    const s = useWorkspaceStore.getState();
+    if (!isAppStudioKind(s.artifactKind, s.templateId) || !s.appSchema) return;
+    const map = filesToMap(s.artifactFiles);
+    if (s.activeFilePath) map[s.activeFilePath] = s.code;
+    const views: BlogPostView[] = s.blogPosts.map((p) => ({
+      title: p.data.title,
+      slug: p.slug,
+      excerpt: p.data.excerpt,
+      content: p.data.content,
+      publishedAt: p.publishedAt,
+    }));
+    const slug = s.blogPreviewPage === "post" ? s.blogPreviewSlug || views[0]?.slug || "" : "";
+    const route =
+      s.blogPreviewPage === "post" && slug
+        ? { page: "post" as const, slug }
+        : { page: "home" as const };
+    let html: string | null = null;
+    if (s.artifactId) {
+      try {
+        html = await api.getAppPreviewHtml(
+          s.artifactId,
+          route.page,
+          route.page === "post" ? slug : undefined,
+        );
+      } catch {
+        html = null;
+      }
+    }
+    if (!html) {
+      html = renderBlogHtml({
+        schema: s.appSchema,
+        posts: views,
+        route,
+        extraCss: map["styles.css"] ?? "",
+        extraJs: map["extensions.js"] ?? "",
+        mode: "preview",
+      });
+    }
+    await publishWebIframe(html, true);
+  }, [publishWebIframe]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: getState() reads posts/route/files
+  useEffect(() => {
+    if (!blogStudio || !appSchema) return;
+    void refreshBlogPreview();
+  }, [
+    blogStudio,
+    appSchema,
+    blogPosts,
+    blogPreviewPage,
+    blogPreviewSlug,
+    artifactId,
+    code,
+    refreshBlogPreview,
+  ]);
+
   const handleRun = useCallback(async () => {
-    if (isHardwareKind(artifactKind)) {
+    if (isAppStudioKind(artifactKind, useWorkspaceStore.getState().templateId)) {
+      setIsRunning(true);
+      setRightPreviewOpen(true);
+      try {
+        await refreshBlogPreview();
+      } catch (err) {
+        appendConsole(`[error] ${err instanceof Error ? err.message : String(err)}`);
+      } finally {
+        setIsRunning(false);
+      }
+      return;
+    }
+    if (isHardwareKind(artifactKind) && useWorkspaceStore.getState().iotRunMode === "live") {
+      setIsRunning(true);
+      setRightPreviewOpen(true);
+      setBottomOpen(true);
+      clearConsole();
+      try {
+        const packSlug = useWorkspaceStore.getState().iotPackSlug || "smart-window";
+        appendConsole("[info] 真机会话走 code-server 代理，浏览器不持有凭据");
+        const result = await api.runIotLabLive({
+          packSlug,
+          code,
+          boardSku: boardSku || "board.espressif.esp32-s3-devkitc-1",
+        });
+        appendConsole(`[live] ${result.decision ?? result.status} ${result.reason ?? ""}`);
+        if (result.command === null || result.exportOnly) {
+          appendConsole("[warn] 未形成真机控制（会话缺失或仅导出）");
+        }
+      } catch (err) {
+        appendConsole(`[error] ${err instanceof Error ? err.message : String(err)}`);
+      } finally {
+        setIsRunning(false);
+      }
+      return;
+    }
+    if (isHardwareKind(artifactKind) && useWorkspaceStore.getState().iotRunMode === "firmware") {
       setIsRunning(true);
       setRightPreviewOpen(true);
       setBottomOpen(true);
@@ -152,13 +278,23 @@ export function CreateWorkspace() {
         appendConsole(`[sim] adapter=${sim.adapter} ${sim.exportHint}`);
         const ran = await api.runHardwareSim(sim.id);
         appendConsole(ran.serialLog || "[sim] no serial output");
+        if (ran.assertions?.length) {
+          for (const a of ran.assertions) {
+            appendConsole(`[assert] ${a.ok ? "pass" : "fail"} ${a.name}: ${a.detail}`);
+          }
+        }
+        if (ran.status === "export_only") {
+          appendConsole("[sim] export_only — not a live pass (need wokwi-cli + firmware.bin, or qemu + firmware.elf)");
+        }
         setFirmwareSim({
-          adapter: sim.adapter,
+          adapter: ran.adapter || sim.adapter,
           serialLog: ran.serialLog,
           status: ran.status,
-          exportHint: sim.exportHint,
+          exportHint: ran.exportHint || sim.exportHint,
+          assertions: ran.assertions,
+          exportFiles: ran.exportFiles,
         });
-        track("hardware.sim.completed", { artifactId, adapter: sim.adapter, status: ran.status });
+        track("hardware.sim.completed", { artifactId, adapter: ran.adapter || sim.adapter, status: ran.status });
       } catch (err) {
         appendConsole(`[error] ${err instanceof Error ? err.message : String(err)}`);
       } finally {
@@ -173,6 +309,7 @@ export function CreateWorkspace() {
         const result = runTargetProgram({
           code,
           kind: artifactKind as RuntimeKind,
+          packSlug: useWorkspaceStore.getState().iotPackSlug,
         });
         setPreviewWorld(result.finalState);
         clearConsole();
@@ -188,6 +325,38 @@ export function CreateWorkspace() {
           appendConsole(`${prefix} ${line.text}`);
         });
         if (result.errorMessage) appendConsole(`[error] ${result.errorMessage}`);
+
+        if (artifactKind === "iot" && result.finalState.iot) {
+          const passed = result.finalState.iot.assertions.filter((a) => a.ok).length;
+          appendConsole(`[assert] ${passed}/${result.finalState.iot.assertions.length} 通过`);
+          const params = new URLSearchParams(window.location.search);
+          const courseId = params.get("courseId");
+          const chapterId = params.get("chapter");
+          const eduApi = import.meta.env.VITE_EDU_API_URL?.trim();
+          if (courseId && chapterId && eduApi) {
+            try {
+              const { authHeaders } = await import("../lib/http");
+              await fetch(
+                `${eduApi.replace(/\/$/, "")}/edu/course/courses/${courseId}/chapters/${chapterId}/iot-lab/evidence`,
+                {
+                  method: "POST",
+                  headers: { ...authHeaders({ "Content-Type": "application/json" }) },
+                  body: JSON.stringify({
+                    packSlug: result.finalState.iot.packSlug,
+                    runMode: "sim",
+                    boardSku,
+                    artifactId,
+                    assertions: result.finalState.iot.assertions,
+                    passed: result.finalState.iot.assertions.every((a) => a.ok),
+                  }),
+                },
+              );
+              appendConsole("[info] 已回写课时实验证据");
+            } catch {
+              appendConsole("[warn] 课时证据回写失败（需登录 edu-server）");
+            }
+          }
+        }
 
         if (artifactKind === "web") {
           let html = buildHtmlFromWorld(result.finalState);
@@ -256,6 +425,7 @@ export function CreateWorkspace() {
     setFirmwareSim,
     saveCurrentArtifact,
     publishWebIframe,
+    refreshBlogPreview,
   ]);
 
   useEffect(() => {
@@ -315,23 +485,14 @@ export function CreateWorkspace() {
                 </Panel>
               </>
             )}
-
-            {aiOpen && (
-              <>
-                <PanelResizeHandle className={styles.hResizeHandle} />
-                <Panel defaultSize="22" minSize="16" maxSize="36" className={styles.panelFull}>
-                  <FloatingAiPanel
-                    variant="dock"
-                    open={aiOpen}
-                    onOpenChange={setAiOpen}
-                    onToggle={toggleAiOpen}
-                    mode="workspace"
-                  />
-                </Panel>
-              </>
-            )}
           </PanelGroup>
         </div>
+        <FloatingAiPanel
+          open={aiOpen}
+          onOpenChange={setAiOpen}
+          onToggle={toggleAiOpen}
+          mode="workspace"
+        />
       </div>
     </AppProviders>
   );

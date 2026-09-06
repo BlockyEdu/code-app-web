@@ -29,14 +29,26 @@ export default defineConfig(({ envMode }) => {
     server: {
       port: 18081,
       historyApiFallback: true,
-      proxy: {
+      // Array form so `/s/{slug}` cannot prefix-match Rsbuild `/static/*` assets.
+      proxy: [
         // Experience + OIDC must be before `/api` backend proxy.
-        ...idpProxy,
-        "/api": {
+        ...Object.entries(idpProxy).map(([path, options]) => ({
+          ...options,
+          pathFilter: path,
+        })),
+        {
+          pathFilter: (pathname: string) =>
+            pathname === "/s" || pathname.startsWith("/s/"),
+          target: API_PROXY,
+          changeOrigin: true,
+          pathRewrite: { "^/s": "/api/v1/sites" },
+        },
+        {
+          pathFilter: "/api",
           target: API_PROXY,
           changeOrigin: true,
         },
-      },
+      ],
     },
   };
 });

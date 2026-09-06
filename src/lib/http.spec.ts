@@ -52,4 +52,20 @@ describe("httpRequest coalescing", () => {
     ]);
     expect(calls).toBe(1);
   });
+
+  it("extracts nested Nest error messages", async () => {
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({
+          statusCode: 503,
+          error: "Service Unavailable",
+          message: { code: "AI_NOT_CONFIGURED", message: "未配置模型密钥" },
+        }),
+        { status: 503, headers: { "Content-Type": "application/json" } },
+      )) as typeof fetch;
+
+    await expect(httpRequest("/ai/chat", { method: "POST", body: "{}" })).rejects.toThrow(
+      "未配置模型密钥",
+    );
+  });
 });

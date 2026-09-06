@@ -95,6 +95,16 @@ const SMARTHOME_CATEGORIES: TargetCategory[] = [
   { name: "场景联动", colour: "165", types: ["home_run_scene", "home_wait"] },
 ];
 
+const IOT_CATEGORIES: TargetCategory[] = [
+  {
+    name: "通道与传感器",
+    colour: "165",
+    types: ["iot_read_channel", "iot_set_channel"],
+  },
+  { name: "Kit 命令", colour: "160", types: ["iot_command", "iot_evaluate_scene"] },
+  { name: "安全", colour: "0", types: ["iot_wait", "iot_emergency_stop"] },
+];
+
 const TARGET_CATEGORIES: Record<Exclude<ArtifactKind, "exercise" | "free">, TargetCategory[]> = {
   web: [
     {
@@ -119,7 +129,7 @@ const TARGET_CATEGORIES: Record<Exclude<ArtifactKind, "exercise" | "free">, Targ
     },
   ],
   smarthome: SMARTHOME_CATEGORIES,
-  iot: SMARTHOME_CATEGORIES,
+  iot: IOT_CATEGORIES,
   toy: [
     { name: "电机与舵机", colour: "30", types: ["toy_move", "toy_stop", "toy_servo"] },
     { name: "灯光与声音", colour: "25", types: ["toy_led", "toy_buzzer", "toy_say"] },

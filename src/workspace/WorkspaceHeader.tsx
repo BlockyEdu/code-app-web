@@ -2,6 +2,7 @@ import {
   ApiOutlined,
   CaretRightOutlined,
   CheckOutlined,
+  CloudUploadOutlined,
   CodeOutlined,
   ExperimentOutlined,
   GlobalOutlined,
@@ -9,6 +10,7 @@ import {
   MobileOutlined,
   ReloadOutlined,
   RobotOutlined,
+  RocketOutlined,
   SaveOutlined,
 } from "@ant-design/icons";
 import { Button, Dropdown, type MenuProps, message, Segmented, Tooltip } from "antd";
@@ -22,10 +24,17 @@ import { RunControls } from "../components/RunControls";
 import { UserAvatarMenu } from "../components/UserAvatarMenu";
 import { useAiSettings } from "../hooks/useAiSettings";
 import { api } from "../lib/api";
+import { usesHostedPosts } from "../lib/app-studio/app-schema";
 import { useAuthStore } from "../lib/auth-store";
 import { isDirectIdpEnabled } from "../lib/idp";
+import { type AppLocale, useLocaleStore } from "../lib/locale-store";
 import { navigate } from "../lib/navigate";
-import { type EditorMode, useWorkspaceStore } from "../stores/workspace";
+import {
+  type EditorMode,
+  isAppStudioKind,
+  type SurfaceMode,
+  useWorkspaceStore,
+} from "../stores/workspace";
 import type { ArtifactKind } from "../types/artifact";
 import {
   isConsoleKind,
@@ -37,6 +46,7 @@ import {
   KIND_LABEL,
   PREVIEW_LABEL,
 } from "../types/artifact";
+import { PublishWebDialog } from "./PublishWebDialog";
 import styles from "./WorkspaceHeader.module.scss";
 
 const KIND_ICON: Record<ArtifactKind, ReactNode> = {
@@ -56,6 +66,7 @@ interface WorkspaceHeaderProps {
 
 export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
   const artifactKind = useWorkspaceStore((s) => s.artifactKind);
+  const templateId = useWorkspaceStore((s) => s.templateId);
   const artifactName = useWorkspaceStore((s) => s.artifactName);
   const artifactId = useWorkspaceStore((s) => s.artifactId);
   const editorMode = useWorkspaceStore((s) => s.editorMode);
@@ -74,6 +85,8 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
   const toggleBottomOpen = useWorkspaceStore((s) => s.toggleBottomOpen);
   const toggleAiOpen = useWorkspaceStore((s) => s.toggleAiOpen);
   const setEditorMode = useWorkspaceStore((s) => s.setEditorMode);
+  const surfaceMode = useWorkspaceStore((s) => s.surfaceMode);
+  const setSurfaceMode = useWorkspaceStore((s) => s.setSurfaceMode);
   const applyProUpgrade = useWorkspaceStore((s) => s.applyProUpgrade);
   const restoreBlocklyFromSnapshot = useWorkspaceStore((s) => s.restoreBlocklyFromSnapshot);
   const getCurrentGoal = useWorkspaceStore((s) => s.getCurrentGoal);
@@ -82,11 +95,21 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
   const setAiLoading = useWorkspaceStore((s) => s.setAiLoading);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const locale = useLocaleStore((s) => s.locale);
+  const launchLabel = locale === "zh-CN" ? "发布台" : "Launch";
+  const launchHint =
+    locale === "zh-CN"
+      ? "打开发布台：制造检查与上架包"
+      : "Open launch desk: manufacturing checks and listing pack";
+  const hubLabel: Record<AppLocale, string> = { "zh-CN": "项目", "en-US": "Projects" };
   const openLoginPrompt = useAuthStore((s) => s.openLoginPrompt);
   const { aiOpts, ready } = useAiSettings();
 
   const [modeModal, setModeModal] = useState<"upgrade" | "restore" | null>(null);
   const [busy, setBusy] = useState(false);
+  const [publishOpen, setPublishOpen] = useState(false);
+  const appStudio = isAppStudioKind(artifactKind, templateId);
+  const showDataTab = usesHostedPosts(templateId);
 
   const color = KIND_COLOR[artifactKind];
   const previewSupported = !isConsoleKind(artifactKind);
@@ -99,7 +122,9 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
       : PREVIEW_LABEL[KIND_DEFAULT_PREVIEW[artifactKind]];
   const plugin = getActiveLanguagePlugin();
   const supportsBlockly =
-    !isHardwareKind(artifactKind) && (isTargetBlockKind(artifactKind) || Boolean(plugin?.blockly));
+    !appStudio &&
+    !isHardwareKind(artifactKind) &&
+    (isTargetBlockKind(artifactKind) || Boolean(plugin?.blockly));
 
   const goLogin = () => {
     if (isDirectIdpEnabled()) {
@@ -238,15 +263,15 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
     <>
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <Tooltip title="返回项目">
+          <Tooltip title={locale === "zh-CN" ? "返回项目" : "Back to projects"}>
             <button
               type="button"
               className={styles.hubBtn}
               onClick={() => navigate("/")}
-              aria-label="返回项目"
+              aria-label={locale === "zh-CN" ? "返回项目" : "Back to projects"}
             >
               <LogoMark size={22} />
-              <span className={styles.hubLabel}>项目</span>
+              <span className={styles.hubLabel}>{hubLabel[locale]}</span>
             </button>
           </Tooltip>
           <div className={styles.artifactInfo}>
@@ -265,6 +290,19 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
         </div>
 
         <div className={styles.headerCenter}>
+          {appStudio && (
+            <Segmented
+              size="small"
+              value={surfaceMode}
+              onChange={(v) => setSurfaceMode(v as SurfaceMode)}
+              options={[
+                { label: "Design", value: "design" },
+                ...(showDataTab ? [{ label: "Data", value: "data" }] : []),
+                { label: "Logic", value: "logic" },
+                { label: "Code", value: "code" },
+              ]}
+            />
+          )}
           {supportsBlockly && (
             <Segmented
               size="small"
@@ -316,12 +354,29 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
           {isConsoleKind(artifactKind) && <LanguageSelector />}
 
           {hardware && artifactId && (
-            <Button size="small" onClick={() => navigate(`/launch/${artifactId}`)}>
-              Launch
+            <Tooltip title={launchHint}>
+              <Button
+                size="small"
+                icon={<RocketOutlined />}
+                onClick={() => navigate(`/launch/${artifactId}`)}
+              >
+                {launchLabel}
+              </Button>
+            </Tooltip>
+          )}
+
+          {appStudio && (
+            <Button
+              type="primary"
+              size="small"
+              icon={<CloudUploadOutlined />}
+              onClick={() => setPublishOpen(true)}
+            >
+              {locale === "zh-CN" ? "上线分享" : "Ship"}
             </Button>
           )}
 
-          {(artifactKind === "web" || artifactKind === "miniprogram") && (
+          {(artifactKind === "web" || artifactKind === "miniprogram") && !appStudio && (
             <Button
               size="small"
               icon={isRunning ? <ReloadOutlined spin /> : <CaretRightOutlined />}
@@ -379,6 +434,7 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
           <p>专业模式下的手改代码不会同步回积木。确认后将恢复进入专业模式前的积木快照。</p>
         </ModeSwitchModal>
       )}
+      {appStudio && <PublishWebDialog open={publishOpen} onClose={() => setPublishOpen(false)} />}
     </>
   );
 }

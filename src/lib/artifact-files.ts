@@ -16,7 +16,7 @@ export function codePathForKind(kind: ArtifactKind): string {
     case "smarthome":
       return "behavior.js";
     case "iot":
-      return "firmware/main.cpp";
+      return "behavior.js";
     case "toy":
       return "behavior.js";
     case "free":
@@ -77,7 +77,7 @@ export function extractEditorBuffers(
 ): { code: string; blockXml: string } {
   const map = filesToMap(files);
   const code =
-    pickFile(map, [codePathForKind(kind), "behavior.js", "app.js", "main.js"]) ?? "";
+    pickFile(map, [codePathForKind(kind), "firmware/main.cpp", "behavior.js", "app.js", "main.js"]) ?? "";
   const blockXml =
     pickFile(map, [
       blocksPathForKind(kind),

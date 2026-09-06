@@ -54,6 +54,12 @@ export function useAiSettings() {
     [settings],
   );
 
+  const selectProviderModel = useCallback((provider: AiProviderId, model: string) => {
+    const next = { provider, model };
+    setSettings(next);
+    saveAiSettings(next);
+  }, []);
+
   const aiOpts = useMemo(() => (settings ? aiOptionsBody(settings) : {}), [settings]);
 
   const currentProvider = config?.providers.find((p) => p.id === settings?.provider);
@@ -64,6 +70,7 @@ export function useAiSettings() {
     aiOpts,
     setProvider,
     setModel,
+    selectProviderModel,
     currentProvider,
     ready: Boolean(config && settings),
   };

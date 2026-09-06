@@ -1,10 +1,14 @@
 import { ArrowRightOutlined, ReloadOutlined } from "@ant-design/icons";
-import { useCallback } from "react";
+import { Segmented, Select } from "antd";
+import { useCallback, useEffect } from "react";
+import { hasDetailPage, usesHostedPosts } from "../lib/app-studio/app-schema";
+import { useLocaleStore } from "../lib/locale-store";
 import type { WorldState } from "../lib/targets";
 import { WEB_IFRAME_SANDBOX } from "../lib/web-preview";
-import { useWorkspaceStore } from "../stores/workspace";
+import { isAppStudioKind, useWorkspaceStore } from "../stores/workspace";
 import type { ArtifactKind } from "../types/artifact";
 import { KIND_DEFAULT_PREVIEW, PREVIEW_LABEL } from "../types/artifact";
+import studio from "./BlogStudio.module.scss";
 import styles from "./PreviewPanel.module.scss";
 
 interface PreviewPanelProps {
@@ -25,28 +29,63 @@ const ROOM_LABELS: Record<string, string> = {
   kitchen: "厨房",
 };
 
-function WebPreview({ world, onRefresh }: { world: WorldState | null; onRefresh?: () => void }) {
+function parseBlogNavHref(href: string): { page: "home" } | { page: "post"; slug: string } {
+  const match = href.match(/\/posts\/([^/?#]+)/);
+  if (match?.[1]) return { page: "post", slug: decodeURIComponent(match[1]) };
+  return { page: "home" };
+}
+
+function WebPreview({
+  world,
+  onRefresh,
+  chrome = "browser",
+}: {
+  world: WorldState | null;
+  onRefresh?: () => void;
+  chrome?: "browser" | "none";
+}) {
   const embedUrl = useWorkspaceStore((s) => s.webPreviewEmbedUrl);
   const srcDoc = useWorkspaceStore((s) => s.webPreviewSrcDoc);
-  const title = world?.web.title || "我的第一个网站";
+  const artifactKind = useWorkspaceStore((s) => s.artifactKind);
+  const templateId = useWorkspaceStore((s) => s.templateId);
+  const setBlogPreview = useWorkspaceStore((s) => s.setBlogPreview);
+  const blogStudio = isAppStudioKind(artifactKind, templateId);
+  const title = world?.web.title || (blogStudio ? "Site preview" : "我的第一个网站");
   const hasDoc = Boolean(embedUrl || srcDoc);
+
+  useEffect(() => {
+    if (!blogStudio) return;
+    const onMsg = (ev: MessageEvent) => {
+      const data = ev.data as { type?: string; href?: string };
+      if (data?.type !== "blockyedu-blog-nav" || typeof data.href !== "string") return;
+      const route = parseBlogNavHref(data.href);
+      if (route.page === "post") setBlogPreview("post", route.slug);
+      else setBlogPreview("home");
+    };
+    window.addEventListener("message", onMsg);
+    return () => window.removeEventListener("message", onMsg);
+  }, [blogStudio, setBlogPreview]);
 
   return (
     <div className={styles.webFrame}>
-      <div className={styles.browserBar}>
-        <div className={styles.browserDots}>
-          <span style={{ background: "#ef4444" }} />
-          <span style={{ background: "#f59e0b" }} />
-          <span style={{ background: "#22c55e" }} />
+      {chrome === "browser" && (
+        <div className={styles.browserBar}>
+          <div className={styles.browserDots}>
+            <span style={{ background: "#ef4444" }} />
+            <span style={{ background: "#f59e0b" }} />
+            <span style={{ background: "#22c55e" }} />
+          </div>
+          <div className={styles.browserUrl}>
+            {embedUrl
+              ? "sandbox://preview (opaque origin)"
+              : srcDoc
+                ? "srcdoc://sandbox"
+                : blogStudio
+                  ? "preview · schema"
+                  : "preview · 点击「作品预览」"}
+          </div>
         </div>
-        <div className={styles.browserUrl}>
-          {embedUrl
-            ? "sandbox://preview (opaque origin)"
-            : srcDoc
-              ? "srcdoc://sandbox"
-              : "preview · 点击「作品预览」"}
-        </div>
-      </div>
+      )}
       {hasDoc ? (
         <iframe
           key={embedUrl || "srcdoc"}
@@ -245,12 +284,88 @@ function SmarthomePreview({ world }: { world: WorldState | null }) {
   );
 }
 
+function IotLabPreview({ world }: { world: WorldState | null }) {
+  const packSlug = useWorkspaceStore((s) => s.iotPackSlug);
+  const runMode = useWorkspaceStore((s) => s.iotRunMode);
+  const setIotRunMode = useWorkspaceStore((s) => s.setIotRunMode);
+  const boardSku = useWorkspaceStore((s) => s.boardSku);
+  const setBoardSku = useWorkspaceStore((s) => s.setBoardSku);
+  const iot = world?.iot;
+  const channels = iot?.channels ?? {};
+  const timeline = iot?.timeline?.length
+    ? iot.timeline.slice(-8).map((e) => e.text)
+    : ["[仿真] 选择通道与命令后点击运行", "[仿真] 真机需教师短时会话"];
+  const modeLabel = runMode === "live" ? "真机会话" : runMode === "firmware" ? "仅导出" : "仿真";
+
+  return (
+    <div className={styles.homePreview}>
+      <div className={styles.homeNotice}>
+        {modeLabel} · {packSlug || "iot"} · {boardSku || "未选板卡"}
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+        <Select
+          size="small"
+          value={runMode}
+          style={{ minWidth: 120 }}
+          onChange={(v) => setIotRunMode(v as "sim" | "live" | "firmware")}
+          options={[
+            { value: "sim", label: "仿真运行" },
+            { value: "live", label: "真机会话" },
+            { value: "firmware", label: "仅导出" },
+          ]}
+        />
+        <Select
+          size="small"
+          value={boardSku || "board.espressif.esp32-s3-devkitc-1"}
+          style={{ minWidth: 220 }}
+          onChange={(v) => setBoardSku(v)}
+          options={[
+            { value: "board.espressif.esp32-s3-devkitc-1", label: "ESP32-S3 DevKitC-1" },
+            { value: "board.espressif.esp32-c3-devkitm-1", label: "ESP32-C3 DevKit" },
+          ]}
+        />
+      </div>
+      <div className={styles.deviceGrid}>
+        {Object.entries(channels).map(([key, value]) => (
+          <div key={key} className={styles.deviceCard}>
+            <span className={styles.deviceName}>{key}</span>
+            <span className={styles.deviceMeta}>通道</span>
+            <span className={styles.deviceStatus}>{String(value)}</span>
+          </div>
+        ))}
+      </div>
+      {iot?.assertions?.length ? (
+        <div className={styles.homeNotice}>
+          断言 {iot.assertions.filter((a) => a.ok).length}/{iot.assertions.length} 通过
+        </div>
+      ) : null}
+      <div className={styles.homeLog}>
+        {timeline.map((line) => (
+          <div key={line} className={styles.homeLogLine}>
+            {line}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function FirmwarePreview() {
   const sim = useWorkspaceStore((s) => s.firmwareSim);
   const lines = (sim?.serialLog || "Click Firmware sim — this is an MCU adapter, not Piston.")
     .split("\n")
     .filter(Boolean)
     .slice(-16);
+
+  const download = (path: string, content: string) => {
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = path.split("/").pop() || path;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className={styles.homePreview}>
@@ -259,6 +374,25 @@ function FirmwarePreview() {
         {sim?.status ? ` · ${sim.status}` : ""} — not mass production
       </div>
       {sim?.exportHint && <div className={styles.homeNotice}>{sim.exportHint}</div>}
+      {sim?.assertions && sim.assertions.length > 0 && (
+        <div className={styles.homeNotice}>
+          {sim.assertions.map((a) => (
+            <div key={a.id}>
+              {a.ok ? "✓" : "○"} {a.name}: {a.detail}
+            </div>
+          ))}
+        </div>
+      )}
+      {(sim?.exportFiles ?? []).slice(0, 4).map((f) => (
+        <button
+          key={f.path}
+          type="button"
+          className={styles.homeNotice}
+          onClick={() => download(f.path, f.content)}
+        >
+          Download {f.path}
+        </button>
+      ))}
       <div className={styles.homeLog}>
         {lines.map((line) => (
           <div key={line} className={styles.homeLogLine}>
@@ -274,6 +408,23 @@ export function PreviewPanel({ kind, onRefresh }: PreviewPanelProps & { onRefres
   const previewType = KIND_DEFAULT_PREVIEW[kind];
   const label = PREVIEW_LABEL[previewType];
   const world = useWorkspaceStore((s) => s.previewWorld);
+  const templateId = useWorkspaceStore((s) => s.templateId);
+  const iotRunMode = useWorkspaceStore((s) => s.iotRunMode);
+  const blogStudio = isAppStudioKind(kind, templateId);
+  const blogPosts = useWorkspaceStore((s) => s.blogPosts);
+  const appSchema = useWorkspaceStore((s) => s.appSchema);
+  const showDetailSwitch =
+    blogStudio && usesHostedPosts(templateId) && (!appSchema || hasDetailPage(appSchema));
+  const blogPreviewPage = useWorkspaceStore((s) => s.blogPreviewPage);
+  const blogPreviewSlug = useWorkspaceStore((s) => s.blogPreviewSlug);
+  const setBlogPreview = useWorkspaceStore((s) => s.setBlogPreview);
+  const zh = useLocaleStore((s) => s.locale) === "zh-CN";
+
+  useEffect(() => {
+    if (!blogStudio || blogPreviewPage !== "post") return;
+    if (blogPreviewSlug || blogPosts.length === 0) return;
+    setBlogPreview("post", blogPosts[0].slug);
+  }, [blogStudio, blogPreviewPage, blogPreviewSlug, blogPosts, setBlogPreview]);
 
   const handleReload = useCallback(() => {
     onRefresh?.();
@@ -285,10 +436,52 @@ export function PreviewPanel({ kind, onRefresh }: PreviewPanelProps & { onRefres
         <span className={styles.previewTitle}>
           {label}
           {kind === "smarthome" && <span className={styles.previewBadge}>device panel</span>}
-          {kind === "iot" && <span className={styles.previewBadge}>MCU adapter</span>}
-          {kind === "web" && <span className={styles.previewBadge}>sandbox</span>}
+          {kind === "iot" && <span className={styles.previewBadge}>IoT lab</span>}
+          {kind === "web" && (
+            <span className={styles.previewBadge}>{blogStudio ? "site" : "sandbox"}</span>
+          )}
+          {kind === "miniprogram" && blogStudio && (
+            <span className={styles.previewBadge}>mini · h5</span>
+          )}
         </span>
         <div className={styles.previewActions}>
+          {showDetailSwitch && (
+            <div className={studio.previewSwitch}>
+              <Segmented
+                size="small"
+                value={blogPreviewPage}
+                onChange={(v) => {
+                  const page = v as "home" | "post";
+                  if (page === "post") {
+                    setBlogPreview("post", blogPreviewSlug || blogPosts[0]?.slug || "");
+                  } else {
+                    setBlogPreview("home");
+                  }
+                }}
+                options={[
+                  { label: zh ? "首页" : "Home", value: "home" },
+                  {
+                    label: zh ? "文章" : "Post",
+                    value: "post",
+                    disabled: blogPosts.length === 0,
+                  },
+                ]}
+              />
+              {blogPreviewPage === "post" && (
+                <Select
+                  size="small"
+                  style={{ minWidth: 120 }}
+                  value={blogPreviewSlug || undefined}
+                  placeholder={zh ? "选择文章" : "Select post"}
+                  onChange={(slug) => setBlogPreview("post", slug)}
+                  options={blogPosts.map((p) => ({
+                    value: p.slug,
+                    label: `${p.data.title || p.slug}${p.status === "draft" ? " (draft)" : ""}`,
+                  }))}
+                />
+              )}
+            </div>
+          )}
           <button
             type="button"
             className={styles.previewBtn}
@@ -301,9 +494,19 @@ export function PreviewPanel({ kind, onRefresh }: PreviewPanelProps & { onRefres
       </div>
       <div className={styles.previewContent}>
         {kind === "web" && <WebPreview world={world} onRefresh={onRefresh} />}
-        {kind === "miniprogram" && <MiniprogramPreview world={world} />}
+        {kind === "miniprogram" && blogStudio && (
+          <div className={styles.phoneFrame}>
+            <div className={styles.phoneScreenStudio}>
+              <WebPreview world={world} chrome="none" onRefresh={onRefresh} />
+            </div>
+          </div>
+        )}
+        {kind === "miniprogram" && !blogStudio && <MiniprogramPreview world={world} />}
         {kind === "smarthome" && <SmarthomePreview world={world} />}
-        {kind === "iot" && <FirmwarePreview />}
+        {kind === "iot" && iotRunMode === "firmware" && !world?.iot && <FirmwarePreview />}
+        {kind === "iot" && (iotRunMode !== "firmware" || Boolean(world?.iot)) && (
+          <IotLabPreview world={world} />
+        )}
         {kind === "toy" && <ToyPreview world={world} />}
       </div>
     </div>

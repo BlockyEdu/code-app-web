@@ -1,5 +1,13 @@
 import { create } from "zustand";
-import { api, type ChatMessage, type Lesson, type Project } from "../lib/api";
+import {
+  api,
+  type BlogPostRecord,
+  type ChatMessage,
+  type Lesson,
+  type Project,
+  type WebPublishStatus,
+} from "../lib/api";
+import { type AppSchema, isAppStudioTemplate, parseAppSchema } from "../lib/app-studio/app-schema";
 import {
   type ArtifactFileEntry,
   buildSaveFiles,
@@ -15,13 +23,63 @@ import {
 } from "../lib/pair-mission";
 import type { WorldState } from "../lib/targets";
 import { DEFAULT_KIND_CODE, DEFAULT_KIND_XML } from "../lib/targets";
+import { starterIotCode, starterIotXml, type IotRunMode } from "../lib/targets/iot-lab";
 import { track } from "../lib/telemetry";
-import { boardSkuForTemplate, extraFilesForTemplate } from "../lib/templates";
+import {
+  boardSkuForTemplate,
+  extraFilesForTemplate,
+  packSlugFromTemplate,
+  parsePackSlugFromFiles,
+} from "../lib/templates";
 import { getDefaultLanguageId, getLanguagePlugin } from "../plugins";
 import type { ArtifactKind, LeftPanelTab } from "../types/artifact";
 import { isConsoleKind, isHardwareKind, KIND_LABEL } from "../types/artifact";
 
 export type EditorMode = "blockly" | "monaco";
+
+export type FirmwareSimState = {
+  adapter: string;
+  serialLog: string;
+  status: string;
+  exportHint: string;
+  assertions?: Array<{ id: string; name: string; ok: boolean; detail: string }>;
+  exportFiles?: Array<{ path: string; content: string }>;
+};
+export type SurfaceMode = "design" | "data" | "logic" | "code";
+
+const APP_SCHEMA_PATH = "app.schema.json";
+
+export function isAppStudioKind(
+  kind: ArtifactKind,
+  templateId: string | null | undefined,
+): boolean {
+  return (kind === "web" || kind === "miniprogram") && isAppStudioTemplate(templateId);
+}
+
+/** @deprecated use isAppStudioKind */
+export const isBlogStudioKind = isAppStudioKind;
+
+function parseSchemaFromFiles(files: ArtifactFileEntry[]): AppSchema | null {
+  const entry = files.find(
+    (f) => f.path === APP_SCHEMA_PATH || f.path.endsWith(`/${APP_SCHEMA_PATH}`),
+  );
+  if (!entry?.content?.trim()) return null;
+  try {
+    const { schema } = parseAppSchema(JSON.parse(entry.content) as unknown);
+    return schema;
+  } catch {
+    return null;
+  }
+}
+
+function upsertSchemaFile(files: ArtifactFileEntry[], schema: AppSchema): ArtifactFileEntry[] {
+  const content = `${JSON.stringify(schema, null, 2)}\n`;
+  const next = files.filter(
+    (f) => f.path !== APP_SCHEMA_PATH && !f.path.endsWith(`/${APP_SCHEMA_PATH}`),
+  );
+  next.push({ path: APP_SCHEMA_PATH, contentType: "application/json", content });
+  return next;
+}
 
 interface LanguageBuffer {
   code: string;
@@ -59,9 +117,11 @@ interface WorkspaceState {
   intent?: string;
   templateId: string | null;
   boardSku: string | null;
+  iotPackSlug: string | null;
+  iotRunMode: IotRunMode;
   verifiedMilestone: string;
   pairMission: PairMission;
-  firmwareSim: { adapter: string; serialLog: string; status: string; exportHint: string } | null;
+  firmwareSim: FirmwareSimState | null;
   saveDirty: boolean;
   saveStatus: "idle" | "saving" | "saved" | "error";
   leftOpen: boolean;
@@ -76,6 +136,23 @@ interface WorkspaceState {
   /** kind=web: srcdoc fallback when offline / unauthenticated */
   webPreviewSrcDoc: string | null;
   webPreviewSessionId: string | null;
+  /** Blog App Studio surfaces (ignored for other kinds). */
+  surfaceMode: SurfaceMode;
+  appSchema: AppSchema | null;
+  selectedNodeId: string | null;
+  blogPosts: BlogPostRecord[];
+  blogPreviewPage: "home" | "post";
+  blogPreviewSlug: string;
+  blogPublish: WebPublishStatus | null;
+  blogDetailVisited: boolean;
+  isBlogStudio: () => boolean;
+  setSurfaceMode: (mode: SurfaceMode) => void;
+  updateAppSchema: (schema: AppSchema) => void;
+  setSelectedNodeId: (id: string | null) => void;
+  setBlogPreview: (page: "home" | "post", slug?: string) => void;
+  setBlogPosts: (posts: BlogPostRecord[]) => void;
+  setBlogPublish: (status: WebPublishStatus | null) => void;
+  refreshBlogRecords: () => Promise<void>;
   setEditorMode: (mode: EditorMode) => void;
   setLanguage: (languageId: string) => void;
   setCode: (code: string) => void;
@@ -133,9 +210,9 @@ interface WorkspaceState {
   addArtifactFile: (path: string) => void;
   applyPairAction: (action: PairAction) => void;
   setPairMission: (mission: PairMission) => void;
-  setFirmwareSim: (
-    sim: { adapter: string; serialLog: string; status: string; exportHint: string } | null,
-  ) => void;
+  setFirmwareSim: (sim: FirmwareSimState | null) => void;
+  setIotRunMode: (mode: IotRunMode) => void;
+  setBoardSku: (sku: string | null) => void;
 }
 
 function persistLanguage(id: string) {
@@ -181,6 +258,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   intent: undefined,
   templateId: null,
   boardSku: null,
+  iotPackSlug: null,
+  iotRunMode: "sim",
   verifiedMilestone: "none",
   pairMission: DEFAULT_PAIR_MISSION,
   firmwareSim: null,
@@ -196,6 +275,70 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   webPreviewEmbedUrl: null,
   webPreviewSrcDoc: null,
   webPreviewSessionId: null,
+  surfaceMode: "code",
+  appSchema: null,
+  selectedNodeId: null,
+  blogPosts: [],
+  blogPreviewPage: "home",
+  blogPreviewSlug: "",
+  blogPublish: null,
+  blogDetailVisited: false,
+  isBlogStudio: () => isBlogStudioKind(get().artifactKind, get().templateId),
+  setSurfaceMode: (surfaceMode) => {
+    const s = get();
+    if (surfaceMode === "code") {
+      const map = filesToMap(s.artifactFiles);
+      if (s.activeFilePath) map[s.activeFilePath] = s.code;
+      const path = map["styles.css"] !== undefined ? "styles.css" : s.activeFilePath;
+      set({
+        surfaceMode,
+        editorMode: "monaco",
+        artifactFiles: Object.entries(map).map(([p, content]) => ({
+          path: p,
+          contentType: p.endsWith(".json") ? "application/json" : "text",
+          content,
+        })),
+        activeFilePath: path,
+        code: map[path] ?? s.code,
+      });
+      return;
+    }
+    set({ surfaceMode });
+  },
+  updateAppSchema: (schema) => {
+    const s = get();
+    set({
+      appSchema: schema,
+      artifactFiles: upsertSchemaFile(s.artifactFiles, schema),
+      saveDirty: true,
+      saveStatus: "idle",
+    });
+  },
+  setSelectedNodeId: (selectedNodeId) => set({ selectedNodeId }),
+  setBlogPreview: (blogPreviewPage, slug) =>
+    set({
+      blogPreviewPage,
+      blogPreviewSlug: slug !== undefined ? slug : get().blogPreviewSlug,
+      blogDetailVisited: blogPreviewPage === "post" ? true : get().blogDetailVisited,
+    }),
+  setBlogPosts: (blogPosts) => set({ blogPosts }),
+  setBlogPublish: (blogPublish) => set({ blogPublish }),
+  refreshBlogRecords: async () => {
+    const { artifactId, artifactKind, templateId } = get();
+    if (!artifactId || !isBlogStudioKind(artifactKind, templateId)) return;
+    try {
+      const { items } = await api.listPosts(artifactId);
+      set({ blogPosts: items });
+    } catch {
+      /* backend may not be ready */
+    }
+    try {
+      const status = await api.getWebPublish(artifactId);
+      set({ blogPublish: status });
+    } catch {
+      /* never published / API missing */
+    }
+  },
   setEditorMode: (editorMode) => {
     const plugin = get().getActiveLanguagePlugin();
     if (editorMode === "blockly" && !plugin?.blockly) {
@@ -334,6 +477,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     if (artifactKind === "free" || artifactKind === "exercise") {
       return `${pairMission.title} — ${pairMission.success}`;
     }
+    if (isBlogStudioKind(artifactKind, get().templateId)) {
+      return "把页面和内容做完，发布后把链接发给家人，或下载 zip 自己部署";
+    }
     return "";
   },
   getActiveLanguagePlugin: () => getLanguagePlugin(get().languageId),
@@ -351,6 +497,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   setShowNewProjectDialog: (showNewProjectDialog) => set({ showNewProjectDialog }),
   setPreviewWorld: (previewWorld) => set({ previewWorld }),
   setFirmwareSim: (firmwareSim) => set({ firmwareSim }),
+  setIotRunMode: (iotRunMode) => set({ iotRunMode }),
+  setBoardSku: (boardSku) => set({ boardSku }),
   setPairMission: (pairMission) => set({ pairMission }),
   applyPairAction: (action) => {
     const current = get().pairMission;
@@ -406,25 +554,29 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     const nextName = name.trim() || `我的${KIND_LABEL[kind]}`;
     const extras = extraFilesForTemplate(kind, opts?.templateId);
     const extraMap = filesToMap(extras);
+    const templateId = opts?.templateId ?? null;
+    const iotPack = kind === "iot" ? packSlugFromTemplate(templateId) : null;
+    const iotLab = Boolean(iotPack);
     const primaryPath = codePathForKind(kind);
-    const nextXml = DEFAULT_KIND_XML[kind];
-    const nextCode = extraMap[primaryPath] || DEFAULT_KIND_CODE[kind];
+    const nextXml = iotPack ? starterIotXml(iotPack) : DEFAULT_KIND_XML[kind];
+    const nextCode = extraMap[primaryPath] || (iotPack ? starterIotCode(iotPack) : DEFAULT_KIND_CODE[kind]);
     const requested = language || get().languageId || "javascript";
     const lang = consoleKind ? requested : requested || "javascript";
     const plugin = getLanguagePlugin(lang);
     persistLanguage(lang);
-    const templateId = opts?.templateId ?? null;
     const boardSku =
       opts?.boardSku ||
       boardSkuForTemplate(templateId) ||
       (hardware ? "board.espressif.esp32-s3-devkitc-1" : null);
-    const intent = opts?.intent || (consoleKind ? "learn" : hardware ? "ship" : "build");
+    const intent = opts?.intent || (consoleKind ? "learn" : hardware && !iotLab ? "ship" : "build");
     const pairMission = consoleKind
       ? { ...DEFAULT_PAIR_MISSION, phase: "mission" as const }
       : get().pairMission;
 
-    const defaultEditorMode =
-      kind === "free" || hardware
+    const blog = isBlogStudioKind(kind, templateId);
+    const defaultEditorMode = blog
+      ? ("monaco" as const)
+      : kind === "free" || (hardware && !iotLab)
         ? ("monaco" as const)
         : consoleKind
           ? plugin?.blockly
@@ -435,6 +587,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     const seedFiles: ArtifactFileEntry[] = extras.length
       ? extras
       : [{ path: primaryPath, contentType: "text", content: nextCode }];
+    const seedSchema = blog ? parseSchemaFromFiles(seedFiles) : null;
+    const blogCode = blog ? (extraMap["styles.css"] ?? "") : nextCode;
+    const blogPath = blog ? "styles.css" : primaryPath;
 
     set({
       artifactKind: kind,
@@ -443,9 +598,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       artifactId: null,
       currentProject: null,
       artifactFiles: seedFiles,
-      activeFilePath: primaryPath,
+      activeFilePath: blogPath,
       templateId,
       boardSku,
+      iotPackSlug: iotPack,
+      iotRunMode: iotLab ? "sim" : hardware ? "firmware" : "sim",
       intent,
       verifiedMilestone: "none",
       pairMission,
@@ -454,22 +611,30 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       saveStatus: "idle",
       leftOpen: true,
       rightPreviewOpen: !consoleKind,
-      bottomOpen: consoleKind || hardware,
+      bottomOpen: consoleKind || (hardware && !iotLab),
       aiOpen: true,
-      activeLeftTab: consoleKind ? "learn" : hardware ? "modules" : "files",
+      activeLeftTab: blog || consoleKind ? "learn" : hardware && !iotLab ? "modules" : "files",
       editorMode: defaultEditorMode,
       languageId: lang,
-      code: nextCode,
-      blockXml: nextXml,
+      code: blogCode,
+      blockXml: blog ? "" : nextXml,
       blockXmlSnapshot: "",
       monacoManuallyEdited: false,
       previewWorld: null,
       webPreviewEmbedUrl: null,
       webPreviewSrcDoc: null,
       webPreviewSessionId: null,
+      surfaceMode: blog ? "design" : "code",
+      appSchema: seedSchema,
+      selectedNodeId: seedSchema?.pages[0]?.nodes.find((n) => n.type === "hero")?.id ?? null,
+      blogPosts: [],
+      blogPreviewPage: "home",
+      blogPreviewSlug: "",
+      blogPublish: null,
+      blogDetailVisited: false,
       languageBuffers: {
         ...get().languageBuffers,
-        [lang]: { code: nextCode, blockXml: nextXml },
+        [lang]: { code: blogCode, blockXml: blog ? "" : nextXml },
       },
       showNewProjectDialog: false,
     });
@@ -507,6 +672,28 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         artifactName: created.title,
         currentProject: project,
       });
+      if (kind === "web" || isAppStudioKind(kind, templateId)) {
+        await get().openArtifact(created.id);
+        const s = get();
+        if (isAppStudioKind(s.artifactKind, s.templateId) && !s.appSchema && extras.length) {
+          const merged = [...s.artifactFiles];
+          for (const extra of extras) {
+            if (!merged.some((f) => f.path === extra.path)) merged.push(extra);
+          }
+          const schema = parseSchemaFromFiles(merged);
+          set({
+            artifactFiles: schema ? upsertSchemaFile(merged, schema) : merged,
+            appSchema: schema,
+            selectedNodeId: schema?.pages[0]?.nodes.find((n) => n.type === "hero")?.id ?? null,
+            surfaceMode: "design",
+            editorMode: "monaco",
+            activeFilePath: "styles.css",
+            code: filesToMap(merged)["styles.css"] ?? "",
+          });
+        }
+        void get().refreshBlogRecords();
+        return created.id;
+      }
       await get().saveCurrentArtifact();
       return created.id;
     } catch {
@@ -543,8 +730,14 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const plugin = getLanguagePlugin(lang);
       persistLanguage(lang);
 
-      const editorMode =
-        meta.kind === "free" || isHardwareKind(meta.kind)
+      const templateId =
+        meta.templateId ?? parseSchemaFromFiles(files)?.templateId ?? get().templateId;
+      const iotPack = meta.kind === "iot" ? parsePackSlugFromFiles(files) ?? packSlugFromTemplate(templateId) : null;
+      const iotLab = Boolean(iotPack);
+      const blog = isBlogStudioKind(meta.kind, templateId);
+      const editorMode = blog
+        ? ("monaco" as const)
+        : meta.kind === "free" || (isHardwareKind(meta.kind) && !iotLab)
           ? ("monaco" as const)
           : consoleKind
             ? plugin?.blockly
@@ -552,7 +745,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
               : ("monaco" as const)
             : ("blockly" as const);
 
-      const primaryPath = codePathForKind(meta.kind);
+      const fileMap = filesToMap(files);
+      const appSchema = parseSchemaFromFiles(files);
+      const activePath = blog ? "styles.css" : codePathForKind(meta.kind);
+      const activeCode = blog ? (fileMap["styles.css"] ?? "") : nextCode;
 
       set({
         artifactId: meta.id,
@@ -561,11 +757,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         projectName: meta.title,
         currentProject: project,
         artifactFiles: files,
-        activeFilePath: primaryPath,
-        templateId: meta.templateId ?? null,
+        activeFilePath: activePath,
+        templateId: templateId ?? null,
         boardSku:
           meta.boardSku ??
           (isHardwareKind(meta.kind) ? "board.espressif.esp32-s3-devkitc-1" : null),
+        iotPackSlug: iotPack,
+        iotRunMode: iotLab ? "sim" : isHardwareKind(meta.kind) ? "firmware" : "sim",
         intent: meta.intent,
         verifiedMilestone: meta.verifiedMilestone ?? "none",
         pairMission: consoleKind ? { ...DEFAULT_PAIR_MISSION } : get().pairMission,
@@ -574,24 +772,34 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         saveStatus: "saved",
         leftOpen: true,
         rightPreviewOpen: !consoleKind,
-        bottomOpen: consoleKind || isHardwareKind(meta.kind),
+        bottomOpen: consoleKind || (isHardwareKind(meta.kind) && !iotLab),
         aiOpen: true,
-        activeLeftTab: consoleKind ? "learn" : isHardwareKind(meta.kind) ? "modules" : "files",
+        activeLeftTab:
+          blog || consoleKind ? "learn" : isHardwareKind(meta.kind) && !iotLab ? "modules" : "files",
         editorMode,
         languageId: lang,
-        code: nextCode,
-        blockXml: nextXml,
+        code: activeCode,
+        blockXml: blog ? "" : nextXml,
         blockXmlSnapshot: "",
         monacoManuallyEdited: false,
         previewWorld: null,
         webPreviewEmbedUrl: null,
         webPreviewSrcDoc: null,
         webPreviewSessionId: null,
+        surfaceMode: blog ? "design" : "code",
+        appSchema,
+        selectedNodeId: appSchema?.pages[0]?.nodes.find((n) => n.type === "hero")?.id ?? null,
+        blogPosts: blog ? get().blogPosts : [],
+        blogPreviewPage: blog ? "home" : get().blogPreviewPage,
+        blogPreviewSlug: blog ? get().blogPreviewSlug : "",
+        blogPublish: blog ? get().blogPublish : null,
+        blogDetailVisited: blog ? false : get().blogDetailVisited,
         languageBuffers: {
           ...get().languageBuffers,
-          [lang]: { code: nextCode, blockXml: nextXml },
+          [lang]: { code: activeCode, blockXml: blog ? "" : nextXml },
         },
       });
+      if (blog) void get().refreshBlogRecords();
     })().finally(() => {
       openArtifactInflight.delete(id);
     });
@@ -630,6 +838,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       webPreviewEmbedUrl: null,
       webPreviewSrcDoc: null,
       webPreviewSessionId: null,
+      surfaceMode: "code",
+      appSchema: null,
+      selectedNodeId: null,
+      blogPosts: [],
+      blogPreviewPage: "home",
+      blogPreviewSlug: "",
+      blogPublish: null,
       languageBuffers: {
         ...get().languageBuffers,
         [lang]: { code: project.code || "", blockXml: project.blockXml || "" },
@@ -701,12 +916,24 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
       const map = filesToMap(state.artifactFiles);
       if (state.activeFilePath) map[state.activeFilePath] = state.code;
-      const primaryPath = codePathForKind(state.artifactKind);
-      const primaryCode = map[primaryPath] ?? state.code;
-      const extras: ArtifactFileEntry[] = Object.entries(map)
-        .filter(([p]) => p !== primaryPath)
-        .map(([path, content]) => ({ path, contentType: "text", content }));
-      const files = buildSaveFiles(state.artifactKind, primaryCode, state.blockXml, extras);
+      if (state.appSchema) {
+        map[APP_SCHEMA_PATH] = `${JSON.stringify(state.appSchema, null, 2)}\n`;
+      }
+      const blog = isBlogStudioKind(state.artifactKind, state.templateId);
+      const files: ArtifactFileEntry[] = blog
+        ? Object.entries(map).map(([path, content]) => ({
+            path,
+            contentType: path.endsWith(".json") ? "json" : "text",
+            content,
+          }))
+        : buildSaveFiles(
+            state.artifactKind,
+            map[codePathForKind(state.artifactKind)] ?? state.code,
+            state.blockXml,
+            Object.entries(map)
+              .filter(([p]) => p !== codePathForKind(state.artifactKind))
+              .map(([path, content]) => ({ path, contentType: "text", content })),
+          );
       const res = await api.putArtifactFiles(artifactId, { files });
       set({
         artifactFiles: res.files,

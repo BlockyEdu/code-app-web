@@ -140,6 +140,13 @@
   flex-wrap: wrap;
 }
 
+.sectionHint {
+  margin: -$space-2 0 $space-4;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  line-height: $line-height-base;
+}
+
 .filterRow {
   margin-bottom: $space-5;
   overflow-x: auto;
