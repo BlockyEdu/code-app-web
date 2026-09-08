@@ -47,7 +47,7 @@ export function authHeaders(extra?: HeadersInit): HeadersInit {
   const token = storage?.getItem("blockyedu_token") ?? null;
   return {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(token ? { Authorization: `Bearer ${token}`, "x-oidc-access-token": token } : {}),
     ...extra,
   };
 }

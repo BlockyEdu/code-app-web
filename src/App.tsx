@@ -11,6 +11,7 @@ import { isLaunchPath, isWorkspacePath } from "./lib/navigate";
 import { AuthCallbackPage } from "./pages/AuthCallbackPage";
 import { LaunchPage } from "./pages/LaunchPage";
 import { LoginPage } from "./pages/LoginPage";
+import { MembershipPage } from "./pages/MembershipPage";
 import { ProjectsHub } from "./pages/ProjectsHub";
 import { CreateWorkspace } from "./workspace/CreateWorkspace";
 
@@ -23,6 +24,7 @@ export default function App() {
   const isAuthCallback = path === "/auth/callback";
   const isLogin = path === "/login";
   const isWorkspace = isWorkspacePath(path);
+  const isMembership = path === "/membership";
   const isLaunch = isLaunchPath(path);
 
   useEffect(() => {
@@ -48,6 +50,10 @@ export default function App() {
 
   if (isLogin) {
     return <LoginPage />;
+  }
+
+  if (isMembership) {
+    return <MembershipPage />;
   }
 
   if (isLaunch) {

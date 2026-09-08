@@ -1,5 +1,6 @@
 import type { AiPublicConfig, AiUserSettings } from "./ai-settings";
 import type { AppSchema } from "./app-studio/app-schema";
+import { stripClientPriceFields } from "./commerce";
 import {
   API_BASE,
   authHeaders,
@@ -571,7 +572,12 @@ export const api = {
       assertions: Array<{ id: string; ok: boolean; detail: string }>;
       events: Array<{ text: string }>;
     }>("/iot-lab/run", { method: "POST", body: JSON.stringify(body) }),
-  runIotLabLive: (body: { packSlug: string; code: string; boardSku?: string; sessionId?: string }) =>
+  runIotLabLive: (body: {
+    packSlug: string;
+    code: string;
+    boardSku?: string;
+    sessionId?: string;
+  }) =>
     request<{
       decision?: string;
       reason?: string;
@@ -625,4 +631,35 @@ export const api = {
       // Strict Mode remounts App effect → avoid duplicate trial ensure
       coalesce: true,
     }),
+  commerceCatalog: (market?: string) =>
+    request<Record<string, unknown>>(
+      `/commerce/catalog${market ? `?market=${encodeURIComponent(market)}` : ""}`,
+    ),
+  commerceMethods: (currency?: string) =>
+    request<Record<string, unknown>>(
+      `/commerce/methods${currency ? `?currency=${encodeURIComponent(currency)}` : ""}`,
+    ),
+  commerceLegal: () => request<Record<string, unknown>>("/commerce/legal"),
+  commerceAcceptLegal: (body: Record<string, unknown>) =>
+    request<Record<string, unknown>>("/commerce/legal/accept", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  commerceCreateOrder: (body: Record<string, unknown>) =>
+    request<{ id: string } & Record<string, unknown>>("/commerce/orders", {
+      method: "POST",
+      body: JSON.stringify(stripClientPriceFields(body)),
+    }),
+  commercePayOrder: (id: string, body: Record<string, unknown>) =>
+    request<Record<string, unknown>>(`/commerce/orders/${encodeURIComponent(id)}/pay`, {
+      method: "POST",
+      body: JSON.stringify(stripClientPriceFields(body)),
+    }),
+  commerceCompleteOrder: (id: string, body?: Record<string, unknown>) =>
+    request<Record<string, unknown>>(`/commerce/orders/${encodeURIComponent(id)}/complete`, {
+      method: "POST",
+      body: JSON.stringify(stripClientPriceFields(body ?? {})),
+    }),
+  commerceOrderStatus: (id: string) =>
+    request<Record<string, unknown>>(`/commerce/orders/${encodeURIComponent(id)}`),
 };
