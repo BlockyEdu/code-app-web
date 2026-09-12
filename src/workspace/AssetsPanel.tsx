@@ -28,7 +28,7 @@ import { type FileTreeNode, filesToTree } from "../lib/file-tree";
 import { t } from "../lib/i18n";
 import { useLocaleStore } from "../lib/locale-store";
 import { navigate } from "../lib/navigate";
-import { PAIR_PHASE_LABEL } from "../lib/pair-mission";
+import { pairPhaseLabel } from "../lib/pair-mission";
 import { profileFeatures } from "../lib/product-profile";
 import { isAppStudioKind, useWorkspaceStore } from "../stores/workspace";
 import type { ArtifactKind, LeftPanelTab } from "../types/artifact";
@@ -353,7 +353,7 @@ function BlogMissionCard() {
   const blogPreviewPage = useWorkspaceStore((s) => s.blogPreviewPage);
   const blogPublish = useWorkspaceStore((s) => s.blogPublish);
   const templateId = useWorkspaceStore((s) => s.templateId);
-  const zh = useLocaleStore((s) => s.locale) === "zh-CN";
+  useLocaleStore((s) => s.locale);
   const steps = studioMissionSteps(templateId);
   const done = studioMissionDone({
     schema,
@@ -366,12 +366,12 @@ function BlogMissionCard() {
   return (
     <div className={styles.missionCard}>
       <div className={styles.sectionTitle}>{t("launch.mission")}</div>
-      <strong>{studioMissionTitle(templateId, zh)}</strong>
+      <strong>{studioMissionTitle(templateId)}</strong>
       <p>{t("launch.missionBlogHint")}</p>
       {steps.map((step, index) => (
         <div key={step.id} className={styles.phaseChip} style={{ marginBottom: 6 }}>
           {done[step.id as keyof typeof done] ? "✓ " : "○ "}
-          {index + 1} {zh ? step.title : step.id}
+          {index + 1} {step.title}
         </div>
       ))}
     </div>
@@ -379,6 +379,7 @@ function BlogMissionCard() {
 }
 
 function LearnPanel() {
+  useLocaleStore((s) => s.locale);
   const pairMission = useWorkspaceStore((s) => s.pairMission);
   const kind = useWorkspaceStore((s) => s.artifactKind);
   const templateId = useWorkspaceStore((s) => s.templateId);
@@ -392,7 +393,7 @@ function LearnPanel() {
           <div className={styles.sectionTitle}>{t("launch.mission")}</div>
           <strong>{pairMission.title}</strong>
           <p>{pairMission.success}</p>
-          <span className={styles.phaseChip}>{PAIR_PHASE_LABEL[pairMission.phase]}</span>
+          <span className={styles.phaseChip}>{pairPhaseLabel(pairMission.phase)}</span>
         </div>
       )}
       {!blogStudio && (

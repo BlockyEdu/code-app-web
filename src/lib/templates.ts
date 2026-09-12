@@ -1,12 +1,8 @@
 import type { ArtifactKind } from "../types/artifact";
 import { defaultSchemaForTemplate } from "./app-studio/app-schema";
 import type { ArtifactFileEntry } from "./artifact-files";
-import {
-  type IotPackSlug,
-  isIotLabPack,
-  starterIotCode,
-  starterIotXml,
-} from "./targets/iot-lab";
+import { t } from "./i18n";
+import { type IotPackSlug, isIotLabPack, starterIotCode, starterIotXml } from "./targets/iot-lab";
 
 const HP01_FIRMWARE = `// HP-01 Air Beacon — ESP32-S3 Arduino stub
 void setup() {
@@ -53,7 +49,11 @@ function firmware(content: string): ArtifactFileEntry {
   return { path: "firmware/main.cpp", contentType: "text", content };
 }
 
-function iotLabFiles(packSlug: IotPackSlug, boardSku: string, modules: string[]): ArtifactFileEntry[] {
+function iotLabFiles(
+  packSlug: IotPackSlug,
+  boardSku: string,
+  modules: string[],
+): ArtifactFileEntry[] {
   return [
     {
       path: "hardware.json",
@@ -87,7 +87,7 @@ function iotLabFiles(packSlug: IotPackSlug, boardSku: string, modules: string[])
         {
           boardSku,
           kitHint: packSlug,
-          notes: "参考 SyncroBrain firmware/esp32-kit；未实机不得宣称真机成功",
+          notes: t("studioFiles.wiringNotes"),
         },
         null,
         2,
@@ -103,11 +103,11 @@ function studioTemplateFiles(templateId: string): ArtifactFileEntry[] {
   const schema = defaultSchemaForTemplate(templateId);
   const landingCss =
     templateId === "落地页"
-      ? `/* 落地页：大标题，一屏讲清楚。 */
+      ? `${t("studioFiles.cssLanding")}
 .hero h1 { font-size: 40px; letter-spacing: -0.03em; }
 .hero { padding: 48px 0 32px; }
 `
-      : `/* 主题：预览时内联。只改颜色、间距与字体即可。 */
+      : `${t("studioFiles.cssTheme")}
 .hero h1 {
   letter-spacing: -0.02em;
 }
@@ -126,7 +126,7 @@ function studioTemplateFiles(templateId: string): ArtifactFileEntry[] {
     {
       path: "extensions.js",
       contentType: "text/javascript",
-      content: `/** 扩展点：预览时内联。请保持函数短小。 */\nfunction onReady() {}\n`,
+      content: `${t("studioFiles.extJs")}\nfunction onReady() {}\n`,
     },
   ];
 }
@@ -180,25 +180,39 @@ console.log(sortNumbers([3, 1, 2]));
     ),
     firmware(HP03_FIRMWARE),
   ],
-  智慧窗控: iotLabFiles("smart-window", "board.espressif.esp32-s3-devkitc-1", [
-    "mod.relay-12v-iso",
-    "mod.limit-switch",
-    "mod.rain-sensor",
-  ]),
-  智慧灌溉: iotLabFiles("agri-irrigation", "board.espressif.esp32-c3-devkitm-1", [
-    "mod.relay-12v-iso",
-    "mod.soil-moisture",
-  ]),
-  鱼塘增氧: iotLabFiles("agri-pond", "board.espressif.esp32-s3-devkitc-1", [
-    "mod.relay-12v-iso",
-    "mod.float-switch",
-  ]),
+  get 智慧窗控() {
+    return iotLabFiles("smart-window", "board.espressif.esp32-s3-devkitc-1", [
+      "mod.relay-12v-iso",
+      "mod.limit-switch",
+      "mod.rain-sensor",
+    ]);
+  },
+  get 智慧灌溉() {
+    return iotLabFiles("agri-irrigation", "board.espressif.esp32-c3-devkitm-1", [
+      "mod.relay-12v-iso",
+      "mod.soil-moisture",
+    ]);
+  },
+  get 鱼塘增氧() {
+    return iotLabFiles("agri-pond", "board.espressif.esp32-s3-devkitc-1", [
+      "mod.relay-12v-iso",
+      "mod.float-switch",
+    ]);
+  },
   温湿度监测: [],
   设备联动: [],
-  落地页: studioTemplateFiles("落地页"),
-  作品集: studioTemplateFiles("作品集"),
-  博客: studioTemplateFiles("博客"),
-  资讯小程序: studioTemplateFiles("资讯小程序"),
+  get 落地页() {
+    return studioTemplateFiles("落地页");
+  },
+  get 作品集() {
+    return studioTemplateFiles("作品集");
+  },
+  get 博客() {
+    return studioTemplateFiles("博客");
+  },
+  get 资讯小程序() {
+    return studioTemplateFiles("资讯小程序");
+  },
   管理后台: [],
 };
 
@@ -224,9 +238,9 @@ export function parsePackSlugFromFiles(files: ArtifactFileEntry[]): IotPackSlug 
 }
 
 export {
-  packSlugFromTemplate,
-  isIotLabPack,
   type IotPackSlug,
+  isIotLabPack,
+  packSlugFromTemplate,
 } from "./targets/iot-lab";
 
 export function extraFilesForTemplate(

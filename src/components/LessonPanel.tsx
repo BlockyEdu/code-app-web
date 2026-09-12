@@ -13,7 +13,7 @@ import { checkLessonStep } from "../lib/runner";
 import { useWorkspaceStore } from "../stores/workspace";
 
 export function LessonPanel() {
-  useLocaleStore((s) => s.locale);
+  const locale = useLocaleStore((s) => s.locale);
   const {
     lesson,
     lessonStepIndex,
@@ -29,6 +29,7 @@ export function LessonPanel() {
 
   useEffect(() => {
     let cancelled = false;
+    void locale;
     api
       .listLessons()
       .then((items) => {
@@ -40,9 +41,10 @@ export function LessonPanel() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
+    void locale;
     if (lesson?.id) return;
     let cancelled = false;
     void api
@@ -56,7 +58,25 @@ export function LessonPanel() {
     return () => {
       cancelled = true;
     };
-  }, [lesson?.id, setLesson]);
+  }, [lesson?.id, locale, setLesson]);
+
+  useEffect(() => {
+    void locale;
+    const id = useWorkspaceStore.getState().lesson?.id;
+    if (!id) return;
+    let cancelled = false;
+    void api
+      .getLesson(id)
+      .then((next) => {
+        if (cancelled) return;
+        if (useWorkspaceStore.getState().lesson?.id !== id) return;
+        setLesson(next);
+      })
+      .catch(console.error);
+    return () => {
+      cancelled = true;
+    };
+  }, [locale, setLesson]);
 
   const loadLesson = (id: string) => {
     void api

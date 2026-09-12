@@ -1,6 +1,8 @@
 import { AnthropicFilled, CloseOutlined } from "@ant-design/icons";
 import { FloatButton } from "antd";
 import { type CSSProperties, type MouseEvent as ReactMouseEvent, useEffect, useState } from "react";
+import { t } from "../lib/i18n";
+import { useLocaleStore } from "../lib/locale-store";
 import type { ArtifactKind } from "../types/artifact";
 import { AiPanel } from "./AiPanel";
 import styles from "./FloatingAiPanel.module.scss";
@@ -45,6 +47,7 @@ export function FloatingAiPanel({
   variant = "float",
   onHubCreateRequest,
 }: FloatingAiPanelProps) {
+  useLocaleStore((s) => s.locale);
   const [hubPendingKind, setHubPendingKind] = useState<ArtifactKind | null>(null);
   const [float, setFloatState] = useState<FloatingRect>(() => loadFloatingRect());
 
@@ -139,7 +142,7 @@ export function FloatingAiPanel({
     <aside
       className={variant === "dock" ? styles.dock : styles.shell}
       style={shellStyle}
-      aria-label="AI pair dock"
+      aria-label={t("ai.pairDock")}
     >
       <div
         className={variant === "float" ? `${styles.header} ${styles.headerDrag}` : styles.header}
@@ -147,22 +150,18 @@ export function FloatingAiPanel({
       >
         <div className={styles.title}>
           <AnthropicFilled />
-          <span>AI pair</span>
+          <span>{t("ai.pairDock")}</span>
         </div>
         <button
           type="button"
           className={styles.closeBtn}
-          aria-label="Close AI dock"
+          aria-label={t("ai.closeDock")}
           onClick={() => onOpenChange(false)}
         >
           <CloseOutlined />
         </button>
       </div>
-      {mode === "hub" && (
-        <p className={styles.hubHint}>
-          Try: “help me learn JavaScript”, “ESP32 air quality node”, “create a landing page”.
-        </p>
-      )}
+      {mode === "hub" && <p className={styles.hubHint}>{t("ai.hubHint")}</p>}
       <div className={styles.body}>
         <AiPanel
           hideHeader
@@ -185,7 +184,7 @@ export function FloatingAiPanel({
       {!open && (
         <FloatButton
           icon={<AnthropicFilled />}
-          tooltip="AI pair"
+          tooltip={t("ai.pairDock")}
           onClick={onToggle}
           style={{ right: 24, bottom: 24 }}
         />

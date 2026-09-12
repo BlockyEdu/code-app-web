@@ -16,6 +16,7 @@ import { filesToMap } from "../lib/artifact-files";
 import { runPreview } from "../lib/execute";
 import { errorCodeOf } from "../lib/http";
 import { t } from "../lib/i18n";
+import { useLocaleStore } from "../lib/locale-store";
 import { parseWorkspaceArtifactId } from "../lib/navigate";
 import { type RuntimeKind, runTargetProgram } from "../lib/targets";
 import { track } from "../lib/telemetry";
@@ -57,6 +58,7 @@ function EditorArea() {
 }
 
 export function CreateWorkspace() {
+  useLocaleStore((s) => s.locale);
   const rightPreviewOpen = useWorkspaceStore((s) => s.rightPreviewOpen);
   const bottomOpen = useWorkspaceStore((s) => s.bottomOpen);
   const leftOpen = useWorkspaceStore((s) => s.leftOpen);
@@ -67,6 +69,7 @@ export function CreateWorkspace() {
   const languageId = useWorkspaceStore((s) => s.languageId);
   const code = useWorkspaceStore((s) => s.code);
   const artifactId = useWorkspaceStore((s) => s.artifactId);
+  const artifactName = useWorkspaceStore((s) => s.artifactName);
   const boardSku = useWorkspaceStore((s) => s.boardSku);
   const clearConsole = useWorkspaceStore((s) => s.clearConsole);
   const appendConsole = useWorkspaceStore((s) => s.appendConsole);
@@ -86,6 +89,11 @@ export function CreateWorkspace() {
   const blogStudio = isAppStudioKind(artifactKind, templateId);
 
   const createNewArtifact = useWorkspaceStore((s) => s.createNewArtifact);
+
+  const brandTitle = t("chrome.brandTitle");
+  useEffect(() => {
+    document.title = artifactName ? `${artifactName} · ${brandTitle}` : brandTitle;
+  }, [artifactName, brandTitle]);
 
   const [isRunning, setIsRunning] = useState(false);
   const showPreview = rightPreviewOpen && !isConsoleKind(artifactKind);
@@ -411,7 +419,8 @@ export function CreateWorkspace() {
                 previewSessionId: preview.id,
               });
               useWorkspaceStore.getState().setSmarthomeSessionId(sim.id);
-              await api.runSmarthomeSession(sim.id);
+              // Local Blockly already applied the program. POST /run applies
+              // activeScene on the server and would overwrite that result.
             } catch {
               /* offline / unauthenticated */
             }

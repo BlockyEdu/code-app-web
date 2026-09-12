@@ -1,7 +1,7 @@
 import * as Blockly from "blockly";
 import { javascriptGenerator } from "blockly/javascript";
 import { useEffect, useRef } from "react";
-import { buildToolbox, ensureTargetGenerators } from "../lib/blockly-config";
+import { buildToolbox, ensureTargetGenerators, registerTargetBlocks } from "../lib/blockly-config";
 import { BLOCKYEDU_BLOCKLY_THEME } from "../lib/blockly-theme";
 import { t } from "../lib/i18n";
 import { useLocaleStore } from "../lib/locale-store";
@@ -23,7 +23,7 @@ export function BlocklyEditor() {
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);
   const applyingRef = useRef(false);
   const lastWrittenXmlRef = useRef("");
-  useLocaleStore((s) => s.locale);
+  const locale = useLocaleStore((s) => s.locale);
   const startComment = t("blockly.startComment");
   const artifactKind = useWorkspaceStore((s) => s.artifactKind);
   const iotPackSlug = useWorkspaceStore((s) => s.iotPackSlug);
@@ -33,11 +33,13 @@ export function BlocklyEditor() {
   const blockXmlRef = useRef(blockXml);
   blockXmlRef.current = blockXml;
 
-  // Remount workspace when kind changes (toolbox + starter XML differ per kind).
+  // Remount when kind or locale changes so toolbox and canvas blocks pick up t().
   useEffect(() => {
     if (!containerRef.current) return;
     void iotPackSlug;
+    void locale;
 
+    registerTargetBlocks();
     ensureTargetGenerators();
 
     const workspace = Blockly.inject(containerRef.current, {
@@ -112,7 +114,7 @@ export function BlocklyEditor() {
       workspace.dispose();
       workspaceRef.current = null;
     };
-  }, [artifactKind, iotPackSlug, setBlockXml, setCode]);
+  }, [artifactKind, iotPackSlug, setBlockXml, setCode, locale]);
 
   useEffect(() => {
     const workspace = workspaceRef.current;

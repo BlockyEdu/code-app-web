@@ -87,6 +87,7 @@ export function LanguageSelector() {
                     key={lang.id}
                     type="button"
                     className={`lang-dropdown-item ${languageId === lang.id ? "active" : ""}`}
+                    title={lang.description}
                     onClick={() => requestSwitch(lang.id)}
                   >
                     <span>{lang.name}</span>

@@ -1,7 +1,7 @@
-import { loadScript } from './load-script';
+import { t } from "../i18n";
+import { loadScript } from "./load-script";
 
-const PYODIDE_JS =
-  'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js';
+const PYODIDE_JS = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js";
 
 type PyodideRuntime = {
   runPythonAsync: (code: string) => Promise<unknown>;
@@ -23,9 +23,9 @@ export function loadPyodideRuntime(): Promise<PyodideRuntime> {
   if (!loading) {
     loading = (async () => {
       await loadScript(PYODIDE_JS);
-      if (!window.loadPyodide) throw new Error('Pyodide 未加载');
+      if (!window.loadPyodide) throw new Error(t("lang.pyodideMissing"));
       const runtime = await window.loadPyodide({
-        indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/',
+        indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/",
       });
       pyodide = runtime;
       return runtime;
@@ -44,5 +44,5 @@ export async function runPythonWithPyodide(code: string): Promise<string[]> {
   } catch (err) {
     logs.push(`[error] ${err instanceof Error ? err.message : String(err)}`);
   }
-  return logs.length ? logs : ['[info] 程序已执行（无输出）'];
+  return logs.length ? logs : [t("execute.noOutput")];
 }

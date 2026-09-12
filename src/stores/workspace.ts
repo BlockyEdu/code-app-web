@@ -13,16 +13,18 @@ import {
   type ArtifactFileEntry,
   buildSaveFiles,
   codePathForKind,
+  contentTypeForPath,
   extractEditorBuffers,
   filesToMap,
 } from "../lib/artifact-files";
 import { t } from "../lib/i18n";
 import { untitledArtifactName } from "../lib/kind-label";
 import {
-  DEFAULT_PAIR_MISSION,
+  defaultPairMission,
   nextPhaseAfterAction,
   type PairAction,
   type PairMission,
+  withPairPhase,
 } from "../lib/pair-mission";
 import type { WorldState } from "../lib/targets";
 import { DEFAULT_KIND_CODE, DEFAULT_KIND_XML } from "../lib/targets";
@@ -80,7 +82,7 @@ function upsertSchemaFile(files: ArtifactFileEntry[], schema: AppSchema): Artifa
   const next = files.filter(
     (f) => f.path !== APP_SCHEMA_PATH && !f.path.endsWith(`/${APP_SCHEMA_PATH}`),
   );
-  next.push({ path: APP_SCHEMA_PATH, contentType: "application/json", content });
+  next.push({ path: APP_SCHEMA_PATH, contentType: contentTypeForPath(APP_SCHEMA_PATH), content });
   return next;
 }
 
@@ -275,7 +277,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   iotPackSlug: null,
   iotRunMode: "sim",
   verifiedMilestone: "none",
-  pairMission: DEFAULT_PAIR_MISSION,
+  pairMission: defaultPairMission(),
   firmwareSim: null,
   saveDirty: false,
   saveStatus: "idle",
@@ -310,7 +312,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         editorMode: "monaco",
         artifactFiles: Object.entries(map).map(([p, content]) => ({
           path: p,
-          contentType: p.endsWith(".json") ? "application/json" : "text",
+          contentType: contentTypeForPath(p),
           content,
         })),
         activeFilePath: path,
@@ -460,7 +462,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     });
   },
   setProjectName: (projectName) => set({ projectName }),
-  setLesson: (lesson) => set({ lesson, lessonStepIndex: 0 }),
+  setLesson: (lesson) => set({ lesson }),
   setLessonStepIndex: (lessonStepIndex) => set({ lessonStepIndex }),
   setLearnLink: (learnLink) => set({ learnLink }),
   addAiMessage: (msg) => set((s) => ({ aiMessages: [...s.aiMessages, msg] })),
@@ -519,7 +521,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   applyPairAction: (action) => {
     const current = get().pairMission;
     const phase = nextPhaseAfterAction(action, current.phase);
-    const next = { ...current, phase };
+    const next = withPairPhase(current, phase);
     set({ pairMission: next });
     if (phase === "mission" && current.phase === "diagnose") {
       track("pair.mission.started", { id: current.id });
@@ -535,7 +537,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     if (s.activeFilePath) map[s.activeFilePath] = s.code;
     const files = Object.entries(map).map(([p, content]) => ({
       path: p,
-      contentType: "text",
+      contentType: contentTypeForPath(p),
       content,
     }));
     set({
@@ -553,7 +555,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       get().setActiveFile(trimmed);
       return;
     }
-    const files = [...s.artifactFiles, { path: trimmed, contentType: "text", content: "" }];
+    const files = [
+      ...s.artifactFiles,
+      { path: trimmed, contentType: contentTypeForPath(trimmed), content: "" },
+    ];
     set({ artifactFiles: files, saveDirty: true });
     get().setActiveFile(trimmed);
   },
@@ -579,7 +584,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const prev = s.artifactFiles.find((f) => f.path === p);
       return {
         path: p,
-        contentType: prev?.contentType ?? (p.endsWith(".json") ? "application/json" : "text"),
+        contentType: prev?.contentType ?? contentTypeForPath(p),
         content: map[p] ?? "",
       };
     });
@@ -662,9 +667,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       boardSkuForTemplate(templateId) ||
       (hardware ? "board.espressif.esp32-s3-devkitc-1" : null);
     const intent = opts?.intent || (consoleKind ? "learn" : hardware && !iotLab ? "ship" : "build");
-    const pairMission = consoleKind
-      ? { ...DEFAULT_PAIR_MISSION, phase: "mission" as const }
-      : get().pairMission;
+    const pairMission = consoleKind ? defaultPairMission() : get().pairMission;
 
     const blog = isBlogStudioKind(kind, templateId);
     const defaultEditorMode = blog
@@ -679,7 +682,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     const seedFiles: ArtifactFileEntry[] = extras.length
       ? extras
-      : [{ path: primaryPath, contentType: "text", content: nextCode }];
+      : [{ path: primaryPath, contentType: contentTypeForPath(primaryPath), content: nextCode }];
     const seedSchema = blog ? parseSchemaFromFiles(seedFiles) : null;
     const blogCode = blog ? (extraMap["styles.css"] ?? "") : nextCode;
     const blogPath = blog ? "styles.css" : primaryPath;
@@ -875,7 +878,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         iotRunMode: iotLab ? "sim" : isHardwareKind(meta.kind) ? "firmware" : "sim",
         intent: meta.intent,
         verifiedMilestone: meta.verifiedMilestone ?? "none",
-        pairMission: consoleKind ? { ...DEFAULT_PAIR_MISSION } : get().pairMission,
+        pairMission: consoleKind ? defaultPairMission() : get().pairMission,
         firmwareSim: null,
         saveDirty: false,
         saveStatus: "saved",
@@ -1042,7 +1045,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const files: ArtifactFileEntry[] = blog
         ? Object.entries(map).map(([path, content]) => ({
             path,
-            contentType: path.endsWith(".json") ? "json" : "text",
+            contentType: contentTypeForPath(path),
             content,
           }))
         : buildSaveFiles(
@@ -1051,7 +1054,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
             state.blockXml,
             Object.entries(map)
               .filter(([p]) => p !== codePathForKind(state.artifactKind))
-              .map(([path, content]) => ({ path, contentType: "text", content })),
+              .map(([path, content]) => ({
+                path,
+                contentType: contentTypeForPath(path),
+                content,
+              })),
           );
       const res = await api.putArtifactFiles(artifactId, { files });
       set({

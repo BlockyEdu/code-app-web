@@ -7,6 +7,7 @@ import {
 } from "./lib/api";
 import { useAuthStore } from "./lib/auth-store";
 import { t } from "./lib/i18n";
+import { useLocaleStore } from "./lib/locale-store";
 import { useMembershipStore } from "./lib/membership-store";
 import { isLaunchPath, isWorkspacePath } from "./lib/navigate";
 import { AuthCallbackPage } from "./pages/AuthCallbackPage";
@@ -20,7 +21,9 @@ export default function App() {
   const fetchMe = useAuthStore((s) => s.fetchMe);
   const user = useAuthStore((s) => s.user);
   const openLoginPrompt = useAuthStore((s) => s.openLoginPrompt);
+  const locale = useLocaleStore((s) => s.locale);
   const ensureTrialOnEntry = useMembershipStore((s) => s.ensureTrialOnEntry);
+  const fetchMembership = useMembershipStore((s) => s.fetchMembership);
   const path = usePathname();
   const isAuthCallback = path === "/auth/callback";
   const isLogin = path === "/login";
@@ -44,6 +47,11 @@ export default function App() {
   useEffect(() => {
     if (user) void ensureTrialOnEntry();
   }, [user, ensureTrialOnEntry]);
+
+  useEffect(() => {
+    if (!user || !locale) return;
+    void fetchMembership();
+  }, [user, locale, fetchMembership]);
 
   if (isAuthCallback) {
     return <AuthCallbackPage />;

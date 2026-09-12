@@ -1,7 +1,9 @@
-import type { CSSProperties } from 'react';
-import { appBrandTitle } from '../lib/deploy-profile';
+import type { CSSProperties } from "react";
+import { appBrandTitle } from "../lib/deploy-profile";
+import { t } from "../lib/i18n";
+import { useLocaleStore } from "../lib/locale-store";
 
-const MARK_SRC = '/logo-mark.png';
+const MARK_SRC = "/logo-mark.png";
 
 export function LogoMark({ size = 32 }: { size?: number }) {
   return (
@@ -10,19 +12,22 @@ export function LogoMark({ size = 32 }: { size?: number }) {
       width={size}
       height={size}
       alt="BlockyEdu"
-      style={{ display: 'block', borderRadius: Math.round(size * 0.22) }}
+      style={{ display: "block", borderRadius: Math.round(size * 0.22) }}
     />
   );
 }
 
 export function Logo({ showSub = true, style }: { showSub?: boolean; style?: CSSProperties }) {
+  useLocaleStore((s) => s.locale);
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, ...style }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 10, ...style }}>
       <LogoMark />
-      <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-        <span style={{ fontSize: 16, fontWeight: 700, color: '#e6edf3' }}>{appBrandTitle()}</span>
+      <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
+        <span style={{ fontSize: 16, fontWeight: 700, color: "#e6edf3" }}>{appBrandTitle()}</span>
         {showSub && (
-          <span style={{ fontSize: 11, fontWeight: 600, color: '#8b949e', letterSpacing: 1 }}>编程工作台</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#8b949e", letterSpacing: 1 }}>
+            {t("logo.workspace")}
+          </span>
         )}
       </span>
     </span>

@@ -152,6 +152,26 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
     }
   };
 
+  const confirmRollback = (rel: WebRelease) => {
+    const live = blogPublish?.liveRelease;
+    const targetStamp = rel.status
+      ? `${rel.status} · ${rel.createdAt.slice(0, 19)}`
+      : rel.createdAt.slice(0, 19);
+    const createdAt =
+      live && live.id !== rel.id
+        ? `${live.createdAt.slice(0, 19)}${live.status ? ` (${live.status})` : ""} → ${targetStamp}`
+        : targetStamp;
+    Modal.confirm({
+      title: t("publish.rollbackTitle"),
+      content: t("publish.rollbackBody", { createdAt }),
+      okText: t("publish.rollbackConfirm"),
+      cancelText: t("confirm.cancel"),
+      okButtonProps: { danger: true },
+      zIndex: 1100,
+      onOk: () => rollback(rel.id),
+    });
+  };
+
   const downloadZip = async () => {
     if (!artifactId) {
       message.warning(t("publish.saveFirst"));
@@ -283,7 +303,7 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
                   {errorCode ? ` · ${t("publish.releaseError", { code: errorCode })}` : ""}
                 </span>
                 {!live && (
-                  <Button size="small" disabled={busy} onClick={() => void rollback(rel.id)}>
+                  <Button size="small" disabled={busy} onClick={() => confirmRollback(rel)}>
                     {t("publish.rollback")}
                   </Button>
                 )}

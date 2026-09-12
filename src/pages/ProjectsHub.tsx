@@ -46,6 +46,11 @@ function ProjectsHubInner() {
   const setAiOpen = useWorkspaceStore((s) => s.setAiOpen);
   const toggleAiOpen = useWorkspaceStore((s) => s.toggleAiOpen);
 
+  const brandTitle = t("chrome.brandTitle");
+  useEffect(() => {
+    document.title = brandTitle;
+  }, [brandTitle]);
+
   const [kindFilter, setKindFilter] = useState<string>("all");
   const [hubSection, setHubSection] = useState<"discover" | "learn" | "build" | "lab" | "launch">(
     "discover",

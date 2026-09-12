@@ -1,5 +1,6 @@
 import { CheckOutlined, GlobalOutlined } from "@ant-design/icons";
 import { Dropdown, type MenuProps } from "antd";
+import { t } from "../lib/i18n";
 import { type AppLocale, useLocaleStore } from "../lib/locale-store";
 import styles from "./LocaleSwitcher.module.scss";
 
@@ -29,8 +30,8 @@ export function LocaleSwitcher() {
       <button
         type="button"
         className={styles.iconBtn}
-        aria-label="Language"
-        title="Language / 语言"
+        aria-label={t("locale.switcherAria")}
+        title={t("locale.switcherTitle")}
       >
         <GlobalOutlined />
       </button>

@@ -15,6 +15,10 @@ import { useLocaleStore } from "../lib/locale-store";
 
 export function LoginPage() {
   useLocaleStore((s) => s.locale);
+  const brandTitle = t("chrome.brandTitle");
+  useEffect(() => {
+    document.title = brandTitle;
+  }, [brandTitle]);
   const fetchMe = useAuthStore((s) => s.fetchMe);
   const login = useAuthStore((s) => s.login);
   const loading = useAuthStore((s) => s.loading);

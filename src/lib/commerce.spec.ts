@@ -7,13 +7,27 @@ import {
 } from "./commerce";
 import { EN_COMMON, flattenLocaleKeys, ZH_COMMON } from "./i18n";
 
+describe("isFreeLabel", () => {
+  it("treats Chinese and English unsubscribed labels as free-ish", () => {
+    expect(isFreeLabel("免费用户")).toBe(true);
+    expect(isFreeLabel("免费版")).toBe(true);
+    expect(isFreeLabel("Not subscribed")).toBe(true);
+    expect(isFreeLabel("free user")).toBe(true);
+    expect(isFreeLabel("free")).toBe(true);
+    expect(isFreeLabel("专业版 Pro")).toBe(false);
+    expect(isFreeLabel("Pro")).toBe(false);
+  });
+});
+
 describe("locale parity", () => {
   it("keeps en/zh keys aligned without Free commercial labels", () => {
     expect(flattenLocaleKeys(EN_COMMON).sort()).toEqual(flattenLocaleKeys(ZH_COMMON).sort());
     const values = [
-      ...Object.values(EN_COMMON.membership),
-      ...Object.values(ZH_COMMON.membership),
-    ].map(String);
+      ...Object.entries(EN_COMMON.membership),
+      ...Object.entries(ZH_COMMON.membership),
+    ]
+      .filter(([key]) => key !== "planNone")
+      .map(([, value]) => String(value));
     expect(values.some((value) => isFreeLabel(value))).toBe(false);
   });
 

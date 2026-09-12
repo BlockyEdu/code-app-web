@@ -5,7 +5,7 @@
  */
 
 import { shouldAttemptRefresh } from "./auth-refresh";
-import { t } from "./i18n";
+import { getLocale, t } from "./i18n";
 
 export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 
@@ -48,8 +48,10 @@ export function setEntitlementRequiredHandler(handler: EntitlementHandler) {
 export function authHeaders(extra?: HeadersInit): HeadersInit {
   const storage = typeof globalThis !== "undefined" ? globalThis.localStorage : undefined;
   const token = storage?.getItem("blockyedu_token") ?? null;
+  const locale = getLocale();
   return {
     "Content-Type": "application/json",
+    "Accept-Language": locale === "en" ? "en-US" : "zh-CN",
     ...(token ? { Authorization: `Bearer ${token}`, "x-oidc-access-token": token } : {}),
     ...extra,
   };

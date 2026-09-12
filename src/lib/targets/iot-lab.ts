@@ -1,4 +1,5 @@
 /** Deterministic IoT lab world for BlockyEdu (window / irrigation / pond). */
+import { t } from "../i18n";
 
 export type IotPackSlug = "smart-window" | "agri-irrigation" | "agri-pond";
 
@@ -24,7 +25,11 @@ export type IotWorldState = {
   actuators: Record<string, number | boolean | string>;
   killSwitch: boolean;
   timeline: IotEvent[];
-  lastDecision: { decision: "dispatch" | "deny" | "noop"; commandId?: string; reason?: string } | null;
+  lastDecision: {
+    decision: "dispatch" | "deny" | "noop";
+    commandId?: string;
+    reason?: string;
+  } | null;
   assertions: IotAssertion[];
 };
 
@@ -48,70 +53,22 @@ export const PACK_ASSERTIONS: Record<IotPackSlug, string[]> = {
   "agri-pond": ["low-do-aerate", "heat-spray", "low-level-deny-spray"],
 };
 
-const PACK_CHANNELS: Record<IotPackSlug, Array<{ key: string; label: string }>> = {
-  "smart-window": [
-    { key: "rain", label: "雨量" },
-    { key: "temperature", label: "温度" },
-    { key: "position", label: "开度" },
-    { key: "limit_open", label: "开限位" },
-    { key: "limit_close", label: "关限位" },
-  ],
-  "agri-irrigation": [
-    { key: "soil", label: "土壤湿度" },
-    { key: "rain", label: "雨量" },
-    { key: "flow", label: "流量" },
-    { key: "pump", label: "泵" },
-    { key: "zone", label: "分区" },
-  ],
-  "agri-pond": [
-    { key: "do_mgl", label: "溶氧" },
-    { key: "level_pct", label: "水位" },
-    { key: "temp", label: "水温" },
-    { key: "aerator", label: "增氧" },
-    { key: "spray", label: "喷淋" },
-  ],
+const PACK_CHANNELS: Record<IotPackSlug, string[]> = {
+  "smart-window": ["rain", "temperature", "position", "limit_open", "limit_close"],
+  "agri-irrigation": ["soil", "rain", "flow", "pump", "zone"],
+  "agri-pond": ["do_mgl", "level_pct", "temp", "aerator", "spray"],
 };
 
-const PACK_COMMANDS: Record<IotPackSlug, Array<[string, string]>> = {
-  "smart-window": [
-    ["open", "开窗"],
-    ["close", "关窗"],
-    ["stop", "停止"],
-    ["setPosition", "设定开度"],
-  ],
-  "agri-irrigation": [
-    ["zoneOn", "开阀"],
-    ["zoneOff", "关阀"],
-    ["pumpOn", "开泵"],
-    ["pumpOff", "停泵"],
-  ],
-  "agri-pond": [
-    ["aerateOn", "增氧开"],
-    ["aerateOff", "增氧关"],
-    ["sprayOn", "喷淋开"],
-    ["sprayOff", "喷淋关"],
-  ],
+const PACK_COMMANDS: Record<IotPackSlug, string[]> = {
+  "smart-window": ["open", "close", "stop", "setPosition"],
+  "agri-irrigation": ["zoneOn", "zoneOff", "pumpOn", "pumpOff"],
+  "agri-pond": ["aerateOn", "aerateOff", "sprayOn", "sprayOff"],
 };
 
-const PACK_SCENES: Record<IotPackSlug, Array<[string, string]>> = {
-  "smart-window": [
-    ["win-rain-close", "下雨关窗"],
-    ["win-heat-vent", "高温开缝"],
-    ["win-manual", "手动窗控"],
-    ["pack", "整包策略"],
-  ],
-  "agri-irrigation": [
-    ["irr-soil", "土壤干燥浇水"],
-    ["irr-rain-skip", "下雨跳过"],
-    ["irr-dry-run", "无流量停泵"],
-    ["pack", "整包策略"],
-  ],
-  "agri-pond": [
-    ["pond-aerate", "低溶氧增氧"],
-    ["pond-spray", "高温喷水"],
-    ["pond-level", "低水位禁喷"],
-    ["pack", "整包策略"],
-  ],
+const PACK_SCENES: Record<IotPackSlug, string[]> = {
+  "smart-window": ["win-rain-close", "win-heat-vent", "win-manual", "pack"],
+  "agri-irrigation": ["irr-soil", "irr-rain-skip", "irr-dry-run", "pack"],
+  "agri-pond": ["pond-aerate", "pond-spray", "pond-level", "pack"],
 };
 
 export function isIotLabPack(value: string | null | undefined): value is IotPackSlug {
@@ -124,15 +81,15 @@ export function packSlugFromTemplate(templateId: string | null | undefined): Iot
 }
 
 export function channelOptions(packSlug: IotPackSlug): Array<[string, string]> {
-  return PACK_CHANNELS[packSlug].map((ch) => [ch.label, ch.key]);
+  return PACK_CHANNELS[packSlug].map((key) => [t(`iotCh.${key}`), key]);
 }
 
 export function commandOptions(packSlug: IotPackSlug): Array<[string, string]> {
-  return PACK_COMMANDS[packSlug];
+  return PACK_COMMANDS[packSlug].map((id) => [t(`iotCmd.${id}`), id]);
 }
 
 export function sceneOptions(packSlug: IotPackSlug): Array<[string, string]> {
-  return PACK_SCENES[packSlug];
+  return PACK_SCENES[packSlug].map((id) => [t(`iotScene.${id}`), id]);
 }
 
 export function createIotWorld(
@@ -177,14 +134,14 @@ function push(world: IotWorldState, event: Omit<IotEvent, "t">) {
 
 function deny(world: IotWorldState, commandId: string, reason: string) {
   world.lastDecision = { decision: "deny", commandId, reason };
-  push(world, { kind: "deny", text: `拒绝 ${commandId}（${reason}）`, commandId, reason });
+  push(world, { kind: "deny", text: t("iotLab.deny", { commandId, reason }), commandId, reason });
   return world.lastDecision;
 }
 
 function applyCommand(world: IotWorldState, commandId: string, params?: Record<string, unknown>) {
   if (world.killSwitch) return deny(world, commandId, "KILL_SWITCH");
   const pack = world.packSlug;
-  const allowed = PACK_COMMANDS[pack].map(([id]) => id);
+  const allowed = PACK_COMMANDS[pack];
   if (!allowed.includes(commandId)) return deny(world, commandId, "COMMAND_DENIED");
 
   if (pack === "smart-window") {
@@ -232,7 +189,7 @@ function applyCommand(world: IotWorldState, commandId: string, params?: Record<s
   }
 
   world.lastDecision = { decision: "dispatch", commandId };
-  push(world, { kind: "command", text: `执行 ${commandId}`, commandId });
+  push(world, { kind: "command", text: t("iotLab.runCommand", { commandId }), commandId });
   return world.lastDecision;
 }
 
@@ -243,7 +200,10 @@ export function evaluateIotScene(world: IotWorldState, sceneId: string) {
     if (sceneId === "win-rain-close" || (sceneId === "pack" && rain > 0)) {
       return applyCommand(world, "close");
     }
-    if (sceneId === "win-heat-vent" || (sceneId === "pack" && num(world, "temperature") >= 30 && rain <= 0)) {
+    if (
+      sceneId === "win-heat-vent" ||
+      (sceneId === "pack" && num(world, "temperature") >= 30 && rain <= 0)
+    ) {
       return applyCommand(world, "setPosition", { pct: 20 });
     }
     if (sceneId === "win-manual") {
@@ -254,7 +214,10 @@ export function evaluateIotScene(world: IotWorldState, sceneId: string) {
     if (sceneId === "irr-rain-skip" || (sceneId === "pack" && rain > 0)) {
       return deny(world, "zoneOn", "RAIN_SKIP");
     }
-    if (sceneId === "irr-dry-run" || (sceneId === "pack" && num(world, "flow") <= 0 && num(world, "pump") > 0)) {
+    if (
+      sceneId === "irr-dry-run" ||
+      (sceneId === "pack" && num(world, "flow") <= 0 && num(world, "pump") > 0)
+    ) {
       return applyCommand(world, "pumpOff");
     }
     if (sceneId === "irr-soil" || (sceneId === "pack" && num(world, "soil") < 30 && rain <= 0)) {
@@ -269,63 +232,85 @@ export function evaluateIotScene(world: IotWorldState, sceneId: string) {
     if (sceneId === "pond-aerate" || (sceneId === "pack" && num(world, "do_mgl") < 4.5)) {
       return applyCommand(world, "aerateOn");
     }
-    if (sceneId === "pond-spray" || (sceneId === "pack" && num(world, "temp") >= 30 && num(world, "level_pct") >= 30)) {
+    if (
+      sceneId === "pond-spray" ||
+      (sceneId === "pack" && num(world, "temp") >= 30 && num(world, "level_pct") >= 30)
+    ) {
       return applyCommand(world, "sprayOn");
     }
   }
   world.lastDecision = { decision: "noop" };
-  push(world, { kind: "scene", text: `场景 ${sceneId} 无动作` });
+  push(world, { kind: "scene", text: t("iotLab.sceneNoop", { sceneId }) });
   return world.lastDecision;
 }
 
-export function evaluateIotAssertions(world: IotWorldState, ids = PACK_ASSERTIONS[world.packSlug]): IotAssertion[] {
+export function evaluateIotAssertions(
+  world: IotWorldState,
+  ids = PACK_ASSERTIONS[world.packSlug],
+): IotAssertion[] {
   const denied = world.timeline.filter((e) => e.kind === "deny");
   const cmds = world.timeline.filter((e) => e.kind === "command");
   const checks: Record<string, () => IotAssertion> = {
     "rain-close": () => ({
       id: "rain-close",
       ok: num(world, "rain") > 0 && num(world, "position") <= 5,
-      detail: `雨量 ${num(world, "rain")} 开度 ${num(world, "position")}`,
+      detail: t("iotLab.assertRain", {
+        rain: num(world, "rain"),
+        position: num(world, "position"),
+      }),
     }),
     "rain-deny-open": () => ({
       id: "rain-deny-open",
       ok: denied.some((e) => e.commandId === "open" && e.reason === "INTERLOCK"),
-      detail: "下雨时开窗应被互锁拒绝",
+      detail: t("iotLab.assertRainDeny"),
     }),
     "heat-vent": () => ({
       id: "heat-vent",
       ok: num(world, "temperature") < 30 || num(world, "position") >= 15,
-      detail: `温度 ${num(world, "temperature")} 开度 ${num(world, "position")}`,
+      detail: t("iotLab.assertHeat", {
+        temp: num(world, "temperature"),
+        position: num(world, "position"),
+      }),
     }),
     "soil-irrigate": () => ({
       id: "soil-irrigate",
       ok: num(world, "soil") >= 30 || cmds.some((e) => e.commandId === "zoneOn"),
-      detail: `土壤 ${num(world, "soil")}`,
+      detail: t("iotLab.assertSoil", { soil: num(world, "soil") }),
     }),
     "rain-skip": () => ({
       id: "rain-skip",
-      ok: num(world, "rain") <= 0 || denied.some((e) => e.reason === "RAIN_SKIP" || e.reason === "INTERLOCK"),
-      detail: "下雨时应跳过浇水",
+      ok:
+        num(world, "rain") <= 0 ||
+        denied.some((e) => e.reason === "RAIN_SKIP" || e.reason === "INTERLOCK"),
+      detail: t("iotLab.assertRainSkip"),
     }),
     "dry-run-stop": () => ({
       id: "dry-run-stop",
-      ok: num(world, "flow") > 0 || num(world, "pump") === 0 || cmds.some((e) => e.commandId === "pumpOff"),
-      detail: `流量 ${num(world, "flow")} 泵 ${num(world, "pump")}`,
+      ok:
+        num(world, "flow") > 0 ||
+        num(world, "pump") === 0 ||
+        cmds.some((e) => e.commandId === "pumpOff"),
+      detail: t("iotLab.assertFlow", { flow: num(world, "flow"), pump: num(world, "pump") }),
     }),
     "low-do-aerate": () => ({
       id: "low-do-aerate",
       ok: num(world, "do_mgl") >= 4.5 || num(world, "aerator") === 1,
-      detail: `溶氧 ${num(world, "do_mgl")}`,
+      detail: t("iotLab.assertDo", { value: num(world, "do_mgl") }),
     }),
     "heat-spray": () => ({
       id: "heat-spray",
-      ok: num(world, "temp") < 30 || num(world, "spray") === 1 || denied.some((e) => e.commandId === "sprayOn"),
-      detail: `水温 ${num(world, "temp")}`,
+      ok:
+        num(world, "temp") < 30 ||
+        num(world, "spray") === 1 ||
+        denied.some((e) => e.commandId === "sprayOn"),
+      detail: t("iotLab.assertWaterTemp", { temp: num(world, "temp") }),
     }),
     "low-level-deny-spray": () => ({
       id: "low-level-deny-spray",
-      ok: num(world, "level_pct") >= 30 || denied.some((e) => e.commandId === "sprayOn" && e.reason === "INTERLOCK"),
-      detail: `水位 ${num(world, "level_pct")}`,
+      ok:
+        num(world, "level_pct") >= 30 ||
+        denied.some((e) => e.commandId === "sprayOn" && e.reason === "INTERLOCK"),
+      detail: t("iotLab.assertLevel", { level: num(world, "level_pct") }),
     }),
   };
   world.assertions = ids.map((id) => checks[id]?.() ?? { id, ok: false, detail: "unknown" });
@@ -338,7 +323,7 @@ export function iotApi(world: IotWorldState, guard: () => void, log: (text: stri
       guard();
       const name = String(key || "");
       const value = num(world, name);
-      log(`读取 ${name} = ${value}`);
+      log(t("iotLab.read", { name, value }));
       return value;
     },
     setChannel: (key: unknown, value: unknown) => {
@@ -347,26 +332,30 @@ export function iotApi(world: IotWorldState, guard: () => void, log: (text: stri
       const numValue = Number(value);
       if (!Number.isFinite(numValue)) return;
       world.channels[name] = numValue;
-      push(world, { kind: "telemetry", text: `注入 ${name}=${numValue}` });
-      log(`注入 ${name}=${numValue}`);
+      push(world, { kind: "telemetry", text: t("iotLab.inject", { name, value: numValue }) });
+      log(t("iotLab.inject", { name, value: numValue }));
     },
     command: (commandId: unknown, params?: Record<string, unknown>) => {
       guard();
       const id = String(commandId || "stop");
       applyCommand(world, id, params);
-      log(world.lastDecision?.decision === "deny" ? `拒绝 ${id}` : `命令 ${id}`);
+      log(
+        world.lastDecision?.decision === "deny"
+          ? t("iotLab.reject", { id })
+          : t("iotLab.command", { id }),
+      );
       return world.lastDecision;
     },
     evaluateScene: (sceneId: unknown) => {
       guard();
       const id = String(sceneId || "pack");
       evaluateIotScene(world, id);
-      log(`场景 ${id} → ${world.lastDecision?.decision ?? "noop"}`);
+      log(t("iotLab.scene", { id, decision: world.lastDecision?.decision ?? "noop" }));
       return world.lastDecision;
     },
     wait: (seconds: unknown) => {
       guard();
-      log(`等待 ${Number(seconds) || 0} 秒`);
+      log(t("iotLab.wait", { value: Number(seconds) || 0 }));
     },
     emergencyStop: () => {
       guard();
@@ -374,8 +363,8 @@ export function iotApi(world: IotWorldState, guard: () => void, log: (text: stri
       world.channels.pump = 0;
       world.channels.aerator = 0;
       world.channels.spray = 0;
-      push(world, { kind: "stop", text: "紧急停止" });
-      log("紧急停止");
+      push(world, { kind: "stop", text: t("iotLab.stop") });
+      log(t("iotLab.stop"));
     },
   };
 }
@@ -422,9 +411,16 @@ iot.command('sprayOn');
 }
 
 export function starterIotXml(packSlug: IotPackSlug): string {
-  const channel = packSlug === "agri-pond" ? "do_mgl" : packSlug === "agri-irrigation" ? "soil" : "rain";
-  const command = packSlug === "agri-pond" ? "aerateOn" : packSlug === "agri-irrigation" ? "zoneOn" : "close";
-  const scene = packSlug === "agri-pond" ? "pond-aerate" : packSlug === "agri-irrigation" ? "irr-soil" : "win-rain-close";
+  const channel =
+    packSlug === "agri-pond" ? "do_mgl" : packSlug === "agri-irrigation" ? "soil" : "rain";
+  const command =
+    packSlug === "agri-pond" ? "aerateOn" : packSlug === "agri-irrigation" ? "zoneOn" : "close";
+  const scene =
+    packSlug === "agri-pond"
+      ? "pond-aerate"
+      : packSlug === "agri-irrigation"
+        ? "irr-soil"
+        : "win-rain-close";
   return `<xml xmlns="https://developers.google.com/blockly/xml">
   <block type="iot_set_channel" x="30" y="30">
     <field name="CHANNEL">${channel}</field>

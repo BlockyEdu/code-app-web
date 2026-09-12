@@ -15,6 +15,7 @@ import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 import { t } from "../lib/i18n";
 import { kindLabel, untitledArtifactName } from "../lib/kind-label";
 import { useLocaleStore } from "../lib/locale-store";
+import { templateLabel } from "../lib/template-label";
 import type { ArtifactKind } from "../types/artifact";
 import { ARTIFACT_KIND_ORDER, KIND_COLOR } from "../types/artifact";
 import styles from "./NewProjectDialog.module.scss";
@@ -225,7 +226,7 @@ export function NewProjectDialog({
                 onClick={() => setSelectedTemplate(tmpl)}
               >
                 <AppstoreOutlined className={styles.templateCardIcon} />
-                <span className={styles.templateCardLabel}>{tmpl}</span>
+                <span className={styles.templateCardLabel}>{templateLabel(tmpl)}</span>
                 {selectedTemplate === tmpl && (
                   <span className={styles.templateCardCheck}>
                     <CheckOutlined />

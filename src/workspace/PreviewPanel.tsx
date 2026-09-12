@@ -241,6 +241,12 @@ function ToyPreview({ world }: { world: WorldState | null }) {
   );
 }
 
+function iotChannelLabel(key: string): string {
+  const path = `iotCh.${key}`;
+  const label = t(path);
+  return label === path ? key : label;
+}
+
 function IotLabPreview({ world }: { world: WorldState | null }) {
   useLocaleStore((s) => s.locale);
   const packSlug = useWorkspaceStore((s) => s.iotPackSlug);
@@ -291,7 +297,7 @@ function IotLabPreview({ world }: { world: WorldState | null }) {
       <div className={styles.deviceGrid}>
         {Object.entries(channels).map(([key, value]) => (
           <div key={key} className={styles.deviceCard}>
-            <span className={styles.deviceName}>{key}</span>
+            <span className={styles.deviceName}>{iotChannelLabel(key)}</span>
             <span className={styles.deviceMeta}>{t("preview.iotChannel")}</span>
             <span className={styles.deviceStatus}>{String(value)}</span>
           </div>

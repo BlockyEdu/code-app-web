@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import type { AppNode, AppSchema, BlogPostView } from "./app-schema";
 
 const DEFAULT_CSP =
@@ -45,7 +46,9 @@ export function renderBlogHtml(opts: BlogRenderOptions): string {
     .map((n) => renderNode(n, { posts, post, base, primary, from, linkStyle }))
     .join("\n");
   const title =
-    route.page === "post" ? `${post?.title ?? "文章"} · ${schema.site.title}` : schema.site.title;
+    route.page === "post"
+      ? `${post?.title ?? t("blogHtml.posts")} · ${schema.site.title}`
+      : schema.site.title;
 
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -131,9 +134,9 @@ function renderNode(node: AppNode, ctx: LinkCtx): string {
     case "hero":
       return `<section class="hero"><h1>${escapeHtml(props.heading || "")}</h1><p>${escapeHtml(props.subheading || "")}</p></section>`;
     case "postList": {
-      const heading = escapeHtml(props.heading || "文章");
+      const heading = escapeHtml(props.heading || t("blogHtml.posts"));
       if (!ctx.posts.length) {
-        return `<section><h2>${heading}</h2><p class="empty">${escapeHtml(props.emptyText || "暂无文章")}</p></section>`;
+        return `<section><h2>${heading}</h2><p class="empty">${escapeHtml(props.emptyText || t("blogHtml.empty"))}</p></section>`;
       }
       const cards = ctx.posts
         .map((p) => {
@@ -145,7 +148,7 @@ function renderNode(node: AppNode, ctx: LinkCtx): string {
     }
     case "postDetail": {
       if (!ctx.post) {
-        return `<p class="empty">${escapeHtml(props.notFoundText || "未找到文章")}</p>`;
+        return `<p class="empty">${escapeHtml(props.notFoundText || t("blogHtml.notFound"))}</p>`;
       }
       return `<article class="article"><h1>${escapeHtml(ctx.post.title)}</h1><div class="meta">${escapeHtml(ctx.post.publishedAt || "")}</div><div class="body">${escapeHtml(ctx.post.content)}</div></article>`;
     }
@@ -157,18 +160,18 @@ function renderNode(node: AppNode, ctx: LinkCtx): string {
 }
 
 function parseLinks(raw: string | undefined): Array<{ label: string; href: string }> {
-  if (!raw) return [{ label: "首页", href: "/" }];
+  if (!raw) return [{ label: t("blogHtml.home"), href: "/" }];
   try {
     const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [{ label: "首页", href: "/" }];
+    if (!Array.isArray(parsed)) return [{ label: t("blogHtml.home"), href: "/" }];
     return parsed
       .filter((x) => x && typeof x === "object")
       .map((x) => ({
-        label: String((x as { label?: string }).label ?? "链接"),
+        label: String((x as { label?: string }).label ?? t("blogHtml.link")),
         href: String((x as { href?: string }).href ?? "/"),
       }));
   } catch {
-    return [{ label: "首页", href: "/" }];
+    return [{ label: t("blogHtml.home"), href: "/" }];
   }
 }
 

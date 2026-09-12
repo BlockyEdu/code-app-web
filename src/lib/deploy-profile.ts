@@ -1,13 +1,15 @@
-export type DeployProfile = 'code-standalone' | 'blockyedu-full';
+import { t } from "./i18n";
+
+export type DeployProfile = "code-standalone" | "blockyedu-full";
 
 export function getDeployProfile(): DeployProfile {
   const raw = import.meta.env.VITE_DEPLOY_PROFILE?.trim().toLowerCase();
-  if (raw === 'code-standalone' || raw === 'code') return 'code-standalone';
-  return 'blockyedu-full';
+  if (raw === "code-standalone" || raw === "code") return "code-standalone";
+  return "blockyedu-full";
 }
 
 export function isCodeStandalone(): boolean {
-  return getDeployProfile() === 'code-standalone';
+  return getDeployProfile() === "code-standalone";
 }
 
 export function isEduLoginLinked(): boolean {
@@ -16,5 +18,5 @@ export function isEduLoginLinked(): boolean {
 }
 
 export function appBrandTitle(): string {
-  return isCodeStandalone() ? 'BlockyEdu 编程平台' : 'BlockyEdu';
+  return t(isCodeStandalone() ? "brand.codeStandalone" : "brand.full");
 }

@@ -1,6 +1,7 @@
-import { loadScript } from './load-script';
+import { t } from "../i18n";
+import { loadScript } from "./load-script";
 
-const TS_CDN = 'https://cdn.jsdelivr.net/npm/typescript@5.6.3/lib/typescript.js';
+const TS_CDN = "https://cdn.jsdelivr.net/npm/typescript@5.6.3/lib/typescript.js";
 
 type TsGlobal = {
   transpileModule: (
@@ -23,7 +24,7 @@ export function loadTypeScriptCompiler(): Promise<TsGlobal> {
   if (window.ts) return Promise.resolve(window.ts);
   if (!loading) {
     loading = loadScript(TS_CDN).then(() => {
-      if (!window.ts) throw new Error('typescript.js 未加载');
+      if (!window.ts) throw new Error(t("lang.tsMissing"));
       return window.ts;
     });
   }

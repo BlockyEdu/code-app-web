@@ -8,12 +8,15 @@ import {
   saveAiSettings,
 } from "../lib/ai-settings";
 import { type AiPublicConfig, api } from "../lib/api";
+import { useLocaleStore } from "../lib/locale-store";
 
 export function useAiSettings() {
+  const locale = useLocaleStore((s) => s.locale);
   const [config, setConfig] = useState<AiPublicConfig | null>(null);
   const [settings, setSettings] = useState<AiUserSettings | null>(null);
 
   useEffect(() => {
+    void locale;
     let cancelled = false;
     api
       .aiConfig()
@@ -28,7 +31,7 @@ export function useAiSettings() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [locale]);
 
   const setProvider = useCallback(
     (provider: AiProviderId) => {

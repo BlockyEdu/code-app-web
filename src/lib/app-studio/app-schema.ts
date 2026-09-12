@@ -1,5 +1,7 @@
 /** AppSchema for web App Studio (blog slice). Spec: spec/app-studio-spec.md */
 
+import { t } from "../i18n";
+
 export const APP_SCHEMA_VERSION = 1;
 export const BLOG_TEMPLATE_IDS = new Set(["博客", "blog"]);
 export const WEB_STUDIO_TEMPLATES = new Set(["博客", "blog", "落地页", "作品集"]);
@@ -63,14 +65,14 @@ export function hasDetailPage(schema: AppSchema): boolean {
   return schema.pages.some((p) => p.path.includes(":slug"));
 }
 
-export function defaultBlogSchema(title = "我的博客"): AppSchema {
-  const brand = title.trim() || "我的博客";
+export function defaultBlogSchema(title = t("schema.myBlog")): AppSchema {
+  const brand = title.trim() || t("schema.myBlog");
   return {
     version: APP_SCHEMA_VERSION,
     templateId: "博客",
     site: {
       title: brand,
-      tagline: "用页面、数据和逻辑搭起来的站点",
+      tagline: t("schema.taglineBlog"),
       primary: "#1677ff",
       background: "#f8fafc",
     },
@@ -78,52 +80,52 @@ export function defaultBlogSchema(title = "我的博客"): AppSchema {
       {
         id: "home",
         path: "/",
-        title: "首页",
+        title: t("schema.home"),
         nodes: [
           {
             id: "nav",
             type: "nav",
-            props: { brand, links: JSON.stringify([{ label: "首页", href: "/" }]) },
+            props: { brand, links: JSON.stringify([{ label: t("schema.home"), href: "/" }]) },
           },
           {
             id: "hero",
             type: "hero",
             props: {
-              heading: "欢迎来到我的博客",
-              subheading: "先改这段文字，再去数据面板写第一篇文章。",
+              heading: t("schema.heroBlog"),
+              subheading: t("schema.heroBlogSub"),
             },
           },
           {
             id: "list",
             type: "postList",
-            props: { heading: "最新文章", emptyText: "还没有已发布的文章" },
+            props: { heading: t("schema.latestPosts"), emptyText: t("schema.emptyPosts") },
           },
           {
             id: "footer",
             type: "footer",
-            props: { text: "由 BlockyEdu 搭建 · 学习网站是如何工作的" },
+            props: { text: t("schema.footerLearn") },
           },
         ],
       },
       {
         id: "post",
         path: "/posts/:slug",
-        title: "文章",
+        title: t("schema.posts"),
         nodes: [
           {
             id: "nav-detail",
             type: "nav",
-            props: { brand, links: JSON.stringify([{ label: "首页", href: "/" }]) },
+            props: { brand, links: JSON.stringify([{ label: t("schema.home"), href: "/" }]) },
           },
           {
             id: "detail",
             type: "postDetail",
-            props: { notFoundText: "文章不存在或尚未发布" },
+            props: { notFoundText: t("schema.notFoundPost") },
           },
           {
             id: "footer-detail",
             type: "footer",
-            props: { text: "由 BlockyEdu 搭建 · 学习网站是如何工作的" },
+            props: { text: t("schema.footerLearn") },
           },
         ],
       },
@@ -138,14 +140,14 @@ export function defaultBlogSchema(title = "我的博客"): AppSchema {
   };
 }
 
-export function defaultLandingSchema(title = "我的站点"): AppSchema {
-  const brand = title.trim() || "我的站点";
+export function defaultLandingSchema(title = t("schema.mySite")): AppSchema {
+  const brand = title.trim() || t("schema.mySite");
   return {
     version: APP_SCHEMA_VERSION,
     templateId: "落地页",
     site: {
       title: brand,
-      tagline: "一页讲清楚你是谁",
+      tagline: t("schema.taglineLanding"),
       primary: "#1677ff",
       background: "#f8fafc",
     },
@@ -153,25 +155,25 @@ export function defaultLandingSchema(title = "我的站点"): AppSchema {
       {
         id: "home",
         path: "/",
-        title: "首页",
+        title: t("schema.home"),
         nodes: [
           {
             id: "nav",
             type: "nav",
-            props: { brand, links: JSON.stringify([{ label: "首页", href: "/" }]) },
+            props: { brand, links: JSON.stringify([{ label: t("schema.home"), href: "/" }]) },
           },
           {
             id: "hero",
             type: "hero",
             props: {
-              heading: "欢迎来到我的站点",
-              subheading: "改标题、改介绍，发布后就能发给家人朋友打开。",
+              heading: t("schema.heroLanding"),
+              subheading: t("schema.heroLandingSub"),
             },
           },
           {
             id: "footer",
             type: "footer",
-            props: { text: "由 BlockyEdu 搭建 · 可以下载回家自己部署" },
+            props: { text: t("schema.footerDeploy") },
           },
         ],
       },
@@ -180,40 +182,40 @@ export function defaultLandingSchema(title = "我的站点"): AppSchema {
   };
 }
 
-export function defaultPortfolioSchema(title = "我的作品集"): AppSchema {
-  const brand = title.trim() || "我的作品集";
+export function defaultPortfolioSchema(title = t("schema.myPortfolio")): AppSchema {
+  const brand = title.trim() || t("schema.myPortfolio");
   const schema = defaultBlogSchema(brand);
   schema.templateId = "作品集";
-  schema.site.tagline = "把做过的项目放在网上给别人看";
+  schema.site.tagline = t("schema.taglinePortfolio");
   const hero = schema.pages[0]?.nodes.find((n) => n.id === "hero");
   if (hero) {
-    hero.props.heading = "欢迎来到我的作品集";
-    hero.props.subheading = "先改这段介绍，再去数据面板写第一个作品。";
+    hero.props.heading = t("schema.heroPortfolio");
+    hero.props.subheading = t("schema.heroPortfolioSub");
   }
   const list = schema.pages[0]?.nodes.find((n) => n.id === "list");
   if (list) {
-    list.props.heading = "作品";
-    list.props.emptyText = "还没有已发布的作品";
+    list.props.heading = t("schema.works");
+    list.props.emptyText = t("schema.emptyWorks");
   }
   const detail = schema.pages[1]?.nodes.find((n) => n.id === "detail");
-  if (detail) detail.props.notFoundText = "作品不存在或尚未发布";
+  if (detail) detail.props.notFoundText = t("schema.notFoundWork");
   return schema;
 }
 
-export function defaultNewsMiniSchema(title = "我的资讯小程序"): AppSchema {
-  const brand = title.trim() || "我的资讯小程序";
+export function defaultNewsMiniSchema(title = t("schema.myNews")): AppSchema {
+  const brand = title.trim() || t("schema.myNews");
   const schema = defaultBlogSchema(brand);
   schema.templateId = "资讯小程序";
-  schema.site.tagline = "先做成能打开的页面，再导出微信工程";
+  schema.site.tagline = t("schema.taglineNews");
   const hero = schema.pages[0]?.nodes.find((n) => n.id === "hero");
   if (hero) {
-    hero.props.heading = "欢迎来到我的资讯小程序";
-    hero.props.subheading = "家长现在就能打开网页版；你还可以下载微信开发者工具工程。";
+    hero.props.heading = t("schema.heroNews");
+    hero.props.subheading = t("schema.heroNewsSub");
   }
   const list = schema.pages[0]?.nodes.find((n) => n.id === "list");
   if (list) {
-    list.props.heading = "资讯";
-    list.props.emptyText = "还没有已发布的资讯";
+    list.props.heading = t("schema.news");
+    list.props.emptyText = t("schema.emptyNews");
   }
   return schema;
 }
@@ -228,16 +230,16 @@ export function defaultSchemaForTemplate(templateId: string, title?: string): Ap
 export function parseAppSchema(raw: unknown): { schema: AppSchema | null; issues: SchemaIssue[] } {
   const issues: SchemaIssue[] = [];
   if (!raw || typeof raw !== "object") {
-    return { schema: null, issues: [{ code: "APP-ERR-SCHEMA", message: "Schema 必须是对象" }] };
+    return { schema: null, issues: [{ code: "APP-ERR-SCHEMA", message: t("schema.mustObject") }] };
   }
   const obj = raw as Record<string, unknown>;
   const site = obj.site as Record<string, unknown> | undefined;
   const pages = obj.pages;
   if (!site || typeof site.title !== "string") {
-    issues.push({ code: "APP-ERR-SCHEMA", message: "site.title 必填" });
+    issues.push({ code: "APP-ERR-SCHEMA", message: t("schema.siteTitle") });
   }
   if (!Array.isArray(pages) || pages.length === 0) {
-    issues.push({ code: "APP-ERR-SCHEMA", message: "至少需要一个 page" });
+    issues.push({ code: "APP-ERR-SCHEMA", message: t("schema.needPage") });
   }
   const nodes: AppNode[] = [];
   if (Array.isArray(pages)) {
@@ -245,21 +247,24 @@ export function parseAppSchema(raw: unknown): { schema: AppSchema | null; issues
       if (!page || typeof page !== "object") continue;
       const p = page as Record<string, unknown>;
       if (typeof p.id !== "string" || typeof p.path !== "string") {
-        issues.push({ code: "APP-ERR-SCHEMA", message: "page 需要 id 与 path" });
+        issues.push({ code: "APP-ERR-SCHEMA", message: t("schema.pageIdPath") });
       }
       if (!Array.isArray(p.nodes)) {
-        issues.push({ code: "APP-ERR-SCHEMA", message: `page ${String(p.id)} 缺少 nodes` });
+        issues.push({
+          code: "APP-ERR-SCHEMA",
+          message: t("schema.pageNodes", { id: String(p.id) }),
+        });
         continue;
       }
       for (const node of p.nodes) {
         if (!node || typeof node !== "object") continue;
         const n = node as Record<string, unknown>;
         if (typeof n.id !== "string" || typeof n.type !== "string") {
-          issues.push({ code: "APP-ERR-SCHEMA", message: "node 需要 id 与 type" });
+          issues.push({ code: "APP-ERR-SCHEMA", message: t("schema.nodeIdType") });
           continue;
         }
         if (!NODE_TYPES.includes(n.type as AppNodeType)) {
-          issues.push({ code: "APP-ERR-SCHEMA", message: `不支持的组件 ${n.type}` });
+          issues.push({ code: "APP-ERR-SCHEMA", message: t("schema.badNode", { type: n.type }) });
         }
         nodes.push({
           id: n.id,
@@ -275,7 +280,7 @@ export function parseAppSchema(raw: unknown): { schema: AppSchema | null; issues
       version: typeof obj.version === "number" ? obj.version : APP_SCHEMA_VERSION,
       templateId: typeof obj.templateId === "string" ? obj.templateId : "博客",
       site: {
-        title: String(site?.title ?? "我的博客"),
+        title: String(site?.title ?? t("schema.myBlog")),
         tagline: String(site?.tagline ?? ""),
         primary: String(site?.primary ?? "#1677ff"),
         background: String(site?.background ?? "#f8fafc"),
@@ -318,7 +323,10 @@ export function applySchemaPatch(
       ) {
         next.site[op.field] = op.value;
       } else {
-        issues.push({ code: "APP-ERR-SCHEMA", message: `非法 site 字段 ${op.field}` });
+        issues.push({
+          code: "APP-ERR-SCHEMA",
+          message: t("schema.badSiteField", { field: op.field }),
+        });
       }
       continue;
     }
@@ -332,10 +340,14 @@ export function applySchemaPatch(
           found = true;
         }
       }
-      if (!found) issues.push({ code: "APP-ERR-SCHEMA", message: `找不到节点 ${op.nodeId}` });
+      if (!found)
+        issues.push({
+          code: "APP-ERR-SCHEMA",
+          message: t("schema.missingNode", { nodeId: op.nodeId }),
+        });
       continue;
     }
-    issues.push({ code: "APP-ERR-SCHEMA", message: `不支持的操作 ${op.op}` });
+    issues.push({ code: "APP-ERR-SCHEMA", message: t("schema.badOp", { op: op.op }) });
   }
   return { schema: next, issues };
 }

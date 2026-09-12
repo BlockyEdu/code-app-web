@@ -2,6 +2,7 @@ import { Button, Input, message, Select } from "antd";
 import { useEffect, useState } from "react";
 import { api, type BlogPostInput, type BlogPostRecord, type BlogPostStatus } from "../lib/api";
 import { slugifyTitle } from "../lib/app-studio/app-schema";
+import { t } from "../lib/i18n";
 import { useLocaleStore } from "../lib/locale-store";
 import { useWorkspaceStore } from "../stores/workspace";
 import styles from "./BlogStudio.module.scss";
@@ -22,10 +23,10 @@ const emptyDraft = (): Draft => ({
   status: "draft",
 });
 
-function recordNoun(templateId: string | null | undefined, zh: boolean): string {
-  if (templateId === "作品集") return zh ? "作品" : "Works";
-  if (templateId === "资讯小程序") return zh ? "资讯" : "Stories";
-  return zh ? "文章" : "Posts";
+function recordNoun(templateId: string | null | undefined): string {
+  if (templateId === "作品集") return t("studio.nounWorks");
+  if (templateId === "资讯小程序") return t("studio.nounStories");
+  return t("studio.nounPosts");
 }
 
 function toDraft(post: BlogPostRecord): Draft {
@@ -39,13 +40,13 @@ function toDraft(post: BlogPostRecord): Draft {
 }
 
 export function BlogDataPanel() {
+  useLocaleStore((s) => s.locale);
   const artifactId = useWorkspaceStore((s) => s.artifactId);
   const templateId = useWorkspaceStore((s) => s.templateId);
   const posts = useWorkspaceStore((s) => s.blogPosts);
   const setBlogPosts = useWorkspaceStore((s) => s.setBlogPosts);
   const refreshBlogRecords = useWorkspaceStore((s) => s.refreshBlogRecords);
-  const zh = useLocaleStore((s) => s.locale) === "zh-CN";
-  const noun = recordNoun(templateId, zh);
+  const noun = recordNoun(templateId);
   const [selectedId, setSelectedId] = useState<string | "new" | null>(posts[0]?.id ?? null);
   const [draft, setDraft] = useState<Draft>(posts[0] ? toDraft(posts[0]) : emptyDraft());
   const [busy, setBusy] = useState(false);
@@ -67,12 +68,12 @@ export function BlogDataPanel() {
 
   const persist = async () => {
     if (!artifactId) {
-      message.warning(zh ? "请先保存作品" : "Save the project first");
+      message.warning(t("studio.saveFirst"));
       return;
     }
     const title = draft.title.trim();
     if (!title) {
-      message.warning(zh ? "标题必填" : "Title is required");
+      message.warning(t("studio.titleRequired"));
       return;
     }
     const body: BlogPostInput = {
@@ -88,16 +89,16 @@ export function BlogDataPanel() {
         const updated = await api.updatePost(artifactId, selectedId, body);
         setBlogPosts(posts.map((p) => (p.id === updated.id ? updated : p)));
         setDraft(toDraft(updated));
-        message.success(zh ? "已保存文章" : "Post saved");
+        message.success(t("studio.postSaved"));
       } else {
         const created = await api.createPost(artifactId, body);
         setBlogPosts([created, ...posts]);
         setSelectedId(created.id);
         setDraft(toDraft(created));
-        message.success(zh ? "已创建文章" : "Post created");
+        message.success(t("studio.postCreated"));
       }
     } catch (err) {
-      message.error(err instanceof Error ? err.message : zh ? "保存失败" : "Save failed");
+      message.error(err instanceof Error ? err.message : t("studio.saveFailed"));
     } finally {
       setBusy(false);
     }
@@ -112,9 +113,9 @@ export function BlogDataPanel() {
       setBlogPosts(next);
       if (next[0]) select(next[0]);
       else startNew();
-      message.success(zh ? "已删除" : "Deleted");
+      message.success(t("studio.deleted"));
     } catch (err) {
-      message.error(err instanceof Error ? err.message : zh ? "删除失败" : "Delete failed");
+      message.error(err instanceof Error ? err.message : t("studio.deleteFailed"));
     } finally {
       setBusy(false);
     }
@@ -126,11 +127,11 @@ export function BlogDataPanel() {
         <div className={styles.listHead}>
           <span className={styles.listTitle}>{noun}</span>
           <Button size="small" type="link" onClick={startNew}>
-            {zh ? "新建" : "New"}
+            {t("studio.new")}
           </Button>
         </div>
         {posts.length === 0 && selectedId !== "new" && (
-          <p className={styles.empty}>{zh ? `还没有${noun}` : `No ${noun.toLowerCase()} yet`}</p>
+          <p className={styles.empty}>{t("studio.empty", { noun })}</p>
         )}
         {posts.map((post) => (
           <button
@@ -190,19 +191,19 @@ export function BlogDataPanel() {
             style={{ width: "100%" }}
             value={draft.status}
             options={[
-              { value: "draft", label: zh ? "草稿" : "Draft" },
-              { value: "published", label: zh ? "已发布" : "Published" },
+              { value: "draft", label: t("studio.draft") },
+              { value: "published", label: t("studio.published") },
             ]}
             onChange={(status) => setDraft((d) => ({ ...d, status }))}
           />
         </div>
         <div className={styles.formActions}>
           <Button type="primary" loading={busy} onClick={() => void persist()}>
-            {zh ? "保存文章" : "Save post"}
+            {t("studio.savePost")}
           </Button>
           {selectedId && selectedId !== "new" && (
             <Button danger loading={busy} onClick={() => void remove()}>
-              {zh ? "删除" : "Delete"}
+              {t("studio.delete")}
             </Button>
           )}
         </div>

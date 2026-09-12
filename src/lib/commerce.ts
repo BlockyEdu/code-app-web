@@ -13,6 +13,8 @@ export function isFreeLabel(value: string): boolean {
   return (
     normalized === "free" ||
     normalized === "free plan" ||
+    normalized === "not subscribed" ||
+    normalized === "free user" ||
     value.includes("免费版") ||
     value.includes("免费用户")
   );

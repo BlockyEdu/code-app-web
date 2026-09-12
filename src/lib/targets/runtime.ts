@@ -3,13 +3,14 @@
  * Simplified from BlockyEdu Platform Specs `runtime.ts`.
  */
 import type { ArtifactKind } from "../../types/artifact";
+import { t } from "../i18n";
 import {
   createIotWorld,
   evaluateIotAssertions,
-  iotApi,
-  isIotLabPack,
   type IotPackSlug,
   type IotWorldState,
+  iotApi,
+  isIotLabPack,
 } from "./iot-lab";
 
 export type StepStatus = "success" | "error" | "timeout" | "step_limit";
@@ -90,40 +91,25 @@ export interface RunResult {
   errorMessage?: string;
 }
 
-const ROOM_LABELS: Record<string, string> = {
-  living: "客厅",
-  bedroom: "卧室",
-  kitchen: "厨房",
-};
+function labeled(ns: "room" | "device" | "scene" | "led" | "move" | "sensor", key: string): string {
+  const path = `${ns}.${key}`;
+  const label = t(path);
+  return label === path ? key : label;
+}
 
-const DEVICE_LABELS: Record<string, string> = {
-  curtain: "窗帘",
-  socket: "插座",
-  fan: "风扇",
-  alarm: "安防警报",
-};
+function servoLabel(key: string): string {
+  return key === "head" || key === "arm" || key === "claw" ? t(`servo.${key}`) : key;
+}
 
-const SCENE_LABELS: Record<string, string> = {
-  home: "回家模式",
-  away: "离家模式",
-  sleep: "睡眠模式",
-  movie: "观影模式",
-};
+function buzzLabel(key: string): string {
+  return key === "beep" || key === "long" || key === "alert" || key === "win"
+    ? t(`buzz.${key}`)
+    : key;
+}
 
-const LED_LABELS: Record<string, string> = {
-  red: "红色",
-  green: "绿色",
-  blue: "蓝色",
-  yellow: "黄色",
-  off: "熄灭",
-};
-
-const MOVE_LABELS: Record<string, string> = {
-  forward: "前进",
-  backward: "后退",
-  left: "左转",
-  right: "右转",
-};
+function toySensorLabel(key: string): string {
+  return key === "line" || key === "distance" || key === "light" ? t(`toySensor.${key}`) : key;
+}
 
 function toText(value: unknown): string {
   if (typeof value === "string") return value;
@@ -152,7 +138,7 @@ export function createWorldState(kind: ArtifactKind, packSlug?: IotPackSlug): Wo
   return {
     kind,
     web: {
-      title: "预览页面",
+      title: t("runtime.previewTitle"),
       primary: "#1677ff",
       background: "#f5f5f5",
       elements: [],
@@ -180,7 +166,7 @@ export function createWorldState(kind: ArtifactKind, packSlug?: IotPackSlug): Wo
         smoke: 120,
         door: 0,
       },
-      scene: "无",
+      scene: t("runtime.sceneNone"),
       timeline: [],
     },
     toy: {
@@ -188,7 +174,7 @@ export function createWorldState(kind: ArtifactKind, packSlug?: IotPackSlug): Wo
       y: 70,
       heading: 0,
       speed: 0,
-      moving: "停止",
+      moving: t("runtime.stopped"),
       led: "off",
       servos: { head: 90, arm: 90, claw: 90 },
       sensors: { line: 1, distance: 80, light: 400 },
@@ -264,44 +250,47 @@ export function runTargetProgram(options: RunOptions): RunResult {
   const web = {
     setTitle: (text: unknown) => {
       guard();
-      state.web.title = toText(text) || "预览页面";
-      pushLine("log", `页面标题：${state.web.title}`);
+      state.web.title = toText(text) || t("runtime.previewTitle");
+      pushLine("log", t("runtime.pageTitle", { title: state.web.title }));
     },
     setTheme: (primary: unknown, background: unknown) => {
       guard();
       state.web.primary = toText(primary) || "#1677ff";
       state.web.background = toText(background) || "#f5f5f5";
-      pushLine("log", `主题色 ${state.web.primary}，背景 ${state.web.background}`);
+      pushLine(
+        "log",
+        t("runtime.theme", { primary: state.web.primary, background: state.web.background }),
+      );
     },
     addHeading: (text: unknown, level: unknown) => {
       guard();
       const value = toText(text);
       state.web.elements.push({ kind: "heading", text: value, level: toText(level) || "h2" });
-      pushLine("log", `添加标题：${value}`);
+      pushLine("log", t("runtime.addHeading", { value }));
     },
     addText: (text: unknown) => {
       guard();
       const value = toText(text);
       state.web.elements.push({ kind: "text", text: value });
-      pushLine("log", `添加段落：${value}`);
+      pushLine("log", t("runtime.addText", { value }));
     },
     addCard: (title: unknown, body: unknown) => {
       guard();
       const head = toText(title);
       state.web.elements.push({ kind: "card", text: head, extra: toText(body) });
-      pushLine("log", `添加卡片：${head}`);
+      pushLine("log", t("runtime.addCard", { head }));
     },
     addButton: (label: unknown, message: unknown) => {
       guard();
-      const text = toText(label) || "按钮";
+      const text = toText(label) || t("runtime.button");
       state.web.elements.push({ kind: "button", text, extra: toText(message) });
-      pushLine("log", `添加按钮：${text}`);
+      pushLine("log", t("runtime.addButton", { text }));
     },
     addImageBox: (caption: unknown) => {
       guard();
       const text = toText(caption);
       state.web.elements.push({ kind: "image", text });
-      pushLine("log", `添加图片占位：${text || "未命名"}`);
+      pushLine("log", t("runtime.addImage", { text: text || t("runtime.unnamed") }));
     },
   };
 
@@ -324,7 +313,7 @@ export function runTargetProgram(options: RunOptions): RunResult {
       const id = toText(pageId) || "home";
       const page = ensurePage(id, toText(title) || id);
       state.miniapp.activePage = id;
-      pushLine("log", `创建页面 ${id}：${page.title}`);
+      pushLine("log", t("runtime.createPage", { id, title: page.title }));
     },
     addComponent: (pageId: unknown, kind: unknown, content: unknown) => {
       guard();
@@ -332,20 +321,20 @@ export function runTargetProgram(options: RunOptions): RunResult {
       const componentKind = (toText(kind) || "text") as MiniAppComponent["kind"];
       const text = toText(content);
       page.components.push({ kind: componentKind, content: text });
-      pushLine("log", `页面 ${page.id} 添加组件 ${componentKind}：${text}`);
+      pushLine("log", t("runtime.addComponent", { id: page.id, kind: componentKind, text }));
     },
     setData: (key: unknown, value: unknown) => {
       guard();
       const dataKey = toText(key) || "value";
       state.miniapp.data[dataKey] = value;
-      pushLine("log", `数据 ${dataKey} = ${toText(value)}`);
+      pushLine("log", t("runtime.setData", { key: dataKey, value: toText(value) }));
     },
     bindData: (pageId: unknown, key: unknown, label: unknown) => {
       guard();
       const page = ensurePage(toText(pageId) || "home");
       const dataKey = toText(key) || "value";
       page.components.push({ kind: "bind", content: toText(label), dataKey });
-      pushLine("log", `页面 ${page.id} 绑定数据 ${dataKey}`);
+      pushLine("log", t("runtime.bindData", { id: page.id, key: dataKey }));
     },
     addNavButton: (label: unknown, pageId: unknown) => {
       guard();
@@ -353,23 +342,23 @@ export function runTargetProgram(options: RunOptions): RunResult {
       const target = toText(pageId) || "home";
       page.components.push({
         kind: "nav",
-        content: toText(label) || "跳转",
+        content: toText(label) || t("runtime.nav"),
         targetPage: target,
       });
-      pushLine("log", `添加跳转按钮，目标页面 ${target}`);
+      pushLine("log", t("runtime.addNav", { target }));
     },
     navigate: (pageId: unknown) => {
       guard();
       const target = toText(pageId) || "home";
       ensurePage(target);
       state.miniapp.activePage = target;
-      pushLine("log", `跳转到页面 ${target}`);
+      pushLine("log", t("runtime.navigate", { target }));
     },
     showToast: (text: unknown) => {
       guard();
       const value = toText(text);
       state.miniapp.toasts.push(value);
-      pushLine("log", `提示：${value}`);
+      pushLine("log", t("runtime.toast", { value }));
     },
   };
 
@@ -380,7 +369,10 @@ export function runTargetProgram(options: RunOptions): RunResult {
       const on = toText(stateValue) === "on";
       if (!state.home.lights[key]) state.home.lights[key] = { on: false, brightness: 60 };
       state.home.lights[key].on = on;
-      const text = `${ROOM_LABELS[key] || key}灯${on ? "打开" : "关闭"}`;
+      const text = t("runtime.lightToggle", {
+        room: labeled("room", key),
+        state: t(on ? "action.on" : "action.off"),
+      });
       state.home.timeline.push(text);
       pushLine("log", text);
     },
@@ -391,14 +383,14 @@ export function runTargetProgram(options: RunOptions): RunResult {
       if (!state.home.lights[key]) state.home.lights[key] = { on: false, brightness: 60 };
       state.home.lights[key].brightness = brightness;
       if (brightness > 0) state.home.lights[key].on = true;
-      const text = `${ROOM_LABELS[key] || key}灯亮度调到 ${brightness}%`;
+      const text = t("runtime.lightBrightness", { room: labeled("room", key), brightness });
       state.home.timeline.push(text);
       pushLine("log", text);
     },
     setTemperature: (value: unknown) => {
       guard();
       state.home.temperature = clamp(Math.round(toNumber(value, 26)), 16, 32);
-      const text = `空调目标温度设为 ${state.home.temperature}℃`;
+      const text = t("runtime.acTemp", { temp: state.home.temperature });
       state.home.timeline.push(text);
       pushLine("log", text);
     },
@@ -407,7 +399,10 @@ export function runTargetProgram(options: RunOptions): RunResult {
       const key = toText(device) || "socket";
       const on = toText(stateValue) === "on";
       state.home.devices[key] = on;
-      const text = `${DEVICE_LABELS[key] || key}${on ? "打开" : "关闭"}`;
+      const text = t("runtime.deviceToggle", {
+        device: labeled("device", key),
+        state: t(on ? "action.on" : "action.off"),
+      });
       state.home.timeline.push(text);
       pushLine("log", text);
     },
@@ -415,7 +410,7 @@ export function runTargetProgram(options: RunOptions): RunResult {
       guard();
       const key = toText(sensor) || "temperature";
       const value = toNumber(state.home.sensors[key], 0);
-      pushLine("log", `读取传感器 ${key}：${value}`);
+      pushLine("log", t("runtime.readSensor", { key: labeled("sensor", key), value }));
       return value;
     },
     triggerSensor: (sensor: unknown, value: unknown) => {
@@ -423,14 +418,14 @@ export function runTargetProgram(options: RunOptions): RunResult {
       const key = toText(sensor) || "temperature";
       const num = toNumber(value, 0);
       state.home.sensors[key] = num;
-      const text = `传感器 ${key} 读数变为 ${num}`;
+      const text = t("runtime.triggerSensor", { key: labeled("sensor", key), value: num });
       state.home.timeline.push(text);
       pushLine("log", text);
     },
     runScene: (scene: unknown) => {
       guard();
       const key = toText(scene) || "home";
-      state.home.scene = SCENE_LABELS[key] || key;
+      state.home.scene = labeled("scene", key);
       if (key === "home") {
         state.home.lights.living = { on: true, brightness: 80 };
         state.home.devices.curtain = true;
@@ -450,14 +445,14 @@ export function runTargetProgram(options: RunOptions): RunResult {
         state.home.lights.living = { on: true, brightness: 20 };
         state.home.devices.curtain = false;
       }
-      const text = `执行场景联动：${state.home.scene}`;
+      const text = t("runtime.runScene", { scene: state.home.scene });
       state.home.timeline.push(text);
       pushLine("log", text);
     },
     wait: (seconds: unknown) => {
       guard();
       const value = clamp(toNumber(seconds, 1), 0, 10);
-      pushLine("log", `等待 ${value} 秒`);
+      pushLine("log", t("runtime.wait", { value }));
     },
   };
 
@@ -468,7 +463,7 @@ export function runTargetProgram(options: RunOptions): RunResult {
       const spd = clamp(Math.round(toNumber(speed, 60)), 0, 100);
       const secs = clamp(toNumber(seconds, 1), 0, 10);
       state.toy.speed = spd;
-      state.toy.moving = MOVE_LABELS[dir] || dir;
+      state.toy.moving = labeled("move", dir);
       if (dir === "left") state.toy.heading = (state.toy.heading - 90 + 360) % 360;
       else if (dir === "right") state.toy.heading = (state.toy.heading + 90) % 360;
       else {
@@ -478,23 +473,24 @@ export function runTargetProgram(options: RunOptions): RunResult {
         state.toy.x = clamp(state.toy.x + Math.sin(rad) * distance * sign, 6, 94);
         state.toy.y = clamp(state.toy.y - Math.cos(rad) * distance * sign, 6, 94);
       }
-      const text = `${state.toy.moving}，速度 ${spd}，持续 ${secs} 秒`;
+      const text = t("runtime.toyMove", { moving: state.toy.moving, spd, secs });
       state.toy.timeline.push(text);
       pushLine("log", text);
     },
     stop: () => {
       guard();
       state.toy.speed = 0;
-      state.toy.moving = "停止";
-      state.toy.timeline.push("小车停止");
-      pushLine("log", "小车停止");
+      state.toy.moving = t("runtime.stopped");
+      const text = t("runtime.toyStop");
+      state.toy.timeline.push(text);
+      pushLine("log", text);
     },
     setServo: (servo: unknown, angle: unknown) => {
       guard();
       const key = toText(servo) || "arm";
       const value = clamp(Math.round(toNumber(angle, 90)), 0, 180);
       state.toy.servos[key] = value;
-      const text = `舵机 ${key} 转到 ${value} 度`;
+      const text = t("runtime.servo", { key: servoLabel(key), value });
       state.toy.timeline.push(text);
       pushLine("log", text);
     },
@@ -502,7 +498,7 @@ export function runTargetProgram(options: RunOptions): RunResult {
       guard();
       const key = toText(color) || "off";
       state.toy.led = key;
-      const text = `LED 设为${LED_LABELS[key] || key}`;
+      const text = t("runtime.led", { color: labeled("led", key) });
       state.toy.timeline.push(text);
       pushLine("log", text);
     },
@@ -510,7 +506,7 @@ export function runTargetProgram(options: RunOptions): RunResult {
       guard();
       const key = toText(tone) || "beep";
       state.toy.sound = key;
-      const text = `蜂鸣器播放 ${key}`;
+      const text = t("runtime.buzz", { key: buzzLabel(key) });
       state.toy.timeline.push(text);
       pushLine("log", text);
     },
@@ -518,20 +514,20 @@ export function runTargetProgram(options: RunOptions): RunResult {
       guard();
       const key = toText(sensor) || "line";
       const value = toNumber(state.toy.sensors[key], 0);
-      pushLine("log", `读取传感器 ${key}：${value}`);
+      pushLine("log", t("runtime.toyRead", { key: toySensorLabel(key), value }));
       return value;
     },
     wait: (seconds: unknown) => {
       guard();
       const value = clamp(toNumber(seconds, 1), 0, 10);
-      pushLine("log", `等待 ${value} 秒`);
+      pushLine("log", t("runtime.wait", { value }));
     },
     say: (text: unknown) => {
       guard();
       const value = toText(text);
       state.toy.speech = value;
-      state.toy.timeline.push(`说：${value}`);
-      pushLine("log", `玩具说：${value}`);
+      state.toy.timeline.push(t("runtime.say", { value }));
+      pushLine("log", t("runtime.toySay", { value }));
     },
   };
 
@@ -585,22 +581,22 @@ export function runTargetProgram(options: RunOptions): RunResult {
   } catch (error) {
     if (aborted === "timeout") {
       status = "timeout";
-      errorMessage = `执行超时（超过 ${timeoutMs} ms）`;
+      errorMessage = t("runtime.timeout", { ms: timeoutMs });
       pushLine("system", errorMessage);
     } else if (aborted === "step_limit") {
       status = "step_limit";
-      errorMessage = `执行步数超过上限 ${maxSteps} 步`;
+      errorMessage = t("runtime.stepLimit", { max: maxSteps });
       pushLine("system", errorMessage);
     } else {
       status = "error";
       const raw = error as Error;
-      errorMessage = raw?.message || "运行时错误";
+      errorMessage = raw?.message || t("runtime.error");
       pushLine("error", errorMessage);
     }
   }
 
   if (status === "success" && lines.length === 0) {
-    pushLine("system", "程序执行完成，但没有产生任何可预览的动作。");
+    pushLine("system", t("runtime.noActions"));
   }
 
   if (state.iot) evaluateIotAssertions(state.iot);

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "@rstest/core";
 import { clearHttpInflight, httpRequest, setUnauthorizedHandler, UnauthorizedError } from "./http";
+import { useLocaleStore } from "./locale-store";
 
 function urlOf(input: RequestInfo | URL): string {
   if (typeof input === "string") return input;
@@ -97,6 +98,26 @@ describe("httpRequest coalescing", () => {
     await expect(httpRequest("/ai/chat", { method: "POST", body: "{}" })).rejects.toThrow(
       "未配置模型密钥",
     );
+  });
+
+  it("sends Accept-Language from the UI locale", async () => {
+    stubLocalStorage();
+    useLocaleStore.getState().setLocale("en-US");
+    let accept = "";
+    globalThis.fetch = (async (_input, init) => {
+      accept = new Headers(init?.headers).get("Accept-Language") ?? "";
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }) as typeof fetch;
+
+    await httpRequest("/health");
+    expect(accept).toBe("en-US");
+
+    useLocaleStore.getState().setLocale("zh-CN");
+    await httpRequest("/health?reset=1");
+    expect(accept).toBe("zh-CN");
   });
 });
 

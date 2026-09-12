@@ -1,3 +1,5 @@
+import { t } from "./i18n";
+
 export type PairPhase =
   | "diagnose"
   | "mission"
@@ -16,22 +18,29 @@ export type PairMission = {
   phase: PairPhase;
 };
 
-export const DEFAULT_PAIR_MISSION: PairMission = {
-  id: "first-run",
-  title: "Get a first successful run",
-  success: "Console or preview produces output without an error line",
-  phase: "mission",
-};
+export function defaultPairMission(): PairMission {
+  return {
+    id: "first-run",
+    get title() {
+      return t("pairMission.title");
+    },
+    get success() {
+      return t("pairMission.success");
+    },
+    phase: "mission",
+  };
+}
 
-export const PAIR_PHASE_LABEL: Record<PairPhase, string> = {
-  diagnose: "Diagnose",
-  mission: "Mission",
-  hint_loop: "Hint",
-  implement_review: "Review diff",
-  test: "Test",
-  complete: "Complete",
-  stuck: "Stuck",
-};
+export const DEFAULT_PAIR_MISSION: PairMission = defaultPairMission();
+
+/** Keep live title/success getters; object spread would snapshot the current locale. */
+export function withPairPhase(mission: PairMission, phase: PairPhase): PairMission {
+  return Object.assign(defaultPairMission(), { id: mission.id, phase });
+}
+
+export function pairPhaseLabel(phase: PairPhase): string {
+  return t(`pair.${phase}`);
+}
 
 export function nextPhaseAfterAction(action: PairAction, current: PairPhase): PairPhase {
   if (current === "complete") return "complete";

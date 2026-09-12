@@ -6,7 +6,7 @@ import { applySchemaPatch } from "../lib/app-studio/app-schema";
 import { useAuthStore } from "../lib/auth-store";
 import { t } from "../lib/i18n";
 import { useLocaleStore } from "../lib/locale-store";
-import { PAIR_PHASE_LABEL, type PairAction } from "../lib/pair-mission";
+import { type PairAction, pairPhaseLabel } from "../lib/pair-mission";
 import { requestWorkspaceRun, track } from "../lib/telemetry";
 import { isAppStudioKind, useWorkspaceStore } from "../stores/workspace";
 
@@ -400,7 +400,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
         {!hubMode && (
           <div className="ai-goal-card">
             <div className="ai-goal-label">
-              {t("ai.missionLabel", { phase: PAIR_PHASE_LABEL[pairMission.phase] })}
+              {t("ai.missionLabel", { phase: pairPhaseLabel(pairMission.phase) })}
             </div>
             <p>
               {pairMission.title}: {pairMission.success}

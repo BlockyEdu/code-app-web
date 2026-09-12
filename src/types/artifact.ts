@@ -22,16 +22,6 @@ export const ARTIFACT_KIND_ORDER: ArtifactKind[] = [
   "exercise",
 ];
 
-export const KIND_LABEL: Record<ArtifactKind, string> = {
-  web: "Web 作品",
-  miniprogram: "微信小程序",
-  smarthome: "智能家居",
-  iot: "物联网",
-  toy: "智能玩具",
-  free: "自由编程",
-  exercise: "编程练习",
-};
-
 export const KIND_COLOR: Record<ArtifactKind, string> = {
   web: "#3b82f6",
   miniprogram: "#16a34a",
@@ -50,16 +40,6 @@ export const KIND_DEFAULT_PREVIEW: Record<ArtifactKind, PreviewType> = {
   toy: "simulation",
   free: "console",
   exercise: "console",
-};
-
-export const PREVIEW_LABEL: Record<PreviewType, string> = {
-  artifact: "作品预览",
-  simulation: "仿真运行",
-  /** UI 固定文案仍为「仿真运行」（spec §5）；面板标题可另写「设备面板」 */
-  smarthome: "仿真运行",
-  firmware: "仅导出",
-  iot: "仿真运行",
-  console: "控制台运行",
 };
 
 /** Console-only kinds (no right preview panel). */

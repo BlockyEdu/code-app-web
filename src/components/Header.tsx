@@ -1,17 +1,20 @@
-import { type FormEvent, useState } from 'react';
-import { useAuthStore } from '../lib/auth-store';
-import { isDirectIdpEnabled, isLocalPasswordLoginAllowed } from '../lib/idp';
-import { appBrandTitle } from '../lib/deploy-profile';
-import { LanguageSelector } from './LanguageSelector';
-import { LogoMark } from './Logo';
-import { RunControls } from './RunControls';
+import { type FormEvent, useState } from "react";
+import { useAuthStore } from "../lib/auth-store";
+import { appBrandTitle } from "../lib/deploy-profile";
+import { t } from "../lib/i18n";
+import { isDirectIdpEnabled, isLocalPasswordLoginAllowed } from "../lib/idp";
+import { useLocaleStore } from "../lib/locale-store";
+import { LanguageSelector } from "./LanguageSelector";
+import { LogoMark } from "./Logo";
+import { RunControls } from "./RunControls";
 
 export function Header() {
+  useLocaleStore((s) => s.locale);
   const { user, logout, login, loading, loginPromptOpen, openLoginPrompt, closeLoginPrompt } =
     useAuthStore();
   const showLogin = loginPromptOpen && isLocalPasswordLoginAllowed() && !isDirectIdpEnabled();
-  const [username, setUsername] = useState('learner1');
-  const [password, setPassword] = useState('learner123');
+  const [username, setUsername] = useState("learner1");
+  const [password, setPassword] = useState("learner123");
 
   const onLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -21,7 +24,7 @@ export function Header() {
 
   const goLogin = () => {
     if (isDirectIdpEnabled()) {
-      window.location.href = '/login';
+      window.location.href = "/login";
       return;
     }
     openLoginPrompt();
@@ -40,12 +43,12 @@ export function Header() {
           <>
             <span className="user-label">{user.name}</span>
             <button type="button" className="btn-ghost" onClick={logout}>
-              退出
+              {t("header.logout")}
             </button>
           </>
         ) : (
           <button type="button" className="btn-ghost" onClick={goLogin}>
-            登录
+            {t("header.login")}
           </button>
         )}
       </div>
@@ -56,28 +59,28 @@ export function Header() {
             type="button"
             className="login-close"
             onClick={closeLoginPrompt}
-            aria-label="关闭"
+            aria-label={t("header.close")}
           >
             ×
           </button>
           <input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="用户名"
+            placeholder={t("header.username")}
           />
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="密码"
+            placeholder={t("header.password")}
           />
           <button type="submit" disabled={loading}>
-            登录
+            {t("header.login")}
           </button>
           <a className="btn-ghost" href="/login">
-            统一登录 ↗
+            {t("header.sso")}
           </a>
-          <span className="login-tip">演示：learner1 / learner123</span>
+          <span className="login-tip">{t("header.demoTip")}</span>
         </form>
       )}
     </header>

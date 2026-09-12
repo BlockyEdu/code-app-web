@@ -1,149 +1,161 @@
-import type { LanguagePlugin } from './types';
+import { DEFAULT_JS } from "../lib/blockly-defaults";
+import { t } from "../lib/i18n";
+import type { LanguagePlugin } from "./types";
 
 export const javascriptPlugin: LanguagePlugin = {
-  id: 'javascript',
-  name: 'JavaScript',
-  label: 'JS',
-  tier: 'core',
-  monacoLanguageId: 'javascript',
+  id: "javascript",
+  name: "JavaScript",
+  label: "JS",
+  tier: "core",
+  monacoLanguageId: "javascript",
   blockly: true,
-  fileExtension: '.js',
-  run: 'in-browser',
-  defaultStarter: `// JavaScript
-console.log("Hello BlockyEdu");
-`,
-  description: 'Web 与 Blockly 默认语言，浏览器内直接运行',
+  fileExtension: ".js",
+  run: "in-browser",
+  get defaultStarter() {
+    return DEFAULT_JS();
+  },
+  get description() {
+    return t("lang.jsDesc");
+  },
 };
 
 export const typescriptPlugin: LanguagePlugin = {
-  id: 'typescript',
-  name: 'TypeScript',
-  label: 'TS',
-  tier: 'core',
-  monacoLanguageId: 'typescript',
+  id: "typescript",
+  name: "TypeScript",
+  label: "TS",
+  tier: "core",
+  monacoLanguageId: "typescript",
   blockly: false,
-  fileExtension: '.ts',
-  run: 'in-browser',
-  defaultStarter: `// TypeScript
-const message: string = "Hello BlockyEdu";
-console.log(message);
-`,
-  description: 'Monaco 编辑；预览用 typescript.js，完整运行需 Pro + Piston',
+  fileExtension: ".ts",
+  run: "in-browser",
+  get defaultStarter() {
+    return t("lang.tsStart");
+  },
+  get description() {
+    return t("lang.tsDesc");
+  },
 };
 
 export const pythonPlugin: LanguagePlugin = {
-  id: 'python',
-  name: 'Python',
-  label: 'Py',
-  tier: 'core',
-  monacoLanguageId: 'python',
+  id: "python",
+  name: "Python",
+  label: "Py",
+  tier: "core",
+  monacoLanguageId: "python",
   blockly: false,
-  fileExtension: '.py',
-  run: 'in-browser',
-  defaultStarter: `# Python
-print("Hello BlockyEdu")
-`,
-  description: '入门友好；预览用 Pyodide，完整标准库与 pip 需 Pro 云端',
+  fileExtension: ".py",
+  run: "in-browser",
+  get defaultStarter() {
+    return t("lang.pyStart");
+  },
+  get description() {
+    return t("lang.pyDesc");
+  },
 };
 
 export const cppPlugin: LanguagePlugin = {
-  id: 'cpp',
-  name: 'C++',
-  label: 'C++',
-  tier: 'extension',
-  monacoLanguageId: 'cpp',
+  id: "cpp",
+  name: "C++",
+  label: "C++",
+  tier: "extension",
+  monacoLanguageId: "cpp",
   blockly: false,
-  fileExtension: '.cpp',
-  run: 'plugin',
-  pluginPackage: '@blockyedu/plugin-lang-cpp',
-  runHint: 'C++ 运行需安装 @blockyedu/plugin-lang-cpp（WASM 编译器）',
-  defaultStarter: `// C++
-#include <iostream>
-int main() {
-  std::cout << "Hello BlockyEdu" << std::endl;
-  return 0;
-}
-`,
-  description: '通过插件提供 WASM 编译与运行',
+  fileExtension: ".cpp",
+  run: "plugin",
+  pluginPackage: "@blockyedu/plugin-lang-cpp",
+  get runHint() {
+    return t("lang.cppHint");
+  },
+  get defaultStarter() {
+    return t("lang.cppStart");
+  },
+  get description() {
+    return t("lang.cppDesc");
+  },
 };
 
 export const csharpPlugin: LanguagePlugin = {
-  id: 'csharp',
-  name: 'C#',
-  label: 'C#',
-  tier: 'extension',
-  monacoLanguageId: 'csharp',
+  id: "csharp",
+  name: "C#",
+  label: "C#",
+  tier: "extension",
+  monacoLanguageId: "csharp",
   blockly: false,
-  fileExtension: '.cs',
-  run: 'plugin',
-  pluginPackage: '@blockyedu/plugin-lang-csharp',
-  runHint: 'C# 运行需安装 @blockyedu/plugin-lang-csharp',
-  defaultStarter: `// C#
-using System;
-class Program {
-  static void Main() {
-    Console.WriteLine("Hello BlockyEdu");
-  }
-}
-`,
+  fileExtension: ".cs",
+  run: "plugin",
+  pluginPackage: "@blockyedu/plugin-lang-csharp",
+  get runHint() {
+    return t("lang.csharpHint");
+  },
+  get defaultStarter() {
+    return t("lang.csharpStart");
+  },
+  get description() {
+    return t("lang.csharpDesc");
+  },
 };
 
 export const javaPlugin: LanguagePlugin = {
-  id: 'java',
-  name: 'Java',
-  label: 'Java',
-  tier: 'extension',
-  monacoLanguageId: 'java',
+  id: "java",
+  name: "Java",
+  label: "Java",
+  tier: "extension",
+  monacoLanguageId: "java",
   blockly: false,
-  fileExtension: '.java',
-  run: 'plugin',
-  pluginPackage: '@blockyedu/plugin-lang-java',
-  runHint: 'Java 运行需安装 @blockyedu/plugin-lang-java 或连接 server 沙箱',
-  defaultStarter: `// Java
-public class Main {
-  public static void main(String[] args) {
-    System.out.println("Hello BlockyEdu");
-  }
-}
-`,
+  fileExtension: ".java",
+  run: "plugin",
+  pluginPackage: "@blockyedu/plugin-lang-java",
+  get runHint() {
+    return t("lang.javaHint");
+  },
+  get defaultStarter() {
+    return t("lang.javaStart");
+  },
+  get description() {
+    return t("lang.javaDesc");
+  },
 };
 
 export const rustPlugin: LanguagePlugin = {
-  id: 'rust',
-  name: 'Rust',
-  label: 'Rust',
-  tier: 'extension',
-  monacoLanguageId: 'rust',
+  id: "rust",
+  name: "Rust",
+  label: "Rust",
+  tier: "extension",
+  monacoLanguageId: "rust",
   blockly: false,
-  fileExtension: '.rs',
-  run: 'plugin',
-  pluginPackage: '@blockyedu/plugin-lang-rust',
-  runHint: 'Rust 运行需安装 @blockyedu/plugin-lang-rust（WASM）',
-  defaultStarter: `// Rust
-fn main() {
-    println!("Hello BlockyEdu");
-}
-`,
+  fileExtension: ".rs",
+  run: "plugin",
+  pluginPackage: "@blockyedu/plugin-lang-rust",
+  get runHint() {
+    return t("lang.rustHint");
+  },
+  get defaultStarter() {
+    return t("lang.rustStart");
+  },
+  get description() {
+    return t("lang.rustDesc");
+  },
 };
 
 export const goPlugin: LanguagePlugin = {
-  id: 'go',
-  name: 'Go',
-  label: 'Go',
-  tier: 'extension',
-  monacoLanguageId: 'go',
+  id: "go",
+  name: "Go",
+  label: "Go",
+  tier: "extension",
+  monacoLanguageId: "go",
   blockly: false,
-  fileExtension: '.go',
-  run: 'plugin',
-  pluginPackage: '@blockyedu/plugin-lang-go',
-  runHint: 'Go 运行需安装 @blockyedu/plugin-lang-go',
-  defaultStarter: `// Go
-package main
-import "fmt"
-func main() {
-  fmt.Println("Hello BlockyEdu")
-}
-`,
+  fileExtension: ".go",
+  run: "plugin",
+  pluginPackage: "@blockyedu/plugin-lang-go",
+  get runHint() {
+    return t("lang.goHint");
+  },
+  get defaultStarter() {
+    return t("lang.goStart");
+  },
+  get description() {
+    return t("lang.goDesc");
+  },
 };
 
 export const BUILTIN_PLUGINS: LanguagePlugin[] = [

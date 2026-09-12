@@ -101,7 +101,7 @@ function LaunchPageInner() {
     const name = artifactName || artifactId || "";
     document.title = name ? `${pageTitle} · ${name}` : pageTitle;
     return () => {
-      document.title = "BlockyEdu — Learn, Build, Ship";
+      document.title = t("chrome.brandTitle");
     };
   }, [artifactId, artifactName, pageTitle]);
 

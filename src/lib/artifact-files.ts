@@ -6,6 +6,11 @@ import type { ArtifactKind } from "../types/artifact";
 
 export type ArtifactFileEntry = { path: string; contentType: string; content: string };
 
+/** Contract `contentType` for a snapshot path: `json` | `text` (binary_ref is not inferred from path). */
+export function contentTypeForPath(path: string): "json" | "text" {
+  return path.toLowerCase().endsWith(".json") ? "json" : "text";
+}
+
 /** Primary JS/code path written by the editor for each kind. */
 export function codePathForKind(kind: ArtifactKind): string {
   switch (kind) {
@@ -59,10 +64,7 @@ export function filesToMap(files: ArtifactFileEntry[]): Record<string, string> {
   return map;
 }
 
-export function pickFile(
-  map: Record<string, string>,
-  candidates: string[],
-): string | undefined {
+export function pickFile(map: Record<string, string>, candidates: string[]): string | undefined {
   for (const c of candidates) {
     if (map[c] !== undefined) return map[c];
     const hit = Object.keys(map).find((k) => k.endsWith(`/${c}`));
@@ -77,14 +79,16 @@ export function extractEditorBuffers(
 ): { code: string; blockXml: string } {
   const map = filesToMap(files);
   const code =
-    pickFile(map, [codePathForKind(kind), "firmware/main.cpp", "behavior.js", "app.js", "main.js"]) ?? "";
-  const blockXml =
     pickFile(map, [
-      blocksPathForKind(kind),
-      "behavior.blocks",
-      "blocks.xml",
-      "main.blocks.xml",
+      codePathForKind(kind),
+      "firmware/main.cpp",
+      "behavior.js",
+      "app.js",
+      "main.js",
     ]) ?? "";
+  const blockXml =
+    pickFile(map, [blocksPathForKind(kind), "behavior.blocks", "blocks.xml", "main.blocks.xml"]) ??
+    "";
   return { code, blockXml };
 }
 
@@ -95,22 +99,24 @@ export function buildSaveFiles(
   blockXml: string,
   extra: ArtifactFileEntry[] = [],
 ): ArtifactFileEntry[] {
+  const codePath = codePathForKind(kind);
   const files: ArtifactFileEntry[] = [
     {
-      path: codePathForKind(kind),
-      contentType: "text",
+      path: codePath,
+      contentType: contentTypeForPath(codePath),
       content: code,
     },
   ];
   if (blockXml.trim()) {
+    const blocksPath = blocksPathForKind(kind);
     files.push({
-      path: blocksPathForKind(kind),
-      contentType: "text",
+      path: blocksPath,
+      contentType: contentTypeForPath(blocksPath),
       content: blockXml,
     });
   }
   for (const f of extra) {
-    if (f.path !== codePathForKind(kind)) files.push(f);
+    if (f.path !== codePath) files.push(f);
   }
   return files;
 }
