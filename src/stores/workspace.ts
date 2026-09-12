@@ -11,11 +11,14 @@ import {
 import { type AppSchema, isAppStudioTemplate, parseAppSchema } from "../lib/app-studio/app-schema";
 import {
   type ArtifactFileEntry,
+  buildBinaryRefEntry,
   buildSaveFiles,
   codePathForKind,
   contentTypeForPath,
   extractEditorBuffers,
   filesToMap,
+  isBinaryRefFile,
+  mergeTextMapWithBinaryRefs,
 } from "../lib/artifact-files";
 import { t } from "../lib/i18n";
 import { untitledArtifactName } from "../lib/kind-label";
@@ -138,13 +141,15 @@ interface WorkspaceState {
   activeLeftTab: LeftPanelTab;
   showNewProjectDialog: boolean;
   previewWorld: WorldState | null;
-  /** kind=web: sandboxed iframe src (API embed URL) or empty when using srcdoc */
+  /** kind=web: sandboxed iframe src (absolute PREVIEW_PUBLIC_ORIGIN or relative API path) */
   webPreviewEmbedUrl: string | null;
   /** kind=web: srcdoc fallback when offline / unauthenticated */
   webPreviewSrcDoc: string | null;
   webPreviewSessionId: string | null;
   /** kind=smarthome: server sim session for event inject (TTL, in-memory). */
   smarthomeSessionId: string | null;
+  /** kind=toy: server `/api/v1/toy` simulation session (TTL, in-memory). */
+  toySessionId: string | null;
   /** Blog App Studio surfaces (ignored for other kinds). */
   surfaceMode: SurfaceMode;
   appSchema: AppSchema | null;
@@ -206,6 +211,7 @@ interface WorkspaceState {
     sessionId?: string | null;
   }) => void;
   setSmarthomeSessionId: (id: string | null) => void;
+  setToySessionId: (id: string | null) => void;
   createNewArtifact: (
     kind: ArtifactKind,
     name: string,
@@ -219,6 +225,8 @@ interface WorkspaceState {
   markDirty: () => void;
   setActiveFile: (path: string) => void;
   addArtifactFile: (path: string) => void;
+  /** Register a server-persisted binary_ref asset in the local draft tree. */
+  upsertBinaryAssetFile: (file: ArtifactFileEntry) => void;
   /** Drop one file. Returns false if the path is missing or it would leave zero files. */
   removeArtifactFile: (path: string, opts?: { saveDirty?: boolean }) => boolean;
   /** Replace the draft file tree from a version snapshot. Does not persist or delete. */
@@ -292,6 +300,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   webPreviewSrcDoc: null,
   webPreviewSessionId: null,
   smarthomeSessionId: null,
+  toySessionId: null,
   surfaceMode: "code",
   appSchema: null,
   selectedNodeId: null,
@@ -533,13 +542,17 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   setActiveFile: (path) => {
     const s = get();
     if (!path || s.activeFilePath === path) return;
+    const file = s.artifactFiles.find((f) => f.path === path);
+    if (file && isBinaryRefFile(file)) {
+      set({ activeFilePath: path });
+      return;
+    }
     const map = filesToMap(s.artifactFiles);
-    if (s.activeFilePath) map[s.activeFilePath] = s.code;
-    const files = Object.entries(map).map(([p, content]) => ({
-      path: p,
-      contentType: contentTypeForPath(p),
-      content,
-    }));
+    const activeMeta = s.artifactFiles.find((f) => f.path === s.activeFilePath);
+    if (s.activeFilePath && (!activeMeta || !isBinaryRefFile(activeMeta))) {
+      map[s.activeFilePath] = s.code;
+    }
+    const files = mergeTextMapWithBinaryRefs(s.artifactFiles, map);
     set({
       artifactFiles: files,
       activeFilePath: path,
@@ -562,12 +575,33 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set({ artifactFiles: files, saveDirty: true });
     get().setActiveFile(trimmed);
   },
+  upsertBinaryAssetFile: (file) => {
+    if (!file.path || !file.storageRef) return;
+    const entry = buildBinaryRefEntry({
+      path: file.path,
+      storageRef: file.storageRef,
+      mimeType: file.mimeType,
+      sizeBytes: file.sizeBytes,
+      url: file.url,
+    });
+    const s = get();
+    const others = s.artifactFiles.filter((f) => f.path !== entry.path);
+    set({
+      artifactFiles: [...others, entry],
+      activeFilePath: entry.path,
+      saveDirty: false,
+      saveStatus: "saved",
+    });
+  },
   removeArtifactFile: (path, opts) => {
     const trimmed = path.trim().replace(/^\/+/, "");
     if (!trimmed) return false;
     const s = get();
     const map = filesToMap(s.artifactFiles);
-    if (s.activeFilePath) map[s.activeFilePath] = s.code;
+    const activeMeta = s.artifactFiles.find((f) => f.path === s.activeFilePath);
+    if (s.activeFilePath && activeMeta && !isBinaryRefFile(activeMeta)) {
+      map[s.activeFilePath] = s.code;
+    }
 
     const ordered = s.artifactFiles.length
       ? s.artifactFiles.map((f) => f.path)
@@ -580,26 +614,34 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     const remainingPaths = ordered.filter((p) => p !== trimmed);
     if (remainingPaths.length === 0) return false;
 
-    const files = remainingPaths.map((p) => {
-      const prev = s.artifactFiles.find((f) => f.path === p);
-      return {
-        path: p,
-        contentType: prev?.contentType ?? contentTypeForPath(p),
-        content: map[p] ?? "",
-      };
-    });
+    const remaining = s.artifactFiles.filter((f) => f.path !== trimmed);
+    const files = mergeTextMapWithBinaryRefs(remaining, map).filter((f) =>
+      remainingPaths.includes(f.path),
+    );
+    // Preserve path order from remainingPaths
+    const byPath = new Map(files.map((f) => [f.path, f]));
+    const orderedFiles = remainingPaths.map(
+      (p) =>
+        byPath.get(p) ?? {
+          path: p,
+          contentType: contentTypeForPath(p),
+          content: map[p] ?? "",
+        },
+    );
 
     const deletingActive = s.activeFilePath === trimmed;
     const nextPath = deletingActive
       ? remainingPaths[Math.min(idx, remainingPaths.length - 1)]
       : s.activeFilePath;
-    const nextCode = deletingActive ? (map[nextPath] ?? "") : s.code;
+    const nextMeta = orderedFiles.find((f) => f.path === nextPath);
+    const nextCode =
+      deletingActive && nextMeta && !isBinaryRefFile(nextMeta) ? (map[nextPath] ?? "") : s.code;
     const nextDirty = opts?.saveDirty ?? true;
 
     set({
-      artifactFiles: files,
+      artifactFiles: orderedFiles,
       activeFilePath: nextPath,
-      code: nextCode,
+      code: deletingActive ? nextCode : s.code,
       languageBuffers: deletingActive
         ? {
             ...s.languageBuffers,
@@ -645,6 +687,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         payload.sessionId !== undefined ? payload.sessionId : s.webPreviewSessionId,
     })),
   setSmarthomeSessionId: (smarthomeSessionId) => set({ smarthomeSessionId }),
+  setToySessionId: (toySessionId) => set({ toySessionId }),
   createNewArtifact: async (kind, name, language, opts) => {
     const consoleKind = isConsoleKind(kind);
     const hardware = isHardwareKind(kind);
@@ -724,6 +767,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       webPreviewSrcDoc: null,
       webPreviewSessionId: null,
       smarthomeSessionId: null,
+      toySessionId: null,
       surfaceMode: blog ? "design" : "code",
       appSchema: seedSchema,
       selectedNodeId: seedSchema?.pages[0]?.nodes.find((n) => n.type === "hero")?.id ?? null,
@@ -903,6 +947,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         webPreviewSrcDoc: null,
         webPreviewSessionId: null,
         smarthomeSessionId: null,
+        toySessionId: null,
         surfaceMode: blog ? "design" : "code",
         appSchema,
         selectedNodeId: appSchema?.pages[0]?.nodes.find((n) => n.type === "hero")?.id ?? null,
@@ -960,6 +1005,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       webPreviewSrcDoc: null,
       webPreviewSessionId: null,
       smarthomeSessionId: null,
+      toySessionId: null,
       surfaceMode: "code",
       appSchema: null,
       selectedNodeId: null,
@@ -1037,30 +1083,50 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       }
 
       const map = filesToMap(state.artifactFiles);
-      if (state.activeFilePath) map[state.activeFilePath] = state.code;
+      if (state.activeFilePath) {
+        const activeMeta = state.artifactFiles.find((f) => f.path === state.activeFilePath);
+        if (!activeMeta || !isBinaryRefFile(activeMeta)) {
+          map[state.activeFilePath] = state.code;
+        }
+      }
       if (state.appSchema) {
         map[APP_SCHEMA_PATH] = `${JSON.stringify(state.appSchema, null, 2)}\n`;
       }
       const blog = isBlogStudioKind(state.artifactKind, state.templateId);
+      const binaryFiles = state.artifactFiles.filter(isBinaryRefFile);
       const files: ArtifactFileEntry[] = blog
-        ? Object.entries(map).map(([path, content]) => ({
-            path,
-            contentType: contentTypeForPath(path),
-            content,
-          }))
-        : buildSaveFiles(
-            state.artifactKind,
-            map[codePathForKind(state.artifactKind)] ?? state.code,
-            state.blockXml,
-            Object.entries(map)
-              .filter(([p]) => p !== codePathForKind(state.artifactKind))
-              .map(([path, content]) => ({
-                path,
-                contentType: contentTypeForPath(path),
-                content,
-              })),
-          );
-      const res = await api.putArtifactFiles(artifactId, { files });
+        ? mergeTextMapWithBinaryRefs(state.artifactFiles, map)
+        : [
+            ...buildSaveFiles(
+              state.artifactKind,
+              map[codePathForKind(state.artifactKind)] ?? state.code,
+              state.blockXml,
+              Object.entries(map)
+                .filter(([p]) => p !== codePathForKind(state.artifactKind))
+                .map(([path, content]) => ({
+                  path,
+                  contentType: contentTypeForPath(path),
+                  content,
+                })),
+            ),
+            ...binaryFiles,
+          ];
+      const res = await api.putArtifactFiles(artifactId, {
+        files: files.map((f) =>
+          isBinaryRefFile(f)
+            ? {
+                path: f.path,
+                contentType: "binary_ref",
+                storageRef: f.storageRef,
+                mimeType: f.mimeType,
+              }
+            : {
+                path: f.path,
+                contentType: f.contentType,
+                content: f.content ?? "",
+              },
+        ),
+      });
       set({
         artifactFiles: res.files,
         currentProject: project,

@@ -168,6 +168,12 @@
   letter-spacing: 0.07em;
 }
 
+.sectionActions {
+  @include flex-row();
+  gap: $space-1;
+  align-items: center;
+}
+
 .sectionAction {
   @include flex-center();
   width: 18px;

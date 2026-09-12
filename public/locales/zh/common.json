@@ -197,7 +197,16 @@
     "injectNeedRun": "请先点击仿真运行以创建会话",
     "imageFallback": "图片",
     "emptyBlocks": "暂无内容。在积木中添加页面元素后再次预览。",
-    "isolatedBanner": "BlockyEdu · 隔离预览"
+    "isolatedBanner": "BlockyEdu · 隔离预览",
+    "toyVirtual": "虚拟孪生（可用时连接服务端会话）",
+    "toyControls": "控制",
+    "toyStep": "步进",
+    "toyLed": "切换 LED",
+    "toyShake": "摇一摇",
+    "toyReset": "重置",
+    "toyApiOffline": "服务端仿真不可用 — 仅本地孪生",
+    "toyTick": "帧 {{tick}}",
+    "toyStatus": "{{status}}"
   },
   "lesson": {
     "loading": "加载练习...",
@@ -349,7 +358,14 @@
     "restore": "恢复到草稿",
     "restoreConfirm": "将 v{{n}} 恢复到当前草稿？未保存的文件树改动会被覆盖。",
     "restoreOk": "已恢复到草稿",
-    "restoreFailed": "无法恢复该版本"
+    "restoreFailed": "无法恢复该版本",
+    "uploadImage": "上传图片",
+    "uploadOk": "已上传 {{path}}",
+    "uploadFailed": "图片上传失败",
+    "uploadFailedCode": "上传失败（{{code}}）",
+    "uploadNeedSave": "请先保存作品再上传图片",
+    "binaryHint": "二进制资产 — 文件树中以存储引用登记",
+    "binaryHintRef": "二进制资产 · {{ref}}"
   },
   "assets": {
     "files": "文件",

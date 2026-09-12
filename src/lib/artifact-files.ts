@@ -4,11 +4,47 @@
  */
 import type { ArtifactKind } from "../types/artifact";
 
-export type ArtifactFileEntry = { path: string; contentType: string; content: string };
+export type ArtifactFileEntry = {
+  path: string;
+  contentType: string;
+  content?: string;
+  storageRef?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  url?: string;
+};
 
 /** Contract `contentType` for a snapshot path: `json` | `text` (binary_ref is not inferred from path). */
 export function contentTypeForPath(path: string): "json" | "text" {
   return path.toLowerCase().endsWith(".json") ? "json" : "text";
+}
+
+export function isBinaryRefFile(file: ArtifactFileEntry): boolean {
+  return file.contentType === "binary_ref" || Boolean(file.storageRef);
+}
+
+/** Suggested draft path for an uploaded image name. */
+export function assetPathForUpload(fileName: string): string {
+  const base = fileName.trim().replace(/^.*[\\/]/, "") || "image.png";
+  const safe = base.replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^\.+/, "") || "image.png";
+  return `assets/${safe}`;
+}
+
+export function buildBinaryRefEntry(input: {
+  path: string;
+  storageRef: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  url?: string;
+}): ArtifactFileEntry {
+  return {
+    path: input.path,
+    contentType: "binary_ref",
+    storageRef: input.storageRef,
+    ...(input.mimeType ? { mimeType: input.mimeType } : {}),
+    ...(typeof input.sizeBytes === "number" ? { sizeBytes: input.sizeBytes } : {}),
+    ...(input.url ? { url: input.url } : {}),
+  };
 }
 
 /** Primary JS/code path written by the editor for each kind. */
@@ -60,8 +96,31 @@ export function blocksPathForKind(kind: ArtifactKind): string {
 
 export function filesToMap(files: ArtifactFileEntry[]): Record<string, string> {
   const map: Record<string, string> = {};
-  for (const f of files) map[f.path] = f.content ?? "";
+  for (const f of files) {
+    if (isBinaryRefFile(f)) continue;
+    map[f.path] = f.content ?? "";
+  }
   return map;
+}
+
+/** Keep binary_ref rows when rebuilding text buffers from a path→content map. */
+export function mergeTextMapWithBinaryRefs(
+  files: ArtifactFileEntry[],
+  map: Record<string, string>,
+): ArtifactFileEntry[] {
+  const binaries = files.filter(isBinaryRefFile);
+  const binaryPaths = new Set(binaries.map((f) => f.path));
+  const textEntries = Object.entries(map)
+    .filter(([path]) => !binaryPaths.has(path))
+    .map(([path, content]) => {
+      const prev = files.find((f) => f.path === path);
+      return {
+        path,
+        contentType: prev?.contentType ?? contentTypeForPath(path),
+        content,
+      };
+    });
+  return [...textEntries, ...binaries];
 }
 
 export function pickFile(map: Record<string, string>, candidates: string[]): string | undefined {

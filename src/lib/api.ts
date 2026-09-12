@@ -167,6 +167,66 @@ export interface SmarthomeSimSession {
   expiresAt: string;
 }
 
+export type ToySimStatus =
+  | "pending"
+  | "loading"
+  | "running"
+  | "paused"
+  | "completed"
+  | "failed"
+  | "stopped"
+  | "expired";
+
+export type ToySimRuntime = "canvas_2d" | "three_3d";
+
+export interface ToySimState {
+  x: number;
+  y: number;
+  heading: number;
+  speed: number;
+  moving: string;
+  led: string;
+  sensors: Record<string, number>;
+  sound?: string;
+  speech?: string;
+  timeline: string[];
+  arena: { width: number; height: number };
+  sku?: string;
+}
+
+export interface ToySimSession {
+  id: string;
+  artifactId: string;
+  status: ToySimStatus | string;
+  runtime: ToySimRuntime | string;
+  tick?: number;
+  state?: ToySimState;
+  embedUrl?: string;
+  lastErrorCode?: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface ToySimEventResult {
+  accepted: boolean;
+  sessionId: string;
+  appliedTick?: number;
+  status?: ToySimStatus | string;
+  state?: ToySimState;
+}
+
+export interface ToySimResult {
+  sessionId: string;
+  status: ToySimStatus | string;
+  metrics?: {
+    durationMs?: number;
+    eventCount?: number;
+    collisionCount?: number;
+  };
+  assertions?: Array<{ name: string; passed: boolean; detail?: string }>;
+  snapshotRef?: string;
+}
+
 export type BlogPostStatus = "draft" | "published";
 
 export interface BlogPostData {
@@ -324,17 +384,41 @@ export const api = {
   putArtifactFiles: (
     id: string,
     body: {
-      files: Array<{ path: string; contentType?: string; content?: string }>;
+      files: Array<{
+        path: string;
+        contentType?: string;
+        content?: string;
+        storageRef?: string;
+        mimeType?: string;
+      }>;
       deletePaths?: string[];
     },
   ) =>
-    request<{ files: Array<{ path: string; contentType: string; content: string }> }>(
-      `/create/artifacts/${id}/files`,
-      {
-        method: "PUT",
-        body: JSON.stringify(body),
-      },
-    ),
+    request<{
+      files: Array<{
+        path: string;
+        contentType: string;
+        content?: string;
+        storageRef?: string;
+        mimeType?: string;
+        sizeBytes?: number;
+      }>;
+    }>(`/create/artifacts/${id}/files`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  putArtifactAsset: (id: string, body: { path: string; mimeType: string; dataBase64: string }) =>
+    request<{
+      path: string;
+      contentType: "binary_ref";
+      storageRef: string;
+      mimeType: string;
+      sizeBytes: number;
+      url?: string;
+    }>(`/create/artifacts/${id}/assets`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   listProjects: () => request<Project[]>("/code/projects"),
   getProject: (id: string) => request<Project>(`/code/projects/${id}`),
   createProject: (data: Partial<Project>) =>
@@ -498,6 +582,40 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  createToySimulation: (body: {
+    artifactId: string;
+    runtime?: ToySimRuntime;
+    versionNumber?: number;
+    previewSessionId?: string;
+    ttlSeconds?: number;
+  }) =>
+    request<ToySimSession>("/toy/simulations", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  getToySimulation: (sessionId: string) => request<ToySimSession>(`/toy/simulations/${sessionId}`),
+  stopToySimulation: (sessionId: string) =>
+    request<void>(`/toy/simulations/${sessionId}`, { method: "DELETE" }),
+  injectToySimulationEvent: (
+    sessionId: string,
+    body: {
+      type: "sensor" | "input" | "reset" | "custom";
+      name?: string;
+      payload?: Record<string, unknown>;
+      clientEventId?: string;
+    },
+  ) =>
+    request<ToySimEventResult>(`/toy/simulations/${sessionId}/events`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  runToySimulation: (sessionId: string, body?: { mode?: "step" | "full" }) =>
+    request<ToySimSession>(`/toy/simulations/${sessionId}/run`, {
+      method: "POST",
+      body: JSON.stringify(body ?? {}),
+    }),
+  getToySimulationResult: (sessionId: string) =>
+    request<ToySimResult>(`/toy/simulations/${sessionId}/result`),
   publishWeb: (artifactId: string, note?: string) =>
     request<WebRelease>("/publish/web", {
       method: "POST",

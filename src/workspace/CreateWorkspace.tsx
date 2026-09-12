@@ -426,6 +426,25 @@ export function CreateWorkspace() {
             }
           })();
         }
+
+        if (artifactKind === "toy" && artifactId) {
+          void (async () => {
+            try {
+              const preview = await api.createPreviewSession({
+                artifactId,
+                kind: "toy",
+              });
+              const sim = await api.createToySimulation({
+                artifactId,
+                previewSessionId: preview.id,
+              });
+              useWorkspaceStore.getState().setToySessionId(sim.id);
+              // Keep local Blockly twin as primary visual; server twin seeds inject/run.
+            } catch {
+              /* offline / unauthenticated — local twin already shown */
+            }
+          })();
+        }
       } catch (err) {
         appendConsole(`[error] ${err instanceof Error ? err.message : String(err)}`);
       } finally {

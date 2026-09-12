@@ -3,14 +3,16 @@ import {
   CaretDownOutlined,
   CaretRightOutlined,
   DeleteOutlined,
+  FileImageOutlined,
   FileOutlined,
   FolderOutlined,
   PlusOutlined,
   ReadOutlined,
   RocketOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import { App as AntdApp, Tooltip } from "antd";
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LessonPanel } from "../components/LessonPanel";
 import { ProjectPanel } from "../components/ProjectPanel";
 import { type ArtifactVersion, api } from "../lib/api";
@@ -19,12 +21,14 @@ import {
   studioMissionSteps,
   studioMissionTitle,
 } from "../lib/app-studio/blog-mission";
+import { assetPathForUpload, isBinaryRefFile } from "../lib/artifact-files";
 import {
   formatVersionTime,
   takeRecentArtifactVersions,
   versionHasFiles,
 } from "../lib/artifact-versions";
 import { type FileTreeNode, filesToTree } from "../lib/file-tree";
+import { errorCodeOf } from "../lib/http";
 import { t } from "../lib/i18n";
 import { useLocaleStore } from "../lib/locale-store";
 import { navigate } from "../lib/navigate";
@@ -62,12 +66,16 @@ function FileTree() {
   const artifactId = useWorkspaceStore((s) => s.artifactId);
   const setActiveFile = useWorkspaceStore((s) => s.setActiveFile);
   const addArtifactFile = useWorkspaceStore((s) => s.addArtifactFile);
+  const upsertBinaryAssetFile = useWorkspaceStore((s) => s.upsertBinaryAssetFile);
   const removeArtifactFile = useWorkspaceStore((s) => s.removeArtifactFile);
   const kind = useWorkspaceStore((s) => s.artifactKind);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [deletingPath, setDeletingPath] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const paths = files.map((f) => f.path);
+  const fileByPath = useMemo(() => new Map(files.map((f) => [f.path, f])), [files]);
   const tree = useMemo(
     () => filesToTree(paths.length ? paths : [activeFilePath || "main.js"]),
     [paths, activeFilePath],
@@ -79,6 +87,44 @@ function FileTree() {
       kind === "iot" ? "firmware/notes.txt" : "notes.md",
     );
     if (path) addArtifactFile(path);
+  };
+
+  const onPickImage = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!artifactId) {
+      message.warning(t("files.uploadNeedSave"));
+      return;
+    }
+    if (uploading) return;
+    setUploading(true);
+    try {
+      const dataBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = typeof reader.result === "string" ? reader.result : "";
+          const comma = result.indexOf(",");
+          resolve(comma >= 0 ? result.slice(comma + 1) : result);
+        };
+        reader.onerror = () => reject(reader.error ?? new Error("read failed"));
+        reader.readAsDataURL(file);
+      });
+      const asset = await api.putArtifactAsset(artifactId, {
+        path: assetPathForUpload(file.name),
+        mimeType: file.type || "image/png",
+        dataBase64,
+      });
+      upsertBinaryAssetFile(asset);
+      message.success(t("files.uploadOk", { path: asset.path }));
+    } catch (err) {
+      const code = errorCodeOf(err);
+      message.error(
+        code ? t("files.uploadFailedCode", { code }) : t("files.uploadFailed"),
+      );
+    } finally {
+      setUploading(false);
+    }
   };
 
   const deleteFile = async (path: string) => {
@@ -130,6 +176,8 @@ function FileTree() {
         </div>
       );
     }
+    const meta = fileByPath.get(node.path);
+    const binary = meta ? isBinaryRefFile(meta) : false;
     return (
       <div
         key={node.path}
@@ -138,10 +186,21 @@ function FileTree() {
         <button
           type="button"
           className={styles.treeFileMain}
-          onClick={() => setActiveFile(node.path)}
+          onClick={() => {
+            if (binary) {
+              message.info(
+                meta?.storageRef
+                  ? t("files.binaryHintRef", { ref: meta.storageRef })
+                  : t("files.binaryHint"),
+              );
+              setActiveFile(node.path);
+              return;
+            }
+            setActiveFile(node.path);
+          }}
         >
           <span className={styles.treeIcon} style={{ marginLeft: 8 + depth * 8 }}>
-            <FileOutlined />
+            {binary ? <FileImageOutlined /> : <FileOutlined />}
           </span>
           <span className={styles.treeName}>{node.name}</span>
         </button>
@@ -162,14 +221,32 @@ function FileTree() {
     <div className={styles.fileTree}>
       <div className={styles.sectionHeader}>
         <span className={styles.sectionTitle}>{t("files.title")}</span>
-        <button
-          type="button"
-          className={styles.sectionAction}
-          aria-label={t("files.new")}
-          onClick={addFile}
-        >
-          <PlusOutlined />
-        </button>
+        <div className={styles.sectionActions}>
+          <button
+            type="button"
+            className={styles.sectionAction}
+            aria-label={t("files.uploadImage")}
+            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <UploadOutlined />
+          </button>
+          <button
+            type="button"
+            className={styles.sectionAction}
+            aria-label={t("files.new")}
+            onClick={addFile}
+          >
+            <PlusOutlined />
+          </button>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          hidden
+          onChange={(e) => void onPickImage(e)}
+        />
       </div>
       {tree.map((n) => renderNode(n, 0))}
     </div>

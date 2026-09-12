@@ -118,6 +118,30 @@ export function toSrcDoc(html: string): string {
   return html;
 }
 
+/**
+ * Use server `isolation.embedUrl` as iframe src.
+ * Absolute (PREVIEW_PUBLIC_ORIGIN) loads cross-origin Preview Host;
+ * relative `/api/v1/preview/...` uses same-tab app origin + API proxy (local demo).
+ */
+export function resolvePreviewEmbedSrc(embedUrl: string | null | undefined): string | undefined {
+  const url = embedUrl?.trim();
+  return url || undefined;
+}
+
+/** Browser-chrome label for the preview panel address bar. */
+export function previewEmbedChromeLabel(embedUrl: string | null | undefined): string {
+  const url = resolvePreviewEmbedSrc(embedUrl);
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) {
+    try {
+      return `${new URL(url).origin} · sandbox`;
+    } catch {
+      return "sandbox://preview";
+    }
+  }
+  return "sandbox://preview (opaque origin)";
+}
+
 function pick(files: Record<string, string>, candidates: string[]): string | undefined {
   const keys = Object.keys(files);
   for (const c of candidates) {

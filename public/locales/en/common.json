@@ -197,7 +197,16 @@
     "injectNeedRun": "Run simulation first to create a session",
     "imageFallback": "Image",
     "emptyBlocks": "Nothing to preview yet. Add page blocks, then run again.",
-    "isolatedBanner": "BlockyEdu · isolated preview"
+    "isolatedBanner": "BlockyEdu · isolated preview",
+    "toyVirtual": "Virtual twin (server session when available)",
+    "toyControls": "Controls",
+    "toyStep": "Step",
+    "toyLed": "Toggle LED",
+    "toyShake": "Shake",
+    "toyReset": "Reset",
+    "toyApiOffline": "Server sim offline — local twin only",
+    "toyTick": "tick {{tick}}",
+    "toyStatus": "{{status}}"
   },
   "lesson": {
     "loading": "Loading lesson...",
@@ -349,7 +358,14 @@
     "restore": "Restore",
     "restoreConfirm": "Restore v{{n}} into the draft? Unsaved tree edits will be overwritten.",
     "restoreOk": "Restored into the draft",
-    "restoreFailed": "Could not restore this version"
+    "restoreFailed": "Could not restore this version",
+    "uploadImage": "Upload image",
+    "uploadOk": "Uploaded {{path}}",
+    "uploadFailed": "Could not upload the image",
+    "uploadFailedCode": "Upload failed ({{code}})",
+    "uploadNeedSave": "Save the project once before uploading images",
+    "binaryHint": "Binary asset — referenced by storage id in the file tree",
+    "binaryHintRef": "Binary asset · {{ref}}"
   },
   "assets": {
     "files": "Files",

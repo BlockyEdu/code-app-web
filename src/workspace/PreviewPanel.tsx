@@ -6,25 +6,22 @@ import { t } from "../lib/i18n";
 import { useLocaleStore } from "../lib/locale-store";
 import { previewLabel } from "../lib/preview-label";
 import type { WorldState } from "../lib/targets";
-import { WEB_IFRAME_SANDBOX } from "../lib/web-preview";
+import {
+  previewEmbedChromeLabel,
+  resolvePreviewEmbedSrc,
+  WEB_IFRAME_SANDBOX,
+} from "../lib/web-preview";
 import { isAppStudioKind, useWorkspaceStore } from "../stores/workspace";
 import type { ArtifactKind } from "../types/artifact";
 import { KIND_DEFAULT_PREVIEW } from "../types/artifact";
 import studio from "./BlogStudio.module.scss";
 import styles from "./PreviewPanel.module.scss";
 import { SmarthomePreview } from "./SmarthomePreview";
+import { ToyPreview } from "./ToyPreview";
 
 interface PreviewPanelProps {
   kind: ArtifactKind;
 }
-
-const LED_COLORS: Record<string, string> = {
-  red: "#ef4444",
-  green: "#22c55e",
-  blue: "#2563eb",
-  yellow: "#f59e0b",
-  off: "#334155",
-};
 
 function parseBlogNavHref(href: string): { page: "home" } | { page: "post"; slug: string } {
   const match = href.match(/\/posts\/([^/?#]+)/);
@@ -42,7 +39,8 @@ function WebPreview({
   chrome?: "browser" | "none";
 }) {
   useLocaleStore((s) => s.locale);
-  const embedUrl = useWorkspaceStore((s) => s.webPreviewEmbedUrl);
+  const embedUrlRaw = useWorkspaceStore((s) => s.webPreviewEmbedUrl);
+  const embedUrl = resolvePreviewEmbedSrc(embedUrlRaw);
   const srcDoc = useWorkspaceStore((s) => s.webPreviewSrcDoc);
   const artifactKind = useWorkspaceStore((s) => s.artifactKind);
   const templateId = useWorkspaceStore((s) => s.templateId);
@@ -76,7 +74,7 @@ function WebPreview({
           </div>
           <div className={styles.browserUrl}>
             {embedUrl
-              ? "sandbox://preview (opaque origin)"
+              ? previewEmbedChromeLabel(embedUrl)
               : srcDoc
                 ? "srcdoc://sandbox"
                 : blogStudio
@@ -191,51 +189,6 @@ function MiniprogramPreview({ world }: { world: WorldState | null }) {
               </button>
             ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function ToyPreview({ world }: { world: WorldState | null }) {
-  useLocaleStore((s) => s.locale);
-  const toy = world?.toy;
-  const led = toy?.led || "off";
-  const ledColor = LED_COLORS[led] || LED_COLORS.off;
-  const log = toy?.timeline?.length ? toy.timeline.slice(-6) : [t("preview.toyIdle")];
-
-  return (
-    <div className={styles.toyPreview}>
-      <div className={styles.toyDevice}>
-        <div className={styles.toyBoard}>
-          <div className={styles.toyChip}>CPU</div>
-          <div
-            className={styles.toyLed}
-            style={{ background: ledColor, boxShadow: `0 0 12px ${ledColor}` }}
-          />
-          <div className={styles.toyMotorLabel}>
-            {toy ? `${toy.moving} @${toy.speed}` : "MOTOR"}
-          </div>
-        </div>
-        {toy?.speech && <div className={styles.webHeroSub}>「{toy.speech}」</div>}
-        <div className={styles.toyControls}>
-          <span className={styles.toyBtn}>
-            {t("preview.toyPose", {
-              x: Math.round(toy?.x ?? 50),
-              y: Math.round(toy?.y ?? 70),
-              heading: toy?.heading ?? 0,
-            })}
-          </span>
-          {toy?.sound && (
-            <span className={`${styles.toyBtn} ${styles.toyBtnActive}`}>♪ {toy.sound}</span>
-          )}
-        </div>
-      </div>
-      <div className={styles.toyLog}>
-        {log.map((line) => (
-          <div key={line} className={styles.toyLogLine}>
-            {line}
-          </div>
-        ))}
       </div>
     </div>
   );
