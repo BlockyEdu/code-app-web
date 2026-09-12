@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it } from "@rstest/core";
-import { clearHttpInflight, httpRequest, setUnauthorizedHandler, UnauthorizedError } from "./http";
+import {
+  clearHttpInflight,
+  errorCodeOf,
+  httpRequest,
+  setUnauthorizedHandler,
+  UnauthorizedError,
+} from "./http";
 import { useLocaleStore } from "./locale-store";
 
 function urlOf(input: RequestInfo | URL): string {
@@ -208,5 +214,14 @@ describe("httpRequest JWT refresh", () => {
       UnauthorizedError,
     );
     expect(refreshCalls).toBe(0);
+  });
+});
+
+describe("errorCodeOf", () => {
+  it("reads CP-ERR-* and WEB-ERR-* from thrown request errors", () => {
+    const err = Object.assign(new Error("blocked"), { code: "CP-ERR-VALIDATE" });
+    expect(errorCodeOf(err)).toBe("CP-ERR-VALIDATE");
+    expect(errorCodeOf(new Error("fail CP-ERR-STATE here"))).toBe("CP-ERR-STATE");
+    expect(errorCodeOf(new Error("WEB-ERR-VALIDATE"))).toBe("WEB-ERR-VALIDATE");
   });
 });

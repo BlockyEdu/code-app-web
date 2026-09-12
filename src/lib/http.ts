@@ -168,7 +168,7 @@ async function parseErrorBody(res: Response): Promise<{ message: string; code?: 
   return { message: raw.trim() || res.statusText };
 }
 
-/** WEB-ERR-* / PREVIEW-ERR-* (and other API codes) from a thrown request error. */
+/** WEB-ERR-* / PREVIEW-ERR-* / CP-ERR-* (and other API codes) from a thrown request error. */
 export function errorCodeOf(err: unknown): string | undefined {
   if (
     err &&
@@ -180,7 +180,7 @@ export function errorCodeOf(err: unknown): string | undefined {
     if (code) return code;
   }
   const msg = err instanceof Error ? err.message : typeof err === "string" ? err : "";
-  return msg.match(/\b((?:WEB|PREVIEW|SMARTHOME)-ERR-[A-Z0-9-]+)\b/)?.[1];
+  return msg.match(/\b((?:WEB|PREVIEW|SMARTHOME|CP)-ERR-[A-Z0-9-]+)\b/)?.[1];
 }
 
 async function execute<T>(path: string, init?: HttpRequestInternal): Promise<T> {

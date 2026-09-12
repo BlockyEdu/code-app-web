@@ -3,6 +3,7 @@ import { Button, Input, Modal, message, QRCode } from "antd";
 import { useEffect, useState } from "react";
 import { type AppValidateReport, api, type WebRelease } from "../lib/api";
 import { usesHostedPosts } from "../lib/app-studio/app-schema";
+import { errorCodeOf } from "../lib/http";
 import { t } from "../lib/i18n";
 import { useLocaleStore } from "../lib/locale-store";
 import { useWorkspaceStore } from "../stores/workspace";
@@ -28,6 +29,24 @@ function releaseErrorCode(rel: WebRelease): string | null {
   if (rel.errorCode) return rel.errorCode;
   if (rel.status === "failed") return rel.status;
   return null;
+}
+
+function publishErrorMessage(err: unknown): string {
+  const code = errorCodeOf(err);
+  if (code === "CP-ERR-VALIDATE" || code === "WEB-ERR-VALIDATE" || code === "APP-ERR-SCHEMA") {
+    const detail = err instanceof Error ? err.message : "";
+    return detail && detail !== t("publish.failed")
+      ? `${t("publish.validationBlocked")}: ${detail}`
+      : t("publish.validationBlocked");
+  }
+  if (code === "CP-ERR-STATE") {
+    return t("publish.stateBlocked", { code });
+  }
+  if (code) {
+    const detail = err instanceof Error ? err.message : "";
+    return detail ? t("publish.failedWithCode", { code }) + ` — ${detail}` : t("publish.failedWithCode", { code });
+  }
+  return err instanceof Error ? err.message : t("publish.failed");
 }
 
 export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
@@ -127,7 +146,7 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
       }
       message.success(t("publish.live"));
     } catch (err) {
-      message.error(err instanceof Error ? err.message : t("publish.failed"));
+      message.error(publishErrorMessage(err));
     } finally {
       setBusy(false);
     }
