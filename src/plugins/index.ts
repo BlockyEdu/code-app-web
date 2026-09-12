@@ -1,8 +1,9 @@
-import { runJavascript } from './runners';
-import type { LanguagePlugin, LanguageRunResult } from './types';
-import { BUILTIN_PLUGINS } from './builtins';
-import { compileTypeScriptToJs } from '../lib/preview/typescript-compiler';
-import { runPythonWithPyodide } from '../lib/preview/pyodide-runner';
+import { t } from "../lib/i18n";
+import { runPythonWithPyodide } from "../lib/preview/pyodide-runner";
+import { compileTypeScriptToJs } from "../lib/preview/typescript-compiler";
+import { BUILTIN_PLUGINS } from "./builtins";
+import { runJavascript } from "./runners";
+import type { LanguagePlugin, LanguageRunResult } from "./types";
 
 const registry = new Map<string, LanguagePlugin>();
 
@@ -20,11 +21,11 @@ export function getLanguagePlugin(id: string): LanguagePlugin | undefined {
 }
 
 export function listCoreLanguages(): LanguagePlugin[] {
-  return [...registry.values()].filter((p) => p.tier === 'core');
+  return [...registry.values()].filter((p) => p.tier === "core");
 }
 
 export function listExtensionLanguages(): LanguagePlugin[] {
-  return [...registry.values()].filter((p) => p.tier === 'extension');
+  return [...registry.values()].filter((p) => p.tier === "extension");
 }
 
 export function listAllLanguages(): LanguagePlugin[] {
@@ -33,9 +34,9 @@ export function listAllLanguages(): LanguagePlugin[] {
 
 export function getDefaultLanguageId(): string {
   try {
-    return localStorage.getItem('blockyedu_language') ?? 'javascript';
+    return localStorage.getItem("blockyedu_language") ?? "javascript";
   } catch {
-    return 'javascript';
+    return "javascript";
   }
 }
 
@@ -47,28 +48,28 @@ export function runLanguageCode(languageId: string, code: string): LanguageRunRe
 function runLanguageCodePreviewSync(languageId: string, code: string): LanguageRunResult {
   const plugin = getLanguagePlugin(languageId);
   if (!plugin) {
-    return { logs: [], error: `未知语言：${languageId}` };
+    return { logs: [], error: t("plugin.unknownLang", { id: languageId }) };
   }
 
-  if (plugin.run === 'plugin') {
+  if (plugin.run === "plugin") {
     return {
-      logs: [`[插件] ${plugin.runHint ?? `请安装 ${plugin.pluginPackage}`}`],
+      logs: [plugin.runHint ?? t("plugin.install", { pkg: plugin.pluginPackage })],
     };
   }
 
-  if (plugin.run === 'server') {
-    return { logs: ['[server] 请使用 Pro 云端运行'] };
+  if (plugin.run === "server") {
+    return { logs: [t("plugin.needPro")] };
   }
 
-  if (plugin.run === 'none') {
-    return { logs: ['[info] 该语言暂不支持运行，仅编辑'] };
+  if (plugin.run === "none") {
+    return { logs: [t("plugin.editOnly")] };
   }
 
   switch (languageId) {
-    case 'javascript':
+    case "javascript":
       return { logs: runJavascript(code) };
     default:
-      return { logs: ['[info] 请使用「预览运行」按钮加载完整运行时'] };
+      return { logs: [`[info] ${t("run.useConsoleButton")}`] };
   }
 }
 
@@ -79,31 +80,31 @@ export async function runLanguageCodePreview(
 ): Promise<LanguageRunResult> {
   const plugin = getLanguagePlugin(languageId);
   if (!plugin) {
-    return { logs: [], error: `未知语言：${languageId}` };
+    return { logs: [], error: t("plugin.unknownLang", { id: languageId }) };
   }
 
-  if (plugin.run === 'plugin') {
+  if (plugin.run === "plugin") {
     return {
       logs: [
-        `[插件] ${plugin.runHint ?? `请安装 ${plugin.pluginPackage}`}`,
-        '[提示] Pro 用户可使用「Pro 运行」在云端沙箱执行此语言',
+        plugin.runHint ?? t("plugin.install", { pkg: plugin.pluginPackage }),
+        t("plugin.proSandbox"),
       ],
     };
   }
 
-  if (plugin.run === 'none') {
-    return { logs: ['[info] 该语言暂不支持运行，仅编辑'] };
+  if (plugin.run === "none") {
+    return { logs: [t("plugin.editOnly")] };
   }
 
   try {
     switch (languageId) {
-      case 'javascript':
+      case "javascript":
         return { logs: runJavascript(code) };
-      case 'typescript': {
+      case "typescript": {
         const js = await compileTypeScriptToJs(code);
         return { logs: runJavascript(js) };
       }
-      case 'python':
+      case "python":
         return { logs: await runPythonWithPyodide(code) };
       default:
         return runLanguageCodePreviewSync(languageId, code);
@@ -116,4 +117,4 @@ export async function runLanguageCodePreview(
   }
 }
 
-export type { LanguagePlugin, LanguageRunResult, LanguageTier, RunCapability } from './types';
+export type { LanguagePlugin, LanguageRunResult, LanguageTier, RunCapability } from "./types";

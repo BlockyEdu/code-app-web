@@ -9,104 +9,18 @@ import { UserAvatarMenu } from "../components/UserAvatarMenu";
 import { useWorkItems } from "../hooks/useWorkItems";
 import { useAuthStore } from "../lib/auth-store";
 import { appBrandTitle } from "../lib/deploy-profile";
+import { t } from "../lib/i18n";
 import { rememberPostLoginPath } from "../lib/idp";
-import { type AppLocale, useLocaleStore } from "../lib/locale-store";
+import { kindLabel } from "../lib/kind-label";
+import { useLocaleStore } from "../lib/locale-store";
 import { navigate } from "../lib/navigate";
 import { profileFeatures } from "../lib/product-profile";
 import type { WorkItem } from "../lib/work-items";
 import { useWorkspaceStore } from "../stores/workspace";
 import type { ArtifactKind } from "../types/artifact";
-import { ARTIFACT_KIND_ORDER, KIND_COLOR, KIND_LABEL } from "../types/artifact";
+import { ARTIFACT_KIND_ORDER, KIND_COLOR } from "../types/artifact";
 import { NewProjectDialog } from "../workspace/NewProjectDialog";
 import styles from "./ProjectsHub.module.scss";
-
-const HUB_COPY: Record<
-  AppLocale,
-  {
-    heroTitle: string;
-    heroSub: string;
-    sectionTitle: string;
-    refresh: string;
-    newProject: string;
-    empty: string;
-    updatedAt: string;
-    loadFailed: string;
-    createOk: string;
-    createFailed: string;
-    openFailed: string;
-    logout: string;
-    all: string;
-    navDiscover: string;
-    navLearn: string;
-    navBuild: string;
-    navLab: string;
-    navLaunch: string;
-    launchHint: string;
-    intentLearn: string;
-    intentLearnSub: string;
-    intentBuild: string;
-    intentBuildSub: string;
-    intentShip: string;
-    intentShipSub: string;
-  }
-> = {
-  "zh-CN": {
-    heroTitle: "Learn, Build, Ship",
-    heroSub: "从结对学习到可验证固件，再到开放制造包。仿真不是量产；文件可带走。",
-    sectionTitle: "我的作品",
-    refresh: "刷新",
-    newProject: "新建",
-    empty: "还没有作品。从上方意图开始。",
-    updatedAt: "更新于",
-    loadFailed: "加载失败",
-    createOk: "已创建",
-    createFailed: "创建失败",
-    openFailed: "打开失败",
-    logout: "退出登录",
-    all: "全部",
-    navDiscover: "Discover",
-    navLearn: "Learn",
-    navBuild: "Build",
-    navLab: "Lab",
-    navLaunch: "发布",
-    launchHint: "以下为可走向制造包的硬件作品。点击打开工作台；在工作台点「发布台」可做制造检查。",
-    intentLearn: "Learn a skill",
-    intentLearnSub: "自由编程与 AI 结对",
-    intentBuild: "Build a project",
-    intentBuildSub: "软件、电子、IoT 模板",
-    intentShip: "Ship a product",
-    intentShipSub: "金路径硬件到制造包",
-  },
-  "en-US": {
-    heroTitle: "Learn, Build, Ship",
-    heroSub:
-      "From pair-learning to verified firmware to an open manufacturing pack. Simulation is not mass production. Files leave with you.",
-    sectionTitle: "Your artifacts",
-    refresh: "Refresh",
-    newProject: "New",
-    empty: "No artifacts yet. Start from an intent above.",
-    updatedAt: "Updated",
-    loadFailed: "Failed to load projects",
-    createOk: "Project created",
-    createFailed: "Failed to create",
-    openFailed: "Failed to open",
-    logout: "Sign out",
-    all: "All",
-    navDiscover: "Discover",
-    navLearn: "Learn",
-    navBuild: "Build",
-    navLab: "Lab",
-    navLaunch: "Launch",
-    launchHint:
-      "These are hardware artifacts that can go to a manufacturing pack. Open the workspace, then use Launch desk for checks.",
-    intentLearn: "Learn a skill",
-    intentLearnSub: "Free coding with an AI pair",
-    intentBuild: "Build a project",
-    intentBuildSub: "Software, electronics, IoT templates",
-    intentShip: "Ship a product",
-    intentShipSub: "Golden-path hardware to a manufacturing pack",
-  },
-};
 
 function formatTime(iso: string): string {
   try {
@@ -122,8 +36,7 @@ function ProjectsHubInner() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const authInitialized = useAuthStore((s) => s.initialized);
-  const locale = useLocaleStore((s) => s.locale);
-  const t = HUB_COPY[locale];
+  useLocaleStore((s) => s.locale);
   const createNewArtifact = useWorkspaceStore((s) => s.createNewArtifact);
   const openArtifact = useWorkspaceStore((s) => s.openArtifact);
   const openLegacyProject = useWorkspaceStore((s) => s.openLegacyProject);
@@ -146,7 +59,7 @@ function ProjectsHubInner() {
   const { items, loading, refresh } = useWorkItems({
     enabled: Boolean(user),
     onError: (err) => {
-      message.error(err instanceof Error ? err.message : t.loadFailed);
+      message.error(err instanceof Error ? err.message : t("hub.loadFailed"));
     },
   });
 
@@ -168,15 +81,16 @@ function ProjectsHubInner() {
     return next;
   }, [items, kindFilter, hubSection]);
 
+  const allLabel = t("hub.all");
   const filterOptions = useMemo(
     () => [
-      { label: `${t.all} ${items.length}`, value: "all" },
+      { label: `${allLabel} ${items.length}`, value: "all" },
       ...ARTIFACT_KIND_ORDER.map((kind) => ({
-        label: `${KIND_LABEL[kind]} ${items.filter((i) => i.kind === kind).length}`,
+        label: `${kindLabel(kind)} ${items.filter((i) => i.kind === kind).length}`,
         value: kind,
       })),
     ],
-    [items, t.all],
+    [items, allLabel],
   );
 
   const openCreate = (kind?: ArtifactKind, name?: string, intent?: string) => {
@@ -203,12 +117,12 @@ function ProjectsHubInner() {
         templateId: extras.templateId,
         intent: extras.intent || prefillIntent,
       });
-      message.success(t.createOk);
+      message.success(t("hub.createOk"));
       setShowNewProjectDialog(false);
       if (id) navigate(`/workspace/${id}`);
       else navigate("/workspace");
     } catch (err) {
-      message.error(err instanceof Error ? err.message : t.createFailed);
+      message.error(err instanceof Error ? err.message : t("hub.createFailed"));
     } finally {
       setCreating(false);
     }
@@ -224,7 +138,7 @@ function ProjectsHubInner() {
         navigate("/workspace");
       }
     } catch (err) {
-      message.error(err instanceof Error ? err.message : t.openFailed);
+      message.error(err instanceof Error ? err.message : t("hub.openFailed"));
     }
   };
 
@@ -251,11 +165,11 @@ function ProjectsHubInner() {
         <nav className={styles.topNav} aria-label="Primary">
           {(
             [
-              ["discover", t.navDiscover],
-              ["learn", t.navLearn],
-              ["build", t.navBuild],
-              ["lab", t.navLab],
-              ...(features.showLaunchNav ? ([["launch", t.navLaunch]] as const) : []),
+              ["discover", t("hub.navDiscover")],
+              ["learn", t("hub.navLearn")],
+              ["build", t("hub.navBuild")],
+              ["lab", t("hub.navLab")],
+              ...(features.showLaunchNav ? ([["launch", t("hub.navLaunch")]] as const) : []),
             ] as Array<[typeof hubSection, string]>
           ).map(([id, label]) => (
             <button
@@ -270,30 +184,30 @@ function ProjectsHubInner() {
         </nav>
         <div className={styles.topActions}>
           <LocaleSwitcher />
-          <UserAvatarMenu user={user} onLogout={logout} logoutLabel={t.logout} />
+          <UserAvatarMenu user={user} onLogout={logout} logoutLabel={t("hub.logout")} />
         </div>
       </header>
 
       <main className={styles.main}>
         <section className={styles.hero}>
-          <h1 className={styles.heroTitle}>{t.heroTitle}</h1>
-          <p className={styles.heroSub}>{t.heroSub}</p>
+          <h1 className={styles.heroTitle}>{t("hub.heroTitle")}</h1>
+          <p className={styles.heroSub}>{t("hub.heroSub")}</p>
           <div className={styles.intentGrid}>
             <button
               type="button"
               className={styles.intentCard}
               onClick={() => openCreate("free", "", "learn")}
             >
-              <strong>{t.intentLearn}</strong>
-              <span>{t.intentLearnSub}</span>
+              <strong>{t("hub.intentLearn")}</strong>
+              <span>{t("hub.intentLearnSub")}</span>
             </button>
             <button
               type="button"
               className={styles.intentCard}
               onClick={() => openCreate(undefined, "", "build")}
             >
-              <strong>{t.intentBuild}</strong>
-              <span>{t.intentBuildSub}</span>
+              <strong>{t("hub.intentBuild")}</strong>
+              <span>{t("hub.intentBuildSub")}</span>
             </button>
             {features.showLaunchNav && (
               <button
@@ -301,18 +215,18 @@ function ProjectsHubInner() {
                 className={styles.intentCard}
                 onClick={() => openCreate("iot", "", "ship")}
               >
-                <strong>{t.intentShip}</strong>
-                <span>{t.intentShipSub}</span>
+                <strong>{t("hub.intentShip")}</strong>
+                <span>{t("hub.intentShipSub")}</span>
               </button>
             )}
           </div>
         </section>
 
         <div className={styles.toolbar}>
-          <h2 className={styles.sectionTitle}>{t.sectionTitle}</h2>
+          <h2 className={styles.sectionTitle}>{t("hub.sectionTitle")}</h2>
           <div className={styles.toolbarActions}>
             <Button icon={<ReloadOutlined />} onClick={() => void refresh()} loading={loading}>
-              {t.refresh}
+              {t("hub.refresh")}
             </Button>
             <Button
               type="primary"
@@ -320,12 +234,14 @@ function ProjectsHubInner() {
               onClick={() => openCreate()}
               loading={creating}
             >
-              {t.newProject}
+              {t("hub.newProject")}
             </Button>
           </div>
         </div>
 
-        {hubSection === "launch" ? <p className={styles.sectionHint}>{t.launchHint}</p> : null}
+        {hubSection === "launch" ? (
+          <p className={styles.sectionHint}>{t("hub.launchHint")}</p>
+        ) : null}
 
         <div className={styles.filterRow}>
           <Segmented
@@ -341,9 +257,9 @@ function ProjectsHubInner() {
           </div>
         ) : filtered.length === 0 ? (
           <div className={styles.emptyWrap}>
-            <Empty description={t.empty}>
+            <Empty description={t("hub.empty")}>
               <Button type="primary" icon={<PlusOutlined />} onClick={() => openCreate()}>
-                {t.newProject}
+                {t("hub.newProject")}
               </Button>
             </Empty>
           </div>
@@ -367,7 +283,7 @@ function ProjectsHubInner() {
                         background: `${color}18`,
                       }}
                     >
-                      {KIND_LABEL[item.kind]}
+                      {kindLabel(item.kind)}
                     </span>
                     {item.language ? (
                       <span className={styles.cardLang}>{item.language}</span>
@@ -375,7 +291,7 @@ function ProjectsHubInner() {
                   </div>
                   <h3 className={styles.cardTitle}>{item.title}</h3>
                   <p className={styles.cardMeta}>
-                    {t.updatedAt} {formatTime(item.updatedAt)}
+                    {t("hub.updatedAt")} {formatTime(item.updatedAt)}
                   </p>
                 </button>
               );

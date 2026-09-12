@@ -2,23 +2,31 @@ import {
   AppstoreOutlined,
   CaretDownOutlined,
   CaretRightOutlined,
+  DeleteOutlined,
   FileOutlined,
   FolderOutlined,
   PlusOutlined,
   ReadOutlined,
   RocketOutlined,
 } from "@ant-design/icons";
-import { Tooltip } from "antd";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { App as AntdApp, Tooltip } from "antd";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { LessonPanel } from "../components/LessonPanel";
 import { ProjectPanel } from "../components/ProjectPanel";
-import { api } from "../lib/api";
+import { type ArtifactVersion, api } from "../lib/api";
 import {
   studioMissionDone,
   studioMissionSteps,
   studioMissionTitle,
 } from "../lib/app-studio/blog-mission";
-import { type AppLocale, useLocaleStore } from "../lib/locale-store";
+import {
+  formatVersionTime,
+  takeRecentArtifactVersions,
+  versionHasFiles,
+} from "../lib/artifact-versions";
+import { type FileTreeNode, filesToTree } from "../lib/file-tree";
+import { t } from "../lib/i18n";
+import { useLocaleStore } from "../lib/locale-store";
 import { navigate } from "../lib/navigate";
 import { PAIR_PHASE_LABEL } from "../lib/pair-mission";
 import { profileFeatures } from "../lib/product-profile";
@@ -27,68 +35,37 @@ import type { ArtifactKind, LeftPanelTab } from "../types/artifact";
 import { isConsoleKind, isHardwareKind } from "../types/artifact";
 import styles from "./AssetsPanel.module.scss";
 
-type TreeNode = {
-  name: string;
-  path: string;
-  children?: TreeNode[];
-};
-
-function filesToTree(paths: string[]): TreeNode[] {
-  type Draft = { name: string; path: string; children: Record<string, Draft>; file?: boolean };
-  const root: Record<string, Draft> = {};
-  for (const full of paths) {
-    const parts = full.split("/").filter(Boolean);
-    let cur = root;
-    let acc = "";
-    for (let i = 0; i < parts.length; i++) {
-      const name = parts[i];
-      acc = acc ? `${acc}/${name}` : name;
-      if (!cur[name]) cur[name] = { name, path: acc, children: {} };
-      if (i === parts.length - 1) cur[name].file = true;
-      cur = cur[name].children;
-    }
-  }
-  const toList = (obj: Record<string, Draft>): TreeNode[] =>
-    Object.values(obj)
-      .sort(
-        (a, b) => Number(Boolean(a.file)) - Number(Boolean(b.file)) || a.name.localeCompare(b.name),
-      )
-      .map((n) => ({
-        name: n.name,
-        path: n.path,
-        children: n.file ? undefined : toList(n.children),
-      }));
-  return toList(root);
-}
-
 function getActivityTabs(
   kind: ArtifactKind,
-  locale: AppLocale,
   blogStudio: boolean,
 ): { id: LeftPanelTab; icon: ReactNode; label: string }[] {
-  const zh = locale === "zh-CN";
   const base: { id: LeftPanelTab; icon: ReactNode; label: string }[] = [
-    { id: "files", icon: <FolderOutlined />, label: zh ? "文件" : "Files" },
+    { id: "files", icon: <FolderOutlined />, label: t("assets.files") },
   ];
   if (isHardwareKind(kind) || kind === "smarthome" || kind === "toy") {
-    base.push({ id: "modules", icon: <AppstoreOutlined />, label: zh ? "模块" : "Modules" });
+    base.push({ id: "modules", icon: <AppstoreOutlined />, label: t("assets.modules") });
   }
   if (isConsoleKind(kind) || blogStudio) {
-    base.push({ id: "learn", icon: <ReadOutlined />, label: zh ? "学习" : "Learn" });
+    base.push({ id: "learn", icon: <ReadOutlined />, label: t("assets.learn") });
   }
   if (isHardwareKind(kind) && profileFeatures().showLaunchNav) {
-    base.push({ id: "launch", icon: <RocketOutlined />, label: zh ? "发布" : "Launch" });
+    base.push({ id: "launch", icon: <RocketOutlined />, label: t("assets.launch") });
   }
   return base;
 }
 
 function FileTree() {
+  const { message } = AntdApp.useApp();
+  useLocaleStore((s) => s.locale);
   const files = useWorkspaceStore((s) => s.artifactFiles);
   const activeFilePath = useWorkspaceStore((s) => s.activeFilePath);
+  const artifactId = useWorkspaceStore((s) => s.artifactId);
   const setActiveFile = useWorkspaceStore((s) => s.setActiveFile);
   const addArtifactFile = useWorkspaceStore((s) => s.addArtifactFile);
+  const removeArtifactFile = useWorkspaceStore((s) => s.removeArtifactFile);
   const kind = useWorkspaceStore((s) => s.artifactKind);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [deletingPath, setDeletingPath] = useState<string | null>(null);
 
   const paths = files.map((f) => f.path);
   const tree = useMemo(
@@ -97,11 +74,41 @@ function FileTree() {
   );
 
   const addFile = () => {
-    const path = window.prompt("New file path", kind === "iot" ? "firmware/notes.txt" : "notes.md");
+    const path = window.prompt(
+      t("files.promptPath"),
+      kind === "iot" ? "firmware/notes.txt" : "notes.md",
+    );
     if (path) addArtifactFile(path);
   };
 
-  const renderNode = (node: TreeNode, depth: number) => {
+  const deleteFile = async (path: string) => {
+    const fileCount = files.length || 1;
+    if (fileCount <= 1) {
+      message.warning(t("files.lastFile"));
+      return;
+    }
+    if (!window.confirm(t("files.deleteConfirm", { path }))) return;
+
+    if (!artifactId) {
+      if (!removeArtifactFile(path)) message.warning(t("files.lastFile"));
+      return;
+    }
+
+    const wasDirty = useWorkspaceStore.getState().saveDirty;
+    setDeletingPath(path);
+    try {
+      await api.deleteArtifactFile(artifactId, path);
+      if (!removeArtifactFile(path, { saveDirty: wasDirty })) {
+        message.warning(t("files.lastFile"));
+      }
+    } catch {
+      message.error(t("files.deleteFailed"));
+    } finally {
+      setDeletingPath(null);
+    }
+  };
+
+  const renderNode = (node: FileTreeNode, depth: number) => {
     if (node.children) {
       const open = expanded[node.path] ?? depth < 2;
       return (
@@ -124,28 +131,41 @@ function FileTree() {
       );
     }
     return (
-      <button
+      <div
         key={node.path}
-        type="button"
         className={`${styles.treeFile} ${activeFilePath === node.path ? styles.treeFileActive : ""}`}
-        onClick={() => setActiveFile(node.path)}
       >
-        <span className={styles.treeIcon} style={{ marginLeft: 8 + depth * 8 }}>
-          <FileOutlined />
-        </span>
-        <span className={styles.treeName}>{node.name}</span>
-      </button>
+        <button
+          type="button"
+          className={styles.treeFileMain}
+          onClick={() => setActiveFile(node.path)}
+        >
+          <span className={styles.treeIcon} style={{ marginLeft: 8 + depth * 8 }}>
+            <FileOutlined />
+          </span>
+          <span className={styles.treeName}>{node.name}</span>
+        </button>
+        <button
+          type="button"
+          className={styles.treeFileDelete}
+          aria-label={t("files.delete")}
+          disabled={deletingPath === node.path}
+          onClick={() => void deleteFile(node.path)}
+        >
+          <DeleteOutlined />
+        </button>
+      </div>
     );
   };
 
   return (
     <div className={styles.fileTree}>
       <div className={styles.sectionHeader}>
-        <span className={styles.sectionTitle}>Files</span>
+        <span className={styles.sectionTitle}>{t("files.title")}</span>
         <button
           type="button"
           className={styles.sectionAction}
-          aria-label="New file"
+          aria-label={t("files.new")}
           onClick={addFile}
         >
           <PlusOutlined />
@@ -156,12 +176,120 @@ function FileTree() {
   );
 }
 
+function VersionsStrip() {
+  const { message } = AntdApp.useApp();
+  const locale = useLocaleStore((s) => s.locale);
+  const artifactId = useWorkspaceStore((s) => s.artifactId);
+  const saveCurrentArtifact = useWorkspaceStore((s) => s.saveCurrentArtifact);
+  const restoreArtifactFiles = useWorkspaceStore((s) => s.restoreArtifactFiles);
+  const [items, setItems] = useState<ArtifactVersion[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [restoring, setRestoring] = useState<number | null>(null);
+
+  const refresh = useCallback(async (id: string) => {
+    try {
+      const res = await api.listArtifactVersions(id);
+      setItems(takeRecentArtifactVersions(res.items));
+    } catch {
+      setItems([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!artifactId) {
+      setItems([]);
+      return;
+    }
+    void refresh(artifactId);
+  }, [artifactId, refresh]);
+
+  if (!artifactId) return null;
+
+  const saveVersion = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      if (useWorkspaceStore.getState().saveDirty) {
+        const saved = await saveCurrentArtifact();
+        if (!saved) {
+          message.error(t("files.versionSaveFailed"));
+          return;
+        }
+      }
+      await api.createArtifactVersion(artifactId, { label: "manual" });
+      message.success(t("files.versionSaved"));
+      await refresh(artifactId);
+    } catch {
+      message.error(t("files.versionSaveFailed"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const restoreVersion = async (versionNumber: number) => {
+    if (restoring !== null) return;
+    if (!window.confirm(t("files.restoreConfirm", { n: versionNumber }))) return;
+    setRestoring(versionNumber);
+    try {
+      const version = await api.getArtifactVersion(artifactId, versionNumber);
+      if (!versionHasFiles(version)) {
+        message.error(t("files.restoreFailed"));
+        return;
+      }
+      restoreArtifactFiles(version.files);
+      message.success(t("files.restoreOk"));
+    } catch {
+      message.error(t("files.restoreFailed"));
+    } finally {
+      setRestoring(null);
+    }
+  };
+
+  return (
+    <div className={styles.versionsStrip}>
+      <div className={styles.sectionHeader}>
+        <span className={styles.sectionTitle}>{t("files.versions")}</span>
+        <button
+          type="button"
+          className={styles.versionsSave}
+          disabled={saving}
+          onClick={() => void saveVersion()}
+        >
+          {t("files.saveVersion")}
+        </button>
+      </div>
+      {items.length === 0 ? (
+        <p className={styles.versionsEmpty}>{t("files.versionEmpty")}</p>
+      ) : (
+        <ul className={styles.versionsList}>
+          {items.map((v) => (
+            <li key={v.id || `${v.artifactId}-${v.versionNumber}`} className={styles.versionRow}>
+              <span className={styles.versionNumber}>v{v.versionNumber}</span>
+              <span className={styles.versionMessage}>{v.message?.trim() || "—"}</span>
+              <span className={styles.versionTime}>{formatVersionTime(v.createdAt, locale)}</span>
+              <button
+                type="button"
+                className={styles.versionRestore}
+                disabled={restoring !== null}
+                onClick={() => void restoreVersion(v.versionNumber)}
+              >
+                {t("files.restore")}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function ModulesPanel({ kind }: { kind: ArtifactKind }) {
   const [items, setItems] = useState<
     Array<{ sku: string; name: string; bus: string; voltage: string }>
   >([]);
   const [compat, setCompat] = useState<string | null>(null);
   const boardSku = useWorkspaceStore((s) => s.boardSku);
+  useLocaleStore((s) => s.locale);
 
   useEffect(() => {
     if (!isHardwareKind(kind)) return;
@@ -172,32 +300,33 @@ function ModulesPanel({ kind }: { kind: ArtifactKind }) {
   }, [kind, boardSku]);
 
   if (!isHardwareKind(kind)) {
-    return (
-      <div className={styles.mutedPad}>
-        Modules for this kind are edited as project files. Open Files to continue.
-      </div>
-    );
+    return <div className={styles.mutedPad}>{t("modules.filesHint")}</div>;
   }
 
   const check = async (sku: string) => {
     if (!boardSku) return;
     try {
       const res = await api.checkHardwareCompat(boardSku, [sku]);
-      setCompat(res.ok ? `${sku} compatible` : res.issues.map((i) => i.message).join("; "));
+      setCompat(
+        res.ok ? t("modules.compatible", { sku }) : res.issues.map((i) => i.message).join("; "),
+      );
     } catch (err) {
-      setCompat(err instanceof Error ? err.message : "Compatibility check failed");
+      setCompat(err instanceof Error ? err.message : t("modules.checkFailed"));
     }
   };
 
   return (
     <div>
       <div className={styles.sectionHeader}>
-        <span className={styles.sectionTitle}>Catalog {boardSku ? `· ${boardSku}` : ""}</span>
+        <span className={styles.sectionTitle}>
+          {t("modules.catalog")}
+          {boardSku ? ` · ${boardSku}` : ""}
+        </span>
       </div>
       {compat && <p className={styles.compatNote}>{compat}</p>}
       <div className={styles.modulesGrid}>
         {items.length === 0 ? (
-          <p className={styles.mutedPad}>Sign in to load ESP32 / STM32 modules.</p>
+          <p className={styles.mutedPad}>{t("modules.signIn")}</p>
         ) : (
           items.map((m) => (
             <button
@@ -236,13 +365,9 @@ function BlogMissionCard() {
 
   return (
     <div className={styles.missionCard}>
-      <div className={styles.sectionTitle}>Mission</div>
+      <div className={styles.sectionTitle}>{t("launch.mission")}</div>
       <strong>{studioMissionTitle(templateId, zh)}</strong>
-      <p>
-        {zh
-          ? "改页面 → 写内容（如有）→ 上线分享给家长，或下载 zip"
-          : "Edit the page, add content, then share a live link or download a zip"}
-      </p>
+      <p>{t("launch.missionBlogHint")}</p>
       {steps.map((step, index) => (
         <div key={step.id} className={styles.phaseChip} style={{ marginBottom: 6 }}>
           {done[step.id as keyof typeof done] ? "✓ " : "○ "}
@@ -264,7 +389,7 @@ function LearnPanel() {
       {blogStudio && <BlogMissionCard />}
       {(kind === "free" || kind === "exercise") && (
         <div className={styles.missionCard}>
-          <div className={styles.sectionTitle}>Mission</div>
+          <div className={styles.sectionTitle}>{t("launch.mission")}</div>
           <strong>{pairMission.title}</strong>
           <p>{pairMission.success}</p>
           <span className={styles.phaseChip}>{PAIR_PHASE_LABEL[pairMission.phase]}</span>
@@ -287,20 +412,17 @@ function LearnPanel() {
 function LaunchChecklist() {
   const artifactId = useWorkspaceStore((s) => s.artifactId);
   const features = profileFeatures();
-  const locale = useLocaleStore((s) => s.locale);
-  const zh = locale === "zh-CN";
+  useLocaleStore((s) => s.locale);
 
   return (
     <div className={styles.mutedPad}>
-      <div className={styles.sectionTitle}>{zh ? "上架清单" : "Ship checklist"}</div>
+      <div className={styles.sectionTitle}>{t("launch.checklist")}</div>
       <ol className={styles.checklist}>
-        <li>{zh ? "固件仿真断言通过" : "Firmware sim assertions pass"}</li>
-        <li>{zh ? "BOM / ERC / DFM（规则引擎）" : "BOM / ERC / DFM (rule engine)"}</li>
-        <li>{zh ? "导出 KiCad / Gerber 包" : "Export KiCad / Gerber pack"}</li>
-        <li>{zh ? "报价或供应商深链" : "Quote or vendor deeplink"}</li>
-        <li>
-          {zh ? "上架包 — 人工审核前不可售卖" : "Launch Pack — not ready-to-sell until review"}
-        </li>
+        <li>{t("launch.itemAssert")}</li>
+        <li>{t("launch.itemBom")}</li>
+        <li>{t("launch.itemGerber")}</li>
+        <li>{t("launch.itemQuote")}</li>
+        <li>{t("launch.itemPack")}</li>
       </ol>
       {artifactId && features.showLaunchNav ? (
         <button
@@ -308,12 +430,10 @@ function LaunchChecklist() {
           className={styles.launchLink}
           onClick={() => navigate(`/launch/${artifactId}`)}
         >
-          {zh ? "打开发布台" : "Open launch desk"}
+          {t("launch.openDesk")}
         </button>
       ) : (
-        <p>
-          {zh ? "请先保存作品后再进入制造流程。" : "Save the project first to open manufacturing."}
-        </p>
+        <p>{t("launch.saveFirst")}</p>
       )}
     </div>
   );
@@ -324,14 +444,14 @@ function AssetsDrawerBody() {
   const templateId = useWorkspaceStore((s) => s.templateId);
   const activeTab = useWorkspaceStore((s) => s.activeLeftTab);
   const setActiveLeftTab = useWorkspaceStore((s) => s.setActiveLeftTab);
-  const locale = useLocaleStore((s) => s.locale);
-  const tabs = getActivityTabs(kind, locale, isAppStudioKind(kind, templateId));
+  useLocaleStore((s) => s.locale);
+  const tabs = getActivityTabs(kind, isAppStudioKind(kind, templateId));
   const resolvedTab = tabs.some((t) => t.id === activeTab) ? activeTab : tabs[0].id;
 
   return (
     <aside className={styles.leftPanel}>
       <div className={styles.drawerHead}>
-        <span className={styles.drawerTitle}>Context</span>
+        <span className={styles.drawerTitle}>{t("launch.context")}</span>
       </div>
       <div className={styles.drawerBody}>
         <div className={styles.activityBar}>
@@ -348,7 +468,12 @@ function AssetsDrawerBody() {
           ))}
         </div>
         <div className={styles.panelContent}>
-          {resolvedTab === "files" && <FileTree />}
+          {resolvedTab === "files" && (
+            <div className={styles.filesTab}>
+              <FileTree />
+              <VersionsStrip />
+            </div>
+          )}
           {resolvedTab === "modules" && <ModulesPanel kind={kind} />}
           {resolvedTab === "learn" && <LearnPanel />}
           {resolvedTab === "launch" && <LaunchChecklist />}

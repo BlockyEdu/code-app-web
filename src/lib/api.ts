@@ -1,5 +1,6 @@
 import type { AiPublicConfig, AiUserSettings } from "./ai-settings";
 import type { AppSchema } from "./app-studio/app-schema";
+import type { ArtifactFileEntry } from "./artifact-files";
 import { stripClientPriceFields } from "./commerce";
 import {
   API_BASE,
@@ -10,6 +11,7 @@ import {
   setUnauthorizedHandler,
   UnauthorizedError,
 } from "./http";
+import { t } from "./i18n";
 import type { MembershipResponse } from "./membership-types";
 
 export type { AiPublicConfig, AiUserSettings };
@@ -86,6 +88,29 @@ export type CreateArtifactKind =
   | "free"
   | "exercise";
 
+export type LearnLinkSubmissionState = "none" | "draft" | "submitted" | "returned";
+
+export interface ArtifactLearnLink {
+  assignmentId?: string;
+  courseId?: string;
+  chapterId?: string;
+  workspaceLessonId?: string;
+  deepLink?: string;
+  submissionState?: LearnLinkSubmissionState;
+  submittedVersionId?: string;
+}
+
+export interface ArtifactVersion {
+  id: string;
+  artifactId: string;
+  versionNumber: number;
+  message?: string | null;
+  createdAt: string;
+  createdBy?: string;
+  /** Present on GET /versions/:n when the snapshot includes file bodies. */
+  files?: ArtifactFileEntry[];
+}
+
 export interface CreateArtifact {
   id: string;
   title: string;
@@ -104,6 +129,7 @@ export interface CreateArtifact {
   verifiedMilestone?: string;
   boardSku?: string | null;
   templateId?: string | null;
+  learnLink?: ArtifactLearnLink | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -217,7 +243,7 @@ async function requestText(path: string): Promise<string> {
     headers: authHeaders({ Accept: "text/html" }),
   });
   if (res.status === 401) {
-    throw new UnauthorizedError("请先登录后再使用云端功能");
+    throw new UnauthorizedError(t("auth.needSignInCloud"));
   }
   if (!res.ok) {
     const raw = await res.text().catch(() => res.statusText);
@@ -229,10 +255,17 @@ async function requestText(path: string): Promise<string> {
 export const api = {
   health: () => request<{ status: string }>("/health"),
   aiConfig: () => request<AiPublicConfig>("/ai/config"),
-  listArtifacts: (params?: { kind?: CreateArtifactKind; limit?: number }) => {
+  listArtifacts: (params?: {
+    kind?: CreateArtifactKind;
+    limit?: number;
+    assignmentId?: string;
+    workspaceLessonId?: string;
+  }) => {
     const q = new URLSearchParams();
     if (params?.kind) q.set("kind", params.kind);
     if (params?.limit) q.set("limit", String(params.limit));
+    if (params?.assignmentId) q.set("assignmentId", params.assignmentId);
+    if (params?.workspaceLessonId) q.set("workspaceLessonId", params.workspaceLessonId);
     const qs = q.toString();
     return request<{ items: CreateArtifact[] }>(`/create/artifacts${qs ? `?${qs}` : ""}`);
   },
@@ -253,6 +286,22 @@ export const api = {
       body: JSON.stringify(data),
     }),
   getArtifact: (id: string) => request<CreateArtifact>(`/create/artifacts/${id}`),
+  putArtifactLearnLink: (id: string, body: ArtifactLearnLink) =>
+    request<CreateArtifact>(`/create/artifacts/${id}/learn-link`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  deleteArtifactLearnLink: (id: string) =>
+    request<void>(`/create/artifacts/${id}/learn-link`, { method: "DELETE" }),
+  listArtifactVersions: (id: string) =>
+    request<{ items: ArtifactVersion[] }>(`/create/artifacts/${id}/versions`),
+  getArtifactVersion: (id: string, versionNumber: number) =>
+    request<ArtifactVersion>(`/create/artifacts/${id}/versions/${versionNumber}`),
+  createArtifactVersion: (id: string, body?: { label?: string; message?: string }) =>
+    request<ArtifactVersion>(`/create/artifacts/${id}/versions`, {
+      method: "POST",
+      body: JSON.stringify(body ?? {}),
+    }),
   updateArtifact: (
     id: string,
     data: {
@@ -415,15 +464,39 @@ export const api = {
     request<{ files: Array<{ path: string; contentType: string; content: string }> }>(
       `/create/artifacts/${artifactId}/files`,
     ),
+  getArtifactFile: (id: string, path: string) =>
+    request<{ path: string; contentType: string; content?: string }>(
+      `/create/artifacts/${id}/files/${encodeURIComponent(path)}`,
+    ),
+  deleteArtifactFile: (id: string, path: string) =>
+    request<void>(`/create/artifacts/${id}/files/${encodeURIComponent(path)}`, {
+      method: "DELETE",
+    }),
   createSmarthomeSession: (body: { artifactId: string; previewSessionId?: string }) =>
     request<SmarthomeSimSession>("/smarthome/sessions", {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  getSmarthomeSession: (sessionId: string) =>
+    request<SmarthomeSimSession>(`/smarthome/sessions/${sessionId}`),
   runSmarthomeSession: (sessionId: string) =>
     request<SmarthomeSimSession>(`/smarthome/sessions/${sessionId}/run`, {
       method: "POST",
       body: JSON.stringify({}),
+    }),
+  injectSmarthomeEvent: (
+    sessionId: string,
+    body: {
+      type: "sensor" | "device_toggle" | "scene";
+      sensor?: string;
+      value?: number;
+      deviceId?: string;
+      scene?: string;
+    },
+  ) =>
+    request<SmarthomeSimSession>(`/smarthome/sessions/${sessionId}/events`, {
+      method: "POST",
+      body: JSON.stringify(body),
     }),
   publishWeb: (artifactId: string, note?: string) =>
     request<WebRelease>("/publish/web", {
@@ -466,6 +539,8 @@ export const api = {
   getWebPublish: (artifactId: string) => request<WebPublishStatus>(`/publish/web/${artifactId}`),
   listWebReleases: (artifactId: string) =>
     request<{ items: WebRelease[] }>(`/publish/web/${artifactId}/releases`),
+  getWebRelease: (artifactId: string, releaseId: string) =>
+    request<WebRelease>(`/publish/web/${artifactId}/releases/${releaseId}`),
   rollbackWeb: (artifactId: string, targetReleaseId: string) =>
     request<WebPublishStatus>(`/publish/web/${artifactId}/rollback`, {
       method: "POST",
@@ -480,7 +555,7 @@ export const api = {
       headers: authHeaders({ Accept: "application/zip" }),
     });
     if (res.status === 401) {
-      throw new UnauthorizedError("请先登录后再使用云端功能");
+      throw new UnauthorizedError(t("auth.needSignInCloud"));
     }
     if (!res.ok) {
       const raw = await res.text().catch(() => res.statusText);

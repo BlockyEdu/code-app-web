@@ -3,6 +3,7 @@ import { Button, Input, Modal, message, QRCode } from "antd";
 import { useEffect, useState } from "react";
 import { type AppValidateReport, api, type WebRelease } from "../lib/api";
 import { usesHostedPosts } from "../lib/app-studio/app-schema";
+import { t } from "../lib/i18n";
 import { useLocaleStore } from "../lib/locale-store";
 import { useWorkspaceStore } from "../stores/workspace";
 import styles from "./BlogStudio.module.scss";
@@ -19,7 +20,18 @@ function resolvePublicHref(publicUrl: string | undefined | null): string | null 
   return `${origin}${publicUrl}`;
 }
 
+function releaseIsLive(rel: WebRelease, liveReleaseId: string | undefined): boolean {
+  return rel.status === "live" || (Boolean(liveReleaseId) && rel.id === liveReleaseId);
+}
+
+function releaseErrorCode(rel: WebRelease): string | null {
+  if (rel.errorCode) return rel.errorCode;
+  if (rel.status === "failed") return rel.status;
+  return null;
+}
+
 export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
+  useLocaleStore((s) => s.locale);
   const artifactId = useWorkspaceStore((s) => s.artifactId);
   const artifactKind = useWorkspaceStore((s) => s.artifactKind);
   const templateId = useWorkspaceStore((s) => s.templateId);
@@ -27,12 +39,17 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
   const saveCurrentArtifact = useWorkspaceStore((s) => s.saveCurrentArtifact);
   const blogPublish = useWorkspaceStore((s) => s.blogPublish);
   const setBlogPublish = useWorkspaceStore((s) => s.setBlogPublish);
-  const zh = useLocaleStore((s) => s.locale) === "zh-CN";
   const [report, setReport] = useState<AppValidateReport | null>(null);
   const [releases, setReleases] = useState<WebRelease[]>([]);
   const [busy, setBusy] = useState(false);
   const isMini = artifactKind === "miniprogram";
   const postsKind = usesHostedPosts(templateId);
+  const liveReleaseId = blogPublish?.liveRelease?.id;
+
+  const reloadReleases = async (id: string) => {
+    const { items } = await api.listWebReleases(id);
+    setReleases(items);
+  };
 
   useEffect(() => {
     if (!open || !artifactId) return;
@@ -45,7 +62,7 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
         if (!cancelled) {
           setReport({
             ok: false,
-            issues: [{ message: err instanceof Error ? err.message : "无法校验" }],
+            issues: [{ message: err instanceof Error ? err.message : t("publish.validateFailed") }],
           });
         }
       }
@@ -69,7 +86,7 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
 
   const publish = async () => {
     if (!artifactId) {
-      message.warning(zh ? "请先保存作品" : "Save the project first");
+      message.warning(t("publish.saveFirst"));
       return;
     }
     setBusy(true);
@@ -77,7 +94,7 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
       if (saveDirty) {
         const ok = await saveCurrentArtifact();
         if (!ok) {
-          message.error(zh ? "保存失败，无法发布" : "Save failed, cannot publish");
+          message.error(t("publish.saveFailed"));
           return;
         }
       }
@@ -88,12 +105,12 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
       } catch (err) {
         next = {
           ok: false,
-          issues: [{ message: err instanceof Error ? err.message : "无法校验" }],
+          issues: [{ message: err instanceof Error ? err.message : t("publish.validateFailed") }],
         };
         setReport(next);
       }
       if (next && !next.ok) {
-        message.error(zh ? "校验未通过，不能发布" : "Validation failed");
+        message.error(t("publish.validationBlocked"));
         return;
       }
       await api.publishWeb(artifactId);
@@ -104,14 +121,13 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
         /* status endpoint may lag */
       }
       try {
-        const { items } = await api.listWebReleases(artifactId);
-        setReleases(items);
+        await reloadReleases(artifactId);
       } catch {
-        /* ignore */
+        /* history may lag */
       }
-      message.success(zh ? "已上线，可以把链接发给别人了" : "Live — share the link");
+      message.success(t("publish.live"));
     } catch (err) {
-      message.error(err instanceof Error ? err.message : zh ? "发布失败" : "Publish failed");
+      message.error(err instanceof Error ? err.message : t("publish.failed"));
     } finally {
       setBusy(false);
     }
@@ -123,9 +139,14 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
     try {
       const status = await api.rollbackWeb(artifactId, targetReleaseId);
       setBlogPublish(status);
-      message.success(zh ? "已请求回滚" : "Rollback requested");
+      try {
+        await reloadReleases(artifactId);
+      } catch {
+        /* history may lag */
+      }
+      message.success(t("publish.rollbackOk"));
     } catch (err) {
-      message.error(err instanceof Error ? err.message : zh ? "回滚失败" : "Rollback failed");
+      message.error(err instanceof Error ? err.message : t("publish.rollbackFailed"));
     } finally {
       setBusy(false);
     }
@@ -133,14 +154,14 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
 
   const downloadZip = async () => {
     if (!artifactId) {
-      message.warning(zh ? "请先保存作品" : "Save the project first");
+      message.warning(t("publish.saveFirst"));
       return;
     }
     setBusy(true);
     try {
       if (saveDirty) {
         const ok = await saveCurrentArtifact();
-        if (!ok) throw new Error(zh ? "保存失败" : "Save failed");
+        if (!ok) throw new Error(t("publish.saveFailed"));
       }
       const blob = await api.exportPublishZip(artifactId, isMini ? "miniprogram" : "web");
       const href = URL.createObjectURL(blob);
@@ -149,9 +170,9 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
       a.download = isMini ? "miniprogram.zip" : "site.zip";
       a.click();
       URL.revokeObjectURL(href);
-      message.success(zh ? "已开始下载" : "Download started");
+      message.success(t("publish.downloadStarted"));
     } catch (err) {
-      message.error(err instanceof Error ? err.message : zh ? "导出失败" : "Export failed");
+      message.error(err instanceof Error ? err.message : t("publish.exportFailed"));
     } finally {
       setBusy(false);
     }
@@ -161,17 +182,15 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
   const publicUrl = blogPublish?.publicUrl || blogPublish?.liveRelease?.publicUrl;
   const publicHref = resolvePublicHref(publicUrl);
   const parentText = publicHref
-    ? zh
-      ? `我用 BlockyEdu 做了一个${isMini ? "小程序（网页版）" : "网站"}，打开就能看：\n${publicHref}`
-      : `I shipped this on BlockyEdu:\n${publicHref}`
+    ? t(isMini ? "publish.parentMessageMini" : "publish.parentMessageWeb", { url: publicHref })
     : "";
 
   const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      message.success(zh ? "已复制" : "Copied");
+      message.success(t("publish.copied"));
     } catch {
-      message.error(zh ? "复制失败" : "Copy failed");
+      message.error(t("publish.copyFailed"));
     }
   };
 
@@ -179,20 +198,12 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
     <Modal
       open={open}
       onCancel={onClose}
-      title={zh ? "上线分享" : "Ship & share"}
+      title={t("publish.title")}
       footer={null}
       destroyOnHidden
       width={560}
     >
-      <p className={styles.hint}>
-        {zh
-          ? isMini
-            ? "托管一个网页版给家长打开；同时下载微信开发者工具工程。微信审核不在这里保证通过。"
-            : "BlockyEdu 帮你托管一个别人打得开的网址；也可以下载 zip 自己部署。"
-          : isMini
-            ? "Host an H5 link for parents, and download a WeChat DevTools project. WeChat review is not guaranteed."
-            : "Host a public URL, or download a zip to deploy yourself."}
-      </p>
+      <p className={styles.hint}>{t(isMini ? "publish.hintMini" : "publish.hintWeb")}</p>
       {report && !report.ok && (
         <div className={styles.issues}>
           {issues.map((issue) => (
@@ -203,24 +214,27 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
           ))}
         </div>
       )}
+      {blogPublish?.lastFailedRelease?.errorCode ? (
+        <p className={styles.issue}>
+          {t("publish.lastFailed", { code: blogPublish.lastFailedRelease.errorCode })}
+        </p>
+      ) : null}
 
       {publicHref ? (
         <div className={styles.shareBox}>
           <div className={styles.shareUrlRow}>
             <Input value={publicHref} readOnly />
             <Button icon={<CopyOutlined />} onClick={() => void copy(publicHref)}>
-              {zh ? "复制链接" : "Copy"}
+              {t("publish.copyLink")}
             </Button>
             <Button icon={<LinkOutlined />} href={publicHref} target="_blank" rel="noreferrer">
-              {zh ? "打开" : "Open"}
+              {t("publish.open")}
             </Button>
           </div>
           <div className={styles.shareQr}>
             <QRCode value={publicHref} size={128} />
             <div>
-              <p className={styles.hint}>
-                {zh ? "发给家长 / 同学（扫码或复制下面这段）" : "Send to parents or classmates"}
-              </p>
+              <p className={styles.hint}>{t("publish.shareHint")}</p>
               <Input.TextArea value={parentText} readOnly autoSize={{ minRows: 3, maxRows: 5 }} />
               <Button
                 size="small"
@@ -228,17 +242,13 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
                 icon={<CopyOutlined />}
                 onClick={() => void copy(parentText)}
               >
-                {zh ? "复制给家长的话" : "Copy message"}
+                {t("publish.copyMessage")}
               </Button>
             </div>
           </div>
         </div>
       ) : (
-        <p className={styles.hint}>
-          {zh
-            ? "还没有公开网址。确认发布后，家长不用登录就能打开。"
-            : "No public URL yet. After you confirm, anyone can open it without signing in."}
-        </p>
+        <p className={styles.hint}>{t("publish.noUrl")}</p>
       )}
 
       <div className={styles.formActions}>
@@ -248,41 +258,38 @@ export function PublishWebDialog({ open, onClose }: PublishWebDialogProps) {
           disabled={report?.ok === false}
           onClick={() => void publish()}
         >
-          {publicHref ? (zh ? "更新上线" : "Publish update") : zh ? "确认上线" : "Go live"}
+          {publicHref ? t("publish.publishUpdate") : t("publish.goLive")}
         </Button>
         <Button icon={<DownloadOutlined />} loading={busy} onClick={() => void downloadZip()}>
-          {isMini
-            ? zh
-              ? "下载微信工程"
-              : "Download WeChat project"
-            : zh
-              ? "下载网站 zip"
-              : "Download site zip"}
+          {isMini ? t("publish.downloadMini") : t("publish.downloadWeb")}
         </Button>
-        <Button onClick={onClose}>{zh ? "关闭" : "Close"}</Button>
+        <Button onClick={onClose}>{t("publish.close")}</Button>
       </div>
       {isMini && (
         <p className={styles.hint}>
-          {zh
-            ? postsKind
-              ? "zip 用微信开发者工具导入。网页版链接给没装开发者工具的人看。"
-              : "zip 用微信开发者工具导入。"
-            : "Import the zip in WeChat DevTools. The hosted H5 is for people without DevTools."}
+          {t(postsKind ? "publish.miniZipHintPosts" : "publish.miniZipHint")}
         </p>
       )}
       {releases.length > 0 && (
         <div>
-          <h3 className={styles.inspectorTitle}>{zh ? "历史版本" : "Releases"}</h3>
-          {releases.map((rel) => (
-            <div key={rel.id} className={styles.releaseRow}>
-              <span>
-                {rel.status} · {rel.createdAt.slice(0, 19)}
-              </span>
-              <Button size="small" disabled={busy} onClick={() => void rollback(rel.id)}>
-                {zh ? "回滚" : "Rollback"}
-              </Button>
-            </div>
-          ))}
+          <h3 className={styles.inspectorTitle}>{t("publish.releases")}</h3>
+          {releases.map((rel) => {
+            const live = releaseIsLive(rel, liveReleaseId);
+            const errorCode = releaseErrorCode(rel);
+            return (
+              <div key={rel.id} className={styles.releaseRow}>
+                <span>
+                  {rel.status} · {rel.createdAt.slice(0, 19)}
+                  {errorCode ? ` · ${t("publish.releaseError", { code: errorCode })}` : ""}
+                </span>
+                {!live && (
+                  <Button size="small" disabled={busy} onClick={() => void rollback(rel.id)}>
+                    {t("publish.rollback")}
+                  </Button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </Modal>

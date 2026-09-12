@@ -1,3 +1,5 @@
+import { t } from "./i18n";
+
 /** Membership / entitlement types for code-app-web */
 export type PlanCode = "trial" | "pro" | "ultra" | "enterprise" | "none";
 export type EntitlementMode = "off" | "shadow_read" | "enforce";
@@ -24,13 +26,20 @@ export const FEATURE = {
   AI_TUTOR: "ai.tutor",
 } as const;
 
-export const PLAN_LABELS: Record<PlanCode, string> = {
-  none: "未订阅",
-  trial: "试用 Pro",
-  pro: "专业版 Pro",
-  ultra: "旗舰版 Ultra",
-  enterprise: "企业版 Enterprise",
-};
+export function planLabel(plan: PlanCode): string {
+  switch (plan) {
+    case "none":
+      return t("membership.planNone");
+    case "trial":
+      return t("membership.planTrial");
+    case "pro":
+      return t("membership.planPro");
+    case "ultra":
+      return t("membership.planUltra");
+    case "enterprise":
+      return t("membership.planEnterprise");
+  }
+}
 
 export function isEntitlementErrorCode(code?: string): boolean {
   return Boolean(code?.startsWith("ENTITLEMENT_"));

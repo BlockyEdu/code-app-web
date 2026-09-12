@@ -2,14 +2,17 @@ import { ArrowRightOutlined, ReloadOutlined } from "@ant-design/icons";
 import { Segmented, Select } from "antd";
 import { useCallback, useEffect } from "react";
 import { hasDetailPage, usesHostedPosts } from "../lib/app-studio/app-schema";
+import { t } from "../lib/i18n";
 import { useLocaleStore } from "../lib/locale-store";
+import { previewLabel } from "../lib/preview-label";
 import type { WorldState } from "../lib/targets";
 import { WEB_IFRAME_SANDBOX } from "../lib/web-preview";
 import { isAppStudioKind, useWorkspaceStore } from "../stores/workspace";
 import type { ArtifactKind } from "../types/artifact";
-import { KIND_DEFAULT_PREVIEW, PREVIEW_LABEL } from "../types/artifact";
+import { KIND_DEFAULT_PREVIEW } from "../types/artifact";
 import studio from "./BlogStudio.module.scss";
 import styles from "./PreviewPanel.module.scss";
+import { SmarthomePreview } from "./SmarthomePreview";
 
 interface PreviewPanelProps {
   kind: ArtifactKind;
@@ -21,12 +24,6 @@ const LED_COLORS: Record<string, string> = {
   blue: "#2563eb",
   yellow: "#f59e0b",
   off: "#334155",
-};
-
-const ROOM_LABELS: Record<string, string> = {
-  living: "客厅",
-  bedroom: "卧室",
-  kitchen: "厨房",
 };
 
 function parseBlogNavHref(href: string): { page: "home" } | { page: "post"; slug: string } {
@@ -44,13 +41,15 @@ function WebPreview({
   onRefresh?: () => void;
   chrome?: "browser" | "none";
 }) {
+  useLocaleStore((s) => s.locale);
   const embedUrl = useWorkspaceStore((s) => s.webPreviewEmbedUrl);
   const srcDoc = useWorkspaceStore((s) => s.webPreviewSrcDoc);
   const artifactKind = useWorkspaceStore((s) => s.artifactKind);
   const templateId = useWorkspaceStore((s) => s.templateId);
   const setBlogPreview = useWorkspaceStore((s) => s.setBlogPreview);
   const blogStudio = isAppStudioKind(artifactKind, templateId);
-  const title = world?.web.title || (blogStudio ? "Site preview" : "我的第一个网站");
+  const title =
+    world?.web.title || (blogStudio ? t("preview.sitePreview") : t("preview.siteFallback"));
   const hasDoc = Boolean(embedUrl || srcDoc);
 
   useEffect(() => {
@@ -82,7 +81,7 @@ function WebPreview({
                 ? "srcdoc://sandbox"
                 : blogStudio
                   ? "preview · schema"
-                  : "preview · 点击「作品预览」"}
+                  : t("preview.waiting")}
           </div>
         </div>
       )}
@@ -99,14 +98,12 @@ function WebPreview({
       ) : (
         <div className={styles.webContent}>
           <div className={styles.webHero}>
-            <div className={styles.webHeroTag}>隔离 iframe</div>
+            <div className={styles.webHeroTag}>{t("preview.isolated")}</div>
             <div className={styles.webHeroTitle}>{title}</div>
-            <div className={styles.webHeroSub}>
-              点击「作品预览」在沙箱中渲染（不执行于主站页面）
-            </div>
+            <div className={styles.webHeroSub}>{t("preview.clickSandbox")}</div>
             {onRefresh && (
               <button type="button" className={styles.webHeroBtn} onClick={onRefresh}>
-                作品预览
+                {t("preview.run")}
               </button>
             )}
           </div>
@@ -117,6 +114,7 @@ function WebPreview({
 }
 
 function MiniprogramPreview({ world }: { world: WorldState | null }) {
+  useLocaleStore((s) => s.locale);
   const pages = world?.miniapp.pages ?? [];
   const activeId = world?.miniapp.activePage || pages[0]?.id || "";
   const page = pages.find((p) => p.id === activeId) || pages[0];
@@ -127,7 +125,7 @@ function MiniprogramPreview({ world }: { world: WorldState | null }) {
     <div className={styles.phoneFrame}>
       <div className={styles.phoneScreen}>
         <div className={styles.mpHeader}>
-          <span className={styles.mpTitle}>{page?.title || "我的小程序"}</span>
+          <span className={styles.mpTitle}>{page?.title || t("preview.miniFallback")}</span>
         </div>
         <div className={styles.mpContent}>
           {!page ? (
@@ -180,16 +178,18 @@ function MiniprogramPreview({ world }: { world: WorldState | null }) {
           )}
         </div>
         <div className={styles.mpTabBar}>
-          {(pages.length ? pages : [{ id: "home", title: "首页" }]).slice(0, 3).map((p, i) => (
-            <button
-              key={p.id}
-              type="button"
-              className={`${styles.mpTab} ${p.id === activeId || (!activeId && i === 0) ? styles.mpTabActive : ""}`}
-            >
-              <span className={styles.mpTabIcon}>{["⊞", "◎", "♡"][i] || "○"}</span>
-              <span>{p.title || p.id}</span>
-            </button>
-          ))}
+          {(pages.length ? pages : [{ id: "home", title: t("preview.pageHome") }])
+            .slice(0, 3)
+            .map((p, i) => (
+              <button
+                key={p.id}
+                type="button"
+                className={`${styles.mpTab} ${p.id === activeId || (!activeId && i === 0) ? styles.mpTabActive : ""}`}
+              >
+                <span className={styles.mpTabIcon}>{["⊞", "◎", "♡"][i] || "○"}</span>
+                <span>{p.title || p.id}</span>
+              </button>
+            ))}
         </div>
       </div>
     </div>
@@ -197,10 +197,11 @@ function MiniprogramPreview({ world }: { world: WorldState | null }) {
 }
 
 function ToyPreview({ world }: { world: WorldState | null }) {
+  useLocaleStore((s) => s.locale);
   const toy = world?.toy;
   const led = toy?.led || "off";
   const ledColor = LED_COLORS[led] || LED_COLORS.off;
-  const log = toy?.timeline?.length ? toy.timeline.slice(-6) : ["[孪生] 点击「仿真运行」执行积木"];
+  const log = toy?.timeline?.length ? toy.timeline.slice(-6) : [t("preview.toyIdle")];
 
   return (
     <div className={styles.toyPreview}>
@@ -218,7 +219,11 @@ function ToyPreview({ world }: { world: WorldState | null }) {
         {toy?.speech && <div className={styles.webHeroSub}>「{toy.speech}」</div>}
         <div className={styles.toyControls}>
           <span className={styles.toyBtn}>
-            位姿 ({Math.round(toy?.x ?? 50)}, {Math.round(toy?.y ?? 70)}) °{toy?.heading ?? 0}
+            {t("preview.toyPose", {
+              x: Math.round(toy?.x ?? 50),
+              y: Math.round(toy?.y ?? 70),
+              heading: toy?.heading ?? 0,
+            })}
           </span>
           {toy?.sound && (
             <span className={`${styles.toyBtn} ${styles.toyBtnActive}`}>♪ {toy.sound}</span>
@@ -236,55 +241,8 @@ function ToyPreview({ world }: { world: WorldState | null }) {
   );
 }
 
-function SmarthomePreview({ world }: { world: WorldState | null }) {
-  const home = world?.home;
-  const rooms = Object.keys(home?.lights ?? { living: 1, bedroom: 1, kitchen: 1 });
-  const timeline = home?.timeline?.length
-    ? home.timeline.slice(-8)
-    : ["[仿真] 虚拟设备面板就绪", "[仿真] 点击「仿真运行」执行积木"];
-
-  return (
-    <div className={styles.homePreview}>
-      <div className={styles.homeNotice}>
-        虚拟仿真 · {home?.scene ? `当前场景：${home.scene}` : "非真机控制"}
-        {home ? ` · 空调 ${home.temperature}℃` : ""}
-      </div>
-      <div className={styles.deviceGrid}>
-        {rooms.map((room) => {
-          const light = home?.lights[room];
-          return (
-            <div
-              key={room}
-              className={`${styles.deviceCard} ${light?.on ? styles.deviceCardOn : ""}`}
-            >
-              <span className={styles.deviceName}>{ROOM_LABELS[room] || room}灯</span>
-              <span className={styles.deviceMeta}>灯光</span>
-              <span className={styles.deviceStatus}>
-                {light?.on ? "ON" : "OFF"} · {light?.brightness ?? 0}%
-              </span>
-            </div>
-          );
-        })}
-        {Object.entries(home?.devices ?? {}).map(([key, on]) => (
-          <div key={key} className={`${styles.deviceCard} ${on ? styles.deviceCardOn : ""}`}>
-            <span className={styles.deviceName}>{key}</span>
-            <span className={styles.deviceMeta}>设备</span>
-            <span className={styles.deviceStatus}>{on ? "ON" : "OFF"}</span>
-          </div>
-        ))}
-      </div>
-      <div className={styles.homeLog}>
-        {timeline.map((line) => (
-          <div key={line} className={styles.homeLogLine}>
-            {line}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function IotLabPreview({ world }: { world: WorldState | null }) {
+  useLocaleStore((s) => s.locale);
   const packSlug = useWorkspaceStore((s) => s.iotPackSlug);
   const runMode = useWorkspaceStore((s) => s.iotRunMode);
   const setIotRunMode = useWorkspaceStore((s) => s.setIotRunMode);
@@ -294,13 +252,18 @@ function IotLabPreview({ world }: { world: WorldState | null }) {
   const channels = iot?.channels ?? {};
   const timeline = iot?.timeline?.length
     ? iot.timeline.slice(-8).map((e) => e.text)
-    : ["[仿真] 选择通道与命令后点击运行", "[仿真] 真机需教师短时会话"];
-  const modeLabel = runMode === "live" ? "真机会话" : runMode === "firmware" ? "仅导出" : "仿真";
+    : [t("preview.iotIdle1"), t("preview.iotIdle2")];
+  const modeLabel =
+    runMode === "live"
+      ? t("preview.iotLive")
+      : runMode === "firmware"
+        ? t("preview.iotFirmware")
+        : t("preview.iotSim");
 
   return (
     <div className={styles.homePreview}>
       <div className={styles.homeNotice}>
-        {modeLabel} · {packSlug || "iot"} · {boardSku || "未选板卡"}
+        {modeLabel} · {packSlug || "iot"} · {boardSku || t("preview.iotNoBoard")}
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
         <Select
@@ -309,9 +272,9 @@ function IotLabPreview({ world }: { world: WorldState | null }) {
           style={{ minWidth: 120 }}
           onChange={(v) => setIotRunMode(v as "sim" | "live" | "firmware")}
           options={[
-            { value: "sim", label: "仿真运行" },
-            { value: "live", label: "真机会话" },
-            { value: "firmware", label: "仅导出" },
+            { value: "sim", label: t("preview.iotSim") },
+            { value: "live", label: t("preview.iotLive") },
+            { value: "firmware", label: t("preview.iotFirmware") },
           ]}
         />
         <Select
@@ -329,14 +292,17 @@ function IotLabPreview({ world }: { world: WorldState | null }) {
         {Object.entries(channels).map(([key, value]) => (
           <div key={key} className={styles.deviceCard}>
             <span className={styles.deviceName}>{key}</span>
-            <span className={styles.deviceMeta}>通道</span>
+            <span className={styles.deviceMeta}>{t("preview.iotChannel")}</span>
             <span className={styles.deviceStatus}>{String(value)}</span>
           </div>
         ))}
       </div>
       {iot?.assertions?.length ? (
         <div className={styles.homeNotice}>
-          断言 {iot.assertions.filter((a) => a.ok).length}/{iot.assertions.length} 通过
+          {t("preview.iotAssert", {
+            ok: iot.assertions.filter((a) => a.ok).length,
+            total: iot.assertions.length,
+          })}
         </div>
       ) : null}
       <div className={styles.homeLog}>
@@ -351,11 +317,9 @@ function IotLabPreview({ world }: { world: WorldState | null }) {
 }
 
 function FirmwarePreview() {
+  useLocaleStore((s) => s.locale);
   const sim = useWorkspaceStore((s) => s.firmwareSim);
-  const lines = (sim?.serialLog || "Click Firmware sim — this is an MCU adapter, not Piston.")
-    .split("\n")
-    .filter(Boolean)
-    .slice(-16);
+  const lines = (sim?.serialLog || t("run.firmwareIdle")).split("\n").filter(Boolean).slice(-16);
 
   const download = (path: string, content: string) => {
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
@@ -370,8 +334,8 @@ function FirmwarePreview() {
   return (
     <div className={styles.homePreview}>
       <div className={styles.homeNotice}>
-        Firmware lab · adapter {sim?.adapter || "idle"}
-        {sim?.status ? ` · ${sim.status}` : ""} — not mass production
+        {t("preview.firmwareAdapter", { adapter: sim?.adapter || "idle" })}
+        {sim?.status ? ` · ${sim.status}` : ""} — {t("preview.firmwareNotMass")}
       </div>
       {sim?.exportHint && <div className={styles.homeNotice}>{sim.exportHint}</div>}
       {sim?.assertions && sim.assertions.length > 0 && (
@@ -390,7 +354,7 @@ function FirmwarePreview() {
           className={styles.homeNotice}
           onClick={() => download(f.path, f.content)}
         >
-          Download {f.path}
+          {t("preview.downloadFile", { path: f.path })}
         </button>
       ))}
       <div className={styles.homeLog}>
@@ -406,7 +370,7 @@ function FirmwarePreview() {
 
 export function PreviewPanel({ kind, onRefresh }: PreviewPanelProps & { onRefresh?: () => void }) {
   const previewType = KIND_DEFAULT_PREVIEW[kind];
-  const label = PREVIEW_LABEL[previewType];
+  const label = previewLabel(previewType);
   const world = useWorkspaceStore((s) => s.previewWorld);
   const templateId = useWorkspaceStore((s) => s.templateId);
   const iotRunMode = useWorkspaceStore((s) => s.iotRunMode);
@@ -418,7 +382,7 @@ export function PreviewPanel({ kind, onRefresh }: PreviewPanelProps & { onRefres
   const blogPreviewPage = useWorkspaceStore((s) => s.blogPreviewPage);
   const blogPreviewSlug = useWorkspaceStore((s) => s.blogPreviewSlug);
   const setBlogPreview = useWorkspaceStore((s) => s.setBlogPreview);
-  const zh = useLocaleStore((s) => s.locale) === "zh-CN";
+  useLocaleStore((s) => s.locale);
 
   useEffect(() => {
     if (!blogStudio || blogPreviewPage !== "post") return;
@@ -435,13 +399,17 @@ export function PreviewPanel({ kind, onRefresh }: PreviewPanelProps & { onRefres
       <div className={styles.previewHeader}>
         <span className={styles.previewTitle}>
           {label}
-          {kind === "smarthome" && <span className={styles.previewBadge}>device panel</span>}
-          {kind === "iot" && <span className={styles.previewBadge}>IoT lab</span>}
+          {kind === "smarthome" && (
+            <span className={styles.previewBadge}>{t("preview.badgeDevice")}</span>
+          )}
+          {kind === "iot" && <span className={styles.previewBadge}>{t("preview.badgeIot")}</span>}
           {kind === "web" && (
-            <span className={styles.previewBadge}>{blogStudio ? "site" : "sandbox"}</span>
+            <span className={styles.previewBadge}>
+              {blogStudio ? t("preview.badgeSite") : t("preview.badgeSandbox")}
+            </span>
           )}
           {kind === "miniprogram" && blogStudio && (
-            <span className={styles.previewBadge}>mini · h5</span>
+            <span className={styles.previewBadge}>{t("preview.badgeMini")}</span>
           )}
         </span>
         <div className={styles.previewActions}>
@@ -459,9 +427,9 @@ export function PreviewPanel({ kind, onRefresh }: PreviewPanelProps & { onRefres
                   }
                 }}
                 options={[
-                  { label: zh ? "首页" : "Home", value: "home" },
+                  { label: t("preview.home"), value: "home" },
                   {
-                    label: zh ? "文章" : "Post",
+                    label: t("preview.post"),
                     value: "post",
                     disabled: blogPosts.length === 0,
                   },
@@ -472,11 +440,11 @@ export function PreviewPanel({ kind, onRefresh }: PreviewPanelProps & { onRefres
                   size="small"
                   style={{ minWidth: 120 }}
                   value={blogPreviewSlug || undefined}
-                  placeholder={zh ? "选择文章" : "Select post"}
+                  placeholder={t("preview.selectPost")}
                   onChange={(slug) => setBlogPreview("post", slug)}
                   options={blogPosts.map((p) => ({
                     value: p.slug,
-                    label: `${p.data.title || p.slug}${p.status === "draft" ? " (draft)" : ""}`,
+                    label: `${p.data.title || p.slug}${p.status === "draft" ? t("preview.postDraft") : ""}`,
                   }))}
                 />
               )}
@@ -485,7 +453,7 @@ export function PreviewPanel({ kind, onRefresh }: PreviewPanelProps & { onRefres
           <button
             type="button"
             className={styles.previewBtn}
-            aria-label="Refresh preview"
+            aria-label={t("preview.refreshAria")}
             onClick={handleReload}
           >
             <ReloadOutlined />

@@ -4,6 +4,8 @@ import { encodeProviderModel, parseProviderModel } from "../lib/ai-settings";
 import { type AppSchemaPatch, api } from "../lib/api";
 import { applySchemaPatch } from "../lib/app-studio/app-schema";
 import { useAuthStore } from "../lib/auth-store";
+import { t } from "../lib/i18n";
+import { useLocaleStore } from "../lib/locale-store";
 import { PAIR_PHASE_LABEL, type PairAction } from "../lib/pair-mission";
 import { requestWorkspaceRun, track } from "../lib/telemetry";
 import { isAppStudioKind, useWorkspaceStore } from "../stores/workspace";
@@ -49,6 +51,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
   } = useWorkspaceStore();
   const user = useAuthStore((s) => s.user);
   const openLoginPrompt = useAuthStore((s) => s.openLoginPrompt);
+  useLocaleStore((s) => s.locale);
   const { aiOpts, ready, config, settings, selectProviderModel } = useAiSettings();
   const [input, setInput] = useState("");
   const [pendingAppPatch, setPendingAppPatch] = useState<AppSchemaPatch | null>(null);
@@ -65,7 +68,8 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     return config.providers.flatMap((provider) =>
       provider.models.map((model) => ({
         value: encodeProviderModel(provider.id, model.id),
-        label: `${provider.name} / ${model.name}${provider.configured ? "" : " · 未配置"}`,
+        label: `${provider.name} / ${model.name}`,
+        configured: provider.configured,
         disabled: !provider.configured,
       })),
     );
@@ -95,7 +99,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
       });
       setAiCoachHint(res.hint, res.nextAction);
     } catch (e) {
-      setAiCoachHint("无法获取提示，请检查登录与网络", e instanceof Error ? e.message : "重试");
+      setAiCoachHint(t("ai.coachFailed"), e instanceof Error ? e.message : t("ai.retry"));
     } finally {
       setAiLoading(false);
     }
@@ -118,7 +122,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
       addAiMessage(userMsg);
       addAiMessage({
         role: "assistant",
-        content: "已识别创作意图。请在弹出的新建项目对话框中确认名称与语言，或继续告诉我项目名称。",
+        content: t("ai.intentOk"),
       });
       setInput("");
       return;
@@ -148,7 +152,9 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     } catch (err) {
       addAiMessage({
         role: "assistant",
-        content: `请求失败：${err instanceof Error ? err.message : String(err)}`,
+        content: t("ai.requestFailed", {
+          error: err instanceof Error ? err.message : String(err),
+        }),
       });
     } finally {
       setAiLoading(false);
@@ -167,7 +173,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
       });
       addAiMessage({
         role: "assistant",
-        content: `**代码修复建议**\n${res.explanation}\n请确认 diff 后再应用。`,
+        content: t("ai.fixSuggest", { explanation: res.explanation }),
       });
       if (res.fixedCode && res.fixedCode !== code) {
         setPendingPatch({ original: code, proposed: res.fixedCode });
@@ -175,7 +181,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     } catch (err) {
       addAiMessage({
         role: "assistant",
-        content: `修复失败：${err instanceof Error ? err.message : String(err)}`,
+        content: t("ai.fixFailed", { error: err instanceof Error ? err.message : String(err) }),
       });
     } finally {
       setAiLoading(false);
@@ -198,7 +204,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     setInput("");
     const prompt =
       "Explain the current code and the active mission in simple language. Do not write a patch.";
-    addAiMessage({ role: "user", content: "Explain" });
+    addAiMessage({ role: "user", content: t("ai.explain") });
     if (!ready) return;
     setAiLoading(true);
     try {
@@ -216,7 +222,9 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     } catch (err) {
       addAiMessage({
         role: "assistant",
-        content: `Explain failed: ${err instanceof Error ? err.message : String(err)}`,
+        content: t("ai.explainFailed", {
+          error: err instanceof Error ? err.message : String(err),
+        }),
       });
     } finally {
       setAiLoading(false);
@@ -237,7 +245,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     runPairAction("test");
     addAiMessage({
       role: "assistant",
-      content: "Running tests/preview. Publish, flash, and factory order are not in this action.",
+      content: t("ai.testRunNote"),
     });
     requestWorkspaceRun();
   };
@@ -261,7 +269,9 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     } catch (err) {
       addAiMessage({
         role: "assistant",
-        content: `Review failed: ${err instanceof Error ? err.message : String(err)}`,
+        content: t("ai.reviewFailed", {
+          error: err instanceof Error ? err.message : String(err),
+        }),
       });
     } finally {
       setAiLoading(false);
@@ -274,7 +284,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     if (!instruction || !artifactId || !appSchema) {
       addAiMessage({
         role: "assistant",
-        content: "请先打开博客作品，并在输入框写下要改的页面。",
+        content: t("ai.needBlog"),
       });
       return;
     }
@@ -291,12 +301,14 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
       setPendingAppPatch(res);
       addAiMessage({
         role: "assistant",
-        content: `**页面修改建议（不会自动发布）**\n${res.summary ?? ""}\n\`\`\`json\n${JSON.stringify(res.operations, null, 2)}\n\`\`\``,
+        content: `**${t("ai.pagePatchTitle")}**\n${res.summary ?? ""}\n\`\`\`json\n${JSON.stringify(res.operations, null, 2)}\n\`\`\``,
       });
     } catch (err) {
       addAiMessage({
         role: "assistant",
-        content: `propose-patch 失败：${err instanceof Error ? err.message : String(err)}`,
+        content: t("ai.proposeFailed", {
+          error: err instanceof Error ? err.message : String(err),
+        }),
       });
     } finally {
       setAiLoading(false);
@@ -312,7 +324,9 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     if (next.issues.length) {
       addAiMessage({
         role: "assistant",
-        content: `无法应用：${next.issues.map((i) => i.message).join("; ")}`,
+        content: t("ai.applyFailed", {
+          error: next.issues.map((i) => i.message).join("; "),
+        }),
       });
       return;
     }
@@ -323,7 +337,9 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
       } catch (err) {
         addAiMessage({
           role: "assistant",
-          content: `已写入本地 Schema，云端 PUT 失败：${err instanceof Error ? err.message : String(err)}`,
+          content: t("ai.schemaLocalOnly", {
+            error: err instanceof Error ? err.message : String(err),
+          }),
         });
         setPendingAppPatch(null);
         return;
@@ -332,7 +348,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     setPendingAppPatch(null);
     addAiMessage({
       role: "assistant",
-      content: "已应用页面补丁。未调用 publish。",
+      content: t("ai.patchApplied"),
     });
   };
 
@@ -340,38 +356,42 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     <div className="ai-panel">
       {!hideHeader && (
         <div className="panel-header ai-panel-header">
-          <span>AI 编程助手</span>
+          <span>{t("ai.assistant")}</span>
           <span className="ai-mode-tag">
-            {blogStudio ? "App Studio" : editorMode === "blockly" ? "积木" : "专业"}
+            {blogStudio
+              ? t("ai.tagStudio")
+              : editorMode === "blockly"
+                ? t("ai.tagBlocks")
+                : t("ai.tagPro")}
           </span>
         </div>
       )}
 
       <div className="ai-model-picker">
         <label>
-          模式
+          {t("ai.mode")}
           <select value={aiMode} onChange={(e) => setAiMode(e.target.value as typeof aiMode)}>
-            <option value="tutor">Tutor</option>
-            <option value="debug">Debug</option>
-            <option value="review">Review</option>
+            <option value="tutor">{t("ai.modeTutor")}</option>
+            <option value="debug">{t("ai.modeDebug")}</option>
+            <option value="review">{t("ai.modeReview")}</option>
             <option
               value="agent"
               disabled={teachingDepth === "beginner" || teachingDepth === "guided"}
             >
-              Agent
+              {t("ai.modeAgent")}
             </option>
           </select>
         </label>
         <label>
-          教学深度
+          {t("ai.depth")}
           <select
             value={teachingDepth}
             onChange={(e) => setTeachingDepth(e.target.value as typeof teachingDepth)}
           >
-            <option value="beginner">入门</option>
-            <option value="guided">引导</option>
-            <option value="normal">常规</option>
-            <option value="expert">专家</option>
+            <option value="beginner">{t("ai.depthBeginner")}</option>
+            <option value="guided">{t("ai.depthGuided")}</option>
+            <option value="normal">{t("ai.depthNormal")}</option>
+            <option value="expert">{t("ai.depthExpert")}</option>
           </select>
         </label>
       </div>
@@ -379,7 +399,9 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
       <div className="ai-panel-scroll">
         {!hubMode && (
           <div className="ai-goal-card">
-            <div className="ai-goal-label">Mission · {PAIR_PHASE_LABEL[pairMission.phase]}</div>
+            <div className="ai-goal-label">
+              {t("ai.missionLabel", { phase: PAIR_PHASE_LABEL[pairMission.phase] })}
+            </div>
             <p>
               {pairMission.title}: {pairMission.success}
             </p>
@@ -389,14 +411,14 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
         {!hubMode && (
           <div className="ai-hint-card">
             <div className="ai-hint-head">
-              <strong>Hint</strong>
+              <strong>{t("ai.hintLabel")}</strong>
               <button
                 type="button"
                 className="btn-sm"
                 onClick={() => void hint()}
                 disabled={aiLoading}
               >
-                Refresh
+                {t("ai.refresh")}
               </button>
             </div>
             {aiNextHint ? (
@@ -405,7 +427,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
                 {aiNextAction && <p className="ai-next-action">👉 {aiNextAction}</p>}
               </>
             ) : (
-              <p className="muted">Sign in to get a Socratic hint</p>
+              <p className="muted">{t("ai.signInHint")}</p>
             )}
           </div>
         )}
@@ -418,7 +440,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
               onClick={() => void explain()}
               disabled={aiLoading}
             >
-              Explain
+              {t("ai.explain")}
             </button>
             <button
               type="button"
@@ -426,7 +448,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
               onClick={() => void hint()}
               disabled={aiLoading}
             >
-              Hint
+              {t("ai.hint")}
             </button>
             <button
               type="button"
@@ -434,10 +456,10 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
               onClick={() => void implement()}
               disabled={aiLoading}
             >
-              Implement
+              {t("ai.implement")}
             </button>
             <button type="button" className="btn-sm" onClick={test} disabled={aiLoading}>
-              Test
+              {t("ai.test")}
             </button>
             <button
               type="button"
@@ -445,7 +467,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
               onClick={() => void review()}
               disabled={aiLoading}
             >
-              Review
+              {t("ai.review")}
             </button>
           </div>
         )}
@@ -457,19 +479,19 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
               onClick={() => void proposeAppPatch()}
               disabled={aiLoading || !input.trim()}
             >
-              按这句话改页面
+              {t("ai.changePage")}
             </button>
           </div>
         )}
         {pendingAppPatch && (
           <div className="ai-hint-card">
-            <strong>确认页面补丁 — 不会发布站点</strong>
+            <strong>{t("ai.confirmPagePatch")}</strong>
             <pre className="ai-hint-text">
               {JSON.stringify(pendingAppPatch.operations, null, 2).slice(0, 800)}
             </pre>
             <div className="ai-quick-actions">
               <button type="button" className="btn-sm" onClick={() => void applyAppPatch()}>
-                Apply
+                {t("ai.apply")}
               </button>
               <button
                 type="button"
@@ -479,18 +501,18 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
                   track("pair.patch.rejected");
                 }}
               >
-                Reject
+                {t("ai.reject")}
               </button>
             </div>
           </div>
         )}
         {pendingPatch && (
           <div className="ai-hint-card">
-            <strong>Confirm patch — will not publish, flash, or order</strong>
+            <strong>{t("ai.patchConfirm")}</strong>
             <pre className="ai-hint-text">{pendingPatch.proposed.slice(0, 400)}</pre>
             <div className="ai-quick-actions">
               <button type="button" className="btn-sm" onClick={() => applyPendingPatch()}>
-                Apply
+                {t("ai.apply")}
               </button>
               <button
                 type="button"
@@ -500,7 +522,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
                   track("pair.patch.rejected");
                 }}
               >
-                Reject
+                {t("ai.reject")}
               </button>
             </div>
           </div>
@@ -508,23 +530,21 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
 
         <div className="ai-messages">
           {aiMessages.length === 0 && (
-            <p className="muted">
-              {hubMode ? "用自然语言描述想创建的项目类型…" : "问我编程问题，或使用上方快捷按钮"}
-            </p>
+            <p className="muted">{hubMode ? t("ai.emptyHub") : t("ai.emptyAsk")}</p>
           )}
           {aiMessages.map((m) => (
             <div key={`${m.role}:${m.content}`} className={`ai-msg ai-msg--${m.role}`}>
-              <strong>{m.role === "user" ? "你" : "AI"}：</strong>
+              <strong>{m.role === "user" ? t("ai.you") : t("ai.bot")}：</strong>
               <span>{m.content}</span>
             </div>
           ))}
-          {aiLoading && <p className="muted">思考中…</p>}
+          {aiLoading && <p className="muted">{t("ai.thinking")}</p>}
         </div>
       </div>
 
       <div className="ai-composer">
         <label className="ai-composer-model">
-          模型
+          {t("ai.model")}
           <select
             value={modelValue}
             onChange={(e) => onModelChange(e.target.value)}
@@ -532,7 +552,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
           >
             {modelOptions.map((opt) => (
               <option key={opt.value} value={opt.value} disabled={opt.disabled}>
-                {opt.label}
+                {opt.configured ? opt.label : t("ai.modelUnconfigured", { label: opt.label })}
               </option>
             ))}
           </select>
@@ -542,11 +562,11 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && void send()}
-            placeholder={hubMode ? "例如：帮我做一个网站…" : "输入问题…"}
+            placeholder={hubMode ? t("ai.placeholderHub") : t("ai.placeholderAsk")}
             disabled={aiLoading}
           />
           <button type="button" onClick={() => void send()} disabled={aiLoading || !input.trim()}>
-            发送
+            {t("ai.send")}
           </button>
         </div>
       </div>

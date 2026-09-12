@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import {
+  type ArtifactLearnLink,
   api,
   type BlogPostRecord,
   type ChatMessage,
@@ -15,6 +16,8 @@ import {
   extractEditorBuffers,
   filesToMap,
 } from "../lib/artifact-files";
+import { t } from "../lib/i18n";
+import { untitledArtifactName } from "../lib/kind-label";
 import {
   DEFAULT_PAIR_MISSION,
   nextPhaseAfterAction,
@@ -23,7 +26,7 @@ import {
 } from "../lib/pair-mission";
 import type { WorldState } from "../lib/targets";
 import { DEFAULT_KIND_CODE, DEFAULT_KIND_XML } from "../lib/targets";
-import { starterIotCode, starterIotXml, type IotRunMode } from "../lib/targets/iot-lab";
+import { type IotRunMode, starterIotCode, starterIotXml } from "../lib/targets/iot-lab";
 import { track } from "../lib/telemetry";
 import {
   boardSkuForTemplate,
@@ -33,7 +36,7 @@ import {
 } from "../lib/templates";
 import { getDefaultLanguageId, getLanguagePlugin } from "../plugins";
 import type { ArtifactKind, LeftPanelTab } from "../types/artifact";
-import { isConsoleKind, isHardwareKind, KIND_LABEL } from "../types/artifact";
+import { isConsoleKind, isHardwareKind } from "../types/artifact";
 
 export type EditorMode = "blockly" | "monaco";
 
@@ -103,6 +106,8 @@ interface WorkspaceState {
   projectName: string;
   lesson: Lesson | null;
   lessonStepIndex: number;
+  /** Persisted Learn link from artifact meta (course/assignment + submission). */
+  learnLink: ArtifactLearnLink | null;
   aiMessages: ChatMessage[];
   aiLoading: boolean;
   aiNextHint: string;
@@ -136,6 +141,8 @@ interface WorkspaceState {
   /** kind=web: srcdoc fallback when offline / unauthenticated */
   webPreviewSrcDoc: string | null;
   webPreviewSessionId: string | null;
+  /** kind=smarthome: server sim session for event inject (TTL, in-memory). */
+  smarthomeSessionId: string | null;
   /** Blog App Studio surfaces (ignored for other kinds). */
   surfaceMode: SurfaceMode;
   appSchema: AppSchema | null;
@@ -168,6 +175,7 @@ interface WorkspaceState {
   setProjectName: (name: string) => void;
   setLesson: (lesson: Lesson | null) => void;
   setLessonStepIndex: (index: number) => void;
+  setLearnLink: (learnLink: ArtifactLearnLink | null) => void;
   addAiMessage: (msg: ChatMessage) => void;
   setAiLoading: (loading: boolean) => void;
   resetAiMessages: () => void;
@@ -195,6 +203,7 @@ interface WorkspaceState {
     srcDoc?: string | null;
     sessionId?: string | null;
   }) => void;
+  setSmarthomeSessionId: (id: string | null) => void;
   createNewArtifact: (
     kind: ArtifactKind,
     name: string,
@@ -208,6 +217,10 @@ interface WorkspaceState {
   markDirty: () => void;
   setActiveFile: (path: string) => void;
   addArtifactFile: (path: string) => void;
+  /** Drop one file. Returns false if the path is missing or it would leave zero files. */
+  removeArtifactFile: (path: string, opts?: { saveDirty?: boolean }) => boolean;
+  /** Replace the draft file tree from a version snapshot. Does not persist or delete. */
+  restoreArtifactFiles: (files: readonly ArtifactFileEntry[]) => void;
   applyPairAction: (action: PairAction) => void;
   setPairMission: (mission: PairMission) => void;
   setFirmwareSim: (sim: FirmwareSimState | null) => void;
@@ -243,15 +256,16 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   aiMode: "tutor",
   pendingPatch: null,
   currentProject: null,
-  projectName: "未命名项目",
+  projectName: t("workspace.untitledProject"),
   lesson: null,
   lessonStepIndex: 0,
+  learnLink: null,
   aiMessages: [],
   aiLoading: false,
   aiNextHint: "",
   aiNextAction: "",
   artifactKind: "exercise",
-  artifactName: "我的第一个练习",
+  artifactName: t("workspace.firstExercise"),
   artifactId: null,
   artifactFiles: [],
   activeFilePath: "main.js",
@@ -275,6 +289,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   webPreviewEmbedUrl: null,
   webPreviewSrcDoc: null,
   webPreviewSessionId: null,
+  smarthomeSessionId: null,
   surfaceMode: "code",
   appSchema: null,
   selectedNodeId: null,
@@ -447,6 +462,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   setProjectName: (projectName) => set({ projectName }),
   setLesson: (lesson) => set({ lesson, lessonStepIndex: 0 }),
   setLessonStepIndex: (lessonStepIndex) => set({ lessonStepIndex }),
+  setLearnLink: (learnLink) => set({ learnLink }),
   addAiMessage: (msg) => set((s) => ({ aiMessages: [...s.aiMessages, msg] })),
   setAiLoading: (aiLoading) => set({ aiLoading }),
   resetAiMessages: () => set({ aiMessages: [] }),
@@ -478,7 +494,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       return `${pairMission.title} — ${pairMission.success}`;
     }
     if (isBlogStudioKind(artifactKind, get().templateId)) {
-      return "把页面和内容做完，发布后把链接发给家人，或下载 zip 自己部署";
+      return t("workspace.shipGoal");
     }
     return "";
   },
@@ -541,6 +557,81 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set({ artifactFiles: files, saveDirty: true });
     get().setActiveFile(trimmed);
   },
+  removeArtifactFile: (path, opts) => {
+    const trimmed = path.trim().replace(/^\/+/, "");
+    if (!trimmed) return false;
+    const s = get();
+    const map = filesToMap(s.artifactFiles);
+    if (s.activeFilePath) map[s.activeFilePath] = s.code;
+
+    const ordered = s.artifactFiles.length
+      ? s.artifactFiles.map((f) => f.path)
+      : s.activeFilePath
+        ? [s.activeFilePath]
+        : [];
+    const idx = ordered.indexOf(trimmed);
+    if (idx < 0) return false;
+
+    const remainingPaths = ordered.filter((p) => p !== trimmed);
+    if (remainingPaths.length === 0) return false;
+
+    const files = remainingPaths.map((p) => {
+      const prev = s.artifactFiles.find((f) => f.path === p);
+      return {
+        path: p,
+        contentType: prev?.contentType ?? (p.endsWith(".json") ? "application/json" : "text"),
+        content: map[p] ?? "",
+      };
+    });
+
+    const deletingActive = s.activeFilePath === trimmed;
+    const nextPath = deletingActive
+      ? remainingPaths[Math.min(idx, remainingPaths.length - 1)]
+      : s.activeFilePath;
+    const nextCode = deletingActive ? (map[nextPath] ?? "") : s.code;
+    const nextDirty = opts?.saveDirty ?? true;
+
+    set({
+      artifactFiles: files,
+      activeFilePath: nextPath,
+      code: nextCode,
+      languageBuffers: deletingActive
+        ? {
+            ...s.languageBuffers,
+            [s.languageId]: { code: nextCode, blockXml: s.blockXml },
+          }
+        : s.languageBuffers,
+      saveDirty: nextDirty,
+      saveStatus: nextDirty ? "idle" : "saved",
+    });
+    return true;
+  },
+  restoreArtifactFiles: (files) => {
+    const s = get();
+    const next = [...files];
+    const map = filesToMap(next);
+    const keepActive = Boolean(s.activeFilePath && map[s.activeFilePath] !== undefined);
+    const activeFilePath = keepActive ? s.activeFilePath : (next[0]?.path ?? s.activeFilePath);
+    const code = map[activeFilePath] ?? "";
+    const { blockXml } = extractEditorBuffers(s.artifactKind, next);
+    const appSchema = parseSchemaFromFiles(next);
+    set({
+      artifactFiles: next,
+      activeFilePath,
+      code,
+      blockXml,
+      appSchema,
+      selectedNodeId:
+        appSchema?.pages[0]?.nodes.find((n) => n.type === "hero")?.id ??
+        (appSchema ? (appSchema.pages[0]?.nodes[0]?.id ?? null) : s.selectedNodeId),
+      languageBuffers: {
+        ...s.languageBuffers,
+        [s.languageId]: { code, blockXml },
+      },
+      saveDirty: true,
+      saveStatus: "idle",
+    });
+  },
   setWebPreview: (payload) =>
     set((s) => ({
       webPreviewEmbedUrl: payload.embedUrl !== undefined ? payload.embedUrl : s.webPreviewEmbedUrl,
@@ -548,10 +639,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       webPreviewSessionId:
         payload.sessionId !== undefined ? payload.sessionId : s.webPreviewSessionId,
     })),
+  setSmarthomeSessionId: (smarthomeSessionId) => set({ smarthomeSessionId }),
   createNewArtifact: async (kind, name, language, opts) => {
     const consoleKind = isConsoleKind(kind);
     const hardware = isHardwareKind(kind);
-    const nextName = name.trim() || `我的${KIND_LABEL[kind]}`;
+    const nextName = name.trim() || untitledArtifactName(kind);
     const extras = extraFilesForTemplate(kind, opts?.templateId);
     const extraMap = filesToMap(extras);
     const templateId = opts?.templateId ?? null;
@@ -559,7 +651,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     const iotLab = Boolean(iotPack);
     const primaryPath = codePathForKind(kind);
     const nextXml = iotPack ? starterIotXml(iotPack) : DEFAULT_KIND_XML[kind];
-    const nextCode = extraMap[primaryPath] || (iotPack ? starterIotCode(iotPack) : DEFAULT_KIND_CODE[kind]);
+    const nextCode =
+      extraMap[primaryPath] || (iotPack ? starterIotCode(iotPack) : DEFAULT_KIND_CODE[kind]);
     const requested = language || get().languageId || "javascript";
     const lang = consoleKind ? requested : requested || "javascript";
     const plugin = getLanguagePlugin(lang);
@@ -596,6 +689,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       artifactName: nextName,
       projectName: nextName,
       artifactId: null,
+      learnLink: null,
+      lesson: null,
+      lessonStepIndex: 0,
       currentProject: null,
       artifactFiles: seedFiles,
       activeFilePath: blogPath,
@@ -624,6 +720,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       webPreviewEmbedUrl: null,
       webPreviewSrcDoc: null,
       webPreviewSessionId: null,
+      smarthomeSessionId: null,
       surfaceMode: blog ? "design" : "code",
       appSchema: seedSchema,
       selectedNodeId: seedSchema?.pages[0]?.nodes.find((n) => n.type === "hero")?.id ?? null,
@@ -732,7 +829,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
       const templateId =
         meta.templateId ?? parseSchemaFromFiles(files)?.templateId ?? get().templateId;
-      const iotPack = meta.kind === "iot" ? parsePackSlugFromFiles(files) ?? packSlugFromTemplate(templateId) : null;
+      const iotPack =
+        meta.kind === "iot"
+          ? (parsePackSlugFromFiles(files) ?? packSlugFromTemplate(templateId))
+          : null;
       const iotLab = Boolean(iotPack);
       const blog = isBlogStudioKind(meta.kind, templateId);
       const editorMode = blog
@@ -749,6 +849,15 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const appSchema = parseSchemaFromFiles(files);
       const activePath = blog ? "styles.css" : codePathForKind(meta.kind);
       const activeCode = blog ? (fileMap["styles.css"] ?? "") : nextCode;
+      const learnLink = meta.learnLink ?? null;
+      let restoredLesson: Lesson | null = null;
+      if (learnLink?.workspaceLessonId) {
+        try {
+          restoredLesson = await api.getLesson(learnLink.workspaceLessonId);
+        } catch {
+          restoredLesson = null;
+        }
+      }
 
       set({
         artifactId: meta.id,
@@ -775,7 +884,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         bottomOpen: consoleKind || (isHardwareKind(meta.kind) && !iotLab),
         aiOpen: false,
         activeLeftTab:
-          blog || consoleKind ? "learn" : isHardwareKind(meta.kind) && !iotLab ? "modules" : "files",
+          blog || consoleKind
+            ? "learn"
+            : isHardwareKind(meta.kind) && !iotLab
+              ? "modules"
+              : "files",
         editorMode,
         languageId: lang,
         code: activeCode,
@@ -786,6 +899,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         webPreviewEmbedUrl: null,
         webPreviewSrcDoc: null,
         webPreviewSessionId: null,
+        smarthomeSessionId: null,
         surfaceMode: blog ? "design" : "code",
         appSchema,
         selectedNodeId: appSchema?.pages[0]?.nodes.find((n) => n.type === "hero")?.id ?? null,
@@ -798,6 +912,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           ...get().languageBuffers,
           [lang]: { code: activeCode, blockXml: blog ? "" : nextXml },
         },
+        learnLink,
+        lesson: restoredLesson,
+        lessonStepIndex: 0,
       });
       if (blog) void get().refreshBlogRecords();
     })().finally(() => {
@@ -816,6 +933,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     set({
       artifactId: null,
+      learnLink: null,
       artifactKind: "exercise",
       artifactName: project.name,
       projectName: project.name,
@@ -838,6 +956,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       webPreviewEmbedUrl: null,
       webPreviewSrcDoc: null,
       webPreviewSessionId: null,
+      smarthomeSessionId: null,
       surfaceMode: "code",
       appSchema: null,
       selectedNodeId: null,
@@ -868,7 +987,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           });
         } else {
           project = await api.createProject({
-            name: state.artifactName || state.projectName || "未命名练习",
+            name: state.artifactName || state.projectName || t("workspace.unnamedExercise"),
             code: state.code,
             blockXml: state.blockXml,
             language: state.languageId,
@@ -880,7 +999,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       let artifactId = state.artifactId;
       if (!artifactId) {
         const created = await api.createArtifact({
-          title: state.artifactName || state.projectName || "未命名作品",
+          title: state.artifactName || state.projectName || t("workspace.unnamedArtifact"),
           kind: state.artifactKind,
           language: state.languageId,
           intent: state.intent,

@@ -26,8 +26,10 @@ import { useAiSettings } from "../hooks/useAiSettings";
 import { api } from "../lib/api";
 import { usesHostedPosts } from "../lib/app-studio/app-schema";
 import { useAuthStore } from "../lib/auth-store";
+import { t } from "../lib/i18n";
 import { isDirectIdpEnabled } from "../lib/idp";
-import { type AppLocale, useLocaleStore } from "../lib/locale-store";
+import { kindLabel } from "../lib/kind-label";
+import { useLocaleStore } from "../lib/locale-store";
 import { navigate } from "../lib/navigate";
 import {
   type EditorMode,
@@ -42,9 +44,6 @@ import {
   isHomeSimKind,
   isTargetBlockKind,
   KIND_COLOR,
-  KIND_DEFAULT_PREVIEW,
-  KIND_LABEL,
-  PREVIEW_LABEL,
 } from "../types/artifact";
 import { PublishWebDialog } from "./PublishWebDialog";
 import styles from "./WorkspaceHeader.module.scss";
@@ -95,31 +94,23 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
   const setAiLoading = useWorkspaceStore((s) => s.setAiLoading);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
-  const locale = useLocaleStore((s) => s.locale);
-  const launchLabel = locale === "zh-CN" ? "发布台" : "Launch";
-  const launchHint =
-    locale === "zh-CN"
-      ? "打开发布台：制造检查与上架包"
-      : "Open launch desk: manufacturing checks and listing pack";
-  const hubLabel: Record<AppLocale, string> = { "zh-CN": "项目", "en-US": "Projects" };
+  useLocaleStore((s) => s.locale);
   const openLoginPrompt = useAuthStore((s) => s.openLoginPrompt);
   const { aiOpts, ready } = useAiSettings();
 
-  const [modeModal, setModeModal] = useState<"upgrade" | "restore" | null>(null);
+  const [modeModal, setModeModal] = useState<"upgrade" | "restore" | "backDesign" | null>(null);
+  const [pendingSurface, setPendingSurface] = useState<SurfaceMode | null>(null);
   const [busy, setBusy] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const appStudio = isAppStudioKind(artifactKind, templateId);
   const showDataTab = usesHostedPosts(templateId);
+  const canPublishWeb = artifactKind === "web" || artifactKind === "miniprogram";
 
   const color = KIND_COLOR[artifactKind];
   const previewSupported = !isConsoleKind(artifactKind);
   const hardware = isHardwareKind(artifactKind);
   const isSimKind = isHomeSimKind(artifactKind) || artifactKind === "toy";
-  const runLabel = hardware
-    ? "Firmware sim"
-    : isSimKind
-      ? PREVIEW_LABEL.smarthome
-      : PREVIEW_LABEL[KIND_DEFAULT_PREVIEW[artifactKind]];
+  const runLabel = hardware ? t("run.firmware") : isSimKind ? t("run.sim") : t("preview.artifact");
   const plugin = getActiveLanguagePlugin();
   const supportsBlockly =
     !appStudio &&
@@ -140,12 +131,12 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
       return;
     }
     if (!artifactId) {
-      message.warning("请先新建作品（云端会自动创建）");
+      message.warning(t("workspace.saveNeedArtifact"));
       return;
     }
     const ok = await saveCurrentArtifact();
-    if (ok) message.success("已保存到云端");
-    else message.error("保存失败，请确认已登录且有权限");
+    if (ok) message.success(t("workspace.saveOk"));
+    else message.error(t("workspace.saveFailed"));
   };
 
   const requestModeChange = (mode: EditorMode) => {
@@ -164,6 +155,27 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
       return;
     }
     restoreBlocklyFromSnapshot();
+  };
+
+  const requestSurfaceChange = (next: SurfaceMode) => {
+    if (next === surfaceMode) return;
+    if (surfaceMode === "code" && next !== "code") {
+      setPendingSurface(next);
+      setModeModal("backDesign");
+      return;
+    }
+    setSurfaceMode(next);
+  };
+
+  const confirmBackDesign = () => {
+    if (pendingSurface) setSurfaceMode(pendingSurface);
+    setPendingSurface(null);
+    setModeModal(null);
+  };
+
+  const cancelModeModal = () => {
+    setPendingSurface(null);
+    setModeModal(null);
   };
 
   const confirmUpgrade = async () => {
@@ -190,7 +202,9 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
       applyProUpgrade(res.code, blockXml);
       addAiMessage({
         role: "assistant",
-        content: `**已进入专业模式**\n${res.explanation}${res.mock ? "\n\n_(Mock)_" : ""}`,
+        content: t("ai.upgraded", {
+          explanation: `${res.explanation}${res.mock ? "\n\n_(Mock)_" : ""}`,
+        }),
       });
       setModeModal(null);
     } catch {
@@ -206,7 +220,7 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
     restoreBlocklyFromSnapshot();
     addAiMessage({
       role: "assistant",
-      content: "已恢复积木快照。专业模式下的手改代码未保留到积木中。",
+      content: t("ai.restored"),
     });
     setModeModal(null);
   };
@@ -217,7 +231,7 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
       label: (
         <span className={styles.layoutItem}>
           <LayoutIcon showLeft inMenu />
-          <span>资源</span>
+          <span>{t("layout.assets")}</span>
           {leftOpen && <CheckOutlined className={styles.layoutCheck} />}
         </span>
       ),
@@ -229,7 +243,7 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
       label: (
         <span className={styles.layoutItem}>
           <LayoutIcon showPreview inMenu />
-          <span>预览</span>
+          <span>{t("layout.preview")}</span>
           {rightPreviewOpen && previewSupported && <CheckOutlined className={styles.layoutCheck} />}
         </span>
       ),
@@ -240,7 +254,7 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
       label: (
         <span className={styles.layoutItem}>
           <LayoutIcon showConsole inMenu />
-          <span>控制台</span>
+          <span>{t("layout.console")}</span>
           {bottomOpen && <CheckOutlined className={styles.layoutCheck} />}
         </span>
       ),
@@ -251,7 +265,7 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
       label: (
         <span className={styles.layoutItem}>
           <LayoutIcon showAi inMenu />
-          <span>AI</span>
+          <span>{t("layout.ai")}</span>
           {aiOpen && <CheckOutlined className={styles.layoutCheck} />}
         </span>
       ),
@@ -263,15 +277,15 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
     <>
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <Tooltip title={locale === "zh-CN" ? "返回项目" : "Back to projects"}>
+          <Tooltip title={t("layout.back")}>
             <button
               type="button"
               className={styles.hubBtn}
               onClick={() => navigate("/")}
-              aria-label={locale === "zh-CN" ? "返回项目" : "Back to projects"}
+              aria-label={t("layout.back")}
             >
               <LogoMark size={22} />
-              <span className={styles.hubLabel}>{hubLabel[locale]}</span>
+              <span className={styles.hubLabel}>{t("layout.hub")}</span>
             </button>
           </Tooltip>
           <div className={styles.artifactInfo}>
@@ -284,7 +298,7 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
               style={{ color, borderColor: `${color}40`, background: `${color}18` }}
             >
               {KIND_ICON[artifactKind]}
-              <span>{KIND_LABEL[artifactKind]}</span>
+              <span>{kindLabel(artifactKind)}</span>
             </span>
           </div>
         </div>
@@ -294,7 +308,7 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
             <Segmented
               size="small"
               value={surfaceMode}
-              onChange={(v) => setSurfaceMode(v as SurfaceMode)}
+              onChange={(v) => requestSurfaceChange(v as SurfaceMode)}
               options={[
                 { label: "Design", value: "design" },
                 ...(showDataTab ? [{ label: "Data", value: "data" }] : []),
@@ -309,8 +323,8 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
               value={editorMode}
               onChange={(v) => requestModeChange(v as EditorMode)}
               options={[
-                { label: "积木模式", value: "blockly" },
-                { label: "专业模式", value: "monaco" },
+                { label: t("editor.blockly"), value: "blockly" },
+                { label: t("editor.monaco"), value: "monaco" },
               ]}
             />
           )}
@@ -320,10 +334,10 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
           <Tooltip
             title={
               !user
-                ? "登录后可保存到云端"
+                ? t("workspace.saveHintLogin")
                 : saveStatus === "saved" && !saveDirty
-                  ? "已保存"
-                  : "保存积木与代码到作品草稿"
+                  ? t("workspace.saved")
+                  : t("workspace.saveHint")
             }
           >
             <Button
@@ -333,7 +347,7 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
               loading={saveStatus === "saving"}
               onClick={() => void handleSave()}
             >
-              {saveDirty ? "保存" : "已保存"}
+              {saveDirty ? t("workspace.save") : t("workspace.saved")}
             </Button>
           </Tooltip>
 
@@ -354,48 +368,48 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
           {isConsoleKind(artifactKind) && <LanguageSelector />}
 
           {hardware && artifactId && (
-            <Tooltip title={launchHint}>
+            <Tooltip title={t("launch.hint")}>
               <Button
                 size="small"
                 icon={<RocketOutlined />}
                 onClick={() => navigate(`/launch/${artifactId}`)}
               >
-                {launchLabel}
+                {t("launch.desk")}
               </Button>
             </Tooltip>
           )}
 
-          {appStudio && (
+          {canPublishWeb && (
             <Button
               type="primary"
               size="small"
               icon={<CloudUploadOutlined />}
               onClick={() => setPublishOpen(true)}
             >
-              {locale === "zh-CN" ? "上线分享" : "Ship"}
+              {t("publish.ship")}
             </Button>
           )}
 
-          {(artifactKind === "web" || artifactKind === "miniprogram") && !appStudio && (
+          {canPublishWeb && !appStudio && (
             <Button
               size="small"
               icon={isRunning ? <ReloadOutlined spin /> : <CaretRightOutlined />}
               onClick={onRun}
               loading={isRunning}
             >
-              作品预览
+              {t("preview.artifact")}
             </Button>
           )}
 
           <Dropdown menu={{ items: layoutItems }} trigger={["click"]} placement="bottomRight">
-            <button type="button" className={styles.layoutBtn} title="面板布局">
+            <button type="button" className={styles.layoutBtn} title={t("layout.panels")}>
               <LayoutIcon
                 showLeft={leftOpen}
                 showPreview={rightPreviewOpen && previewSupported}
                 showConsole={bottomOpen}
                 showAi={aiOpen}
               />
-              <span>布局</span>
+              <span>{t("layout.menu")}</span>
             </button>
           </Dropdown>
 
@@ -404,7 +418,7 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
             <UserAvatarMenu user={user} onLogout={logout} />
           ) : (
             <button type="button" className={styles.authBtn} onClick={goLogin}>
-              Sign in
+              {t("auth.signIn")}
             </button>
           )}
         </div>
@@ -412,29 +426,43 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
 
       {modeModal === "upgrade" && (
         <ModeSwitchModal
-          title="切换到专业模式"
+          title={t("editor.upgradeTitle")}
           tone="info"
-          confirmLabel={busy ? "处理中…" : "进入专业模式"}
+          confirmLabel={busy ? t("editor.upgradeBusy") : t("editor.upgradeConfirm")}
           disabled={busy}
           onConfirm={() => void confirmUpgrade()}
-          onCancel={() => setModeModal(null)}
+          onCancel={cancelModeModal}
         >
-          <p>将使用 AI 整理当前积木为可编辑代码（若 AI 不可用则直接进入代码编辑器）。</p>
+          <p>{t("editor.upgradeBody")}</p>
         </ModeSwitchModal>
       )}
 
       {modeModal === "restore" && (
         <ModeSwitchModal
-          title="回到积木模式？"
+          title={t("editor.restoreTitle")}
           tone="warn"
-          confirmLabel="恢复积木"
+          confirmLabel={t("editor.restoreConfirm")}
           onConfirm={confirmRestore}
-          onCancel={() => setModeModal(null)}
+          onCancel={cancelModeModal}
         >
-          <p>专业模式下的手改代码不会同步回积木。确认后将恢复进入专业模式前的积木快照。</p>
+          <p>{t("editor.restoreBody")}</p>
         </ModeSwitchModal>
       )}
-      {appStudio && <PublishWebDialog open={publishOpen} onClose={() => setPublishOpen(false)} />}
+
+      {modeModal === "backDesign" && (
+        <ModeSwitchModal
+          title={t("surface.backDesignTitle")}
+          tone="warn"
+          confirmLabel={t("surface.backDesignConfirm")}
+          onConfirm={confirmBackDesign}
+          onCancel={cancelModeModal}
+        >
+          <p>{t("surface.backDesignBody")}</p>
+        </ModeSwitchModal>
+      )}
+      {canPublishWeb && (
+        <PublishWebDialog open={publishOpen} onClose={() => setPublishOpen(false)} />
+      )}
     </>
   );
 }

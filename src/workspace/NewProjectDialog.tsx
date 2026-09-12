@@ -12,44 +12,47 @@ import {
 } from "@ant-design/icons";
 import { Button, Modal, Select } from "antd";
 import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
+import { t } from "../lib/i18n";
+import { kindLabel, untitledArtifactName } from "../lib/kind-label";
+import { useLocaleStore } from "../lib/locale-store";
 import type { ArtifactKind } from "../types/artifact";
-import { ARTIFACT_KIND_ORDER, KIND_COLOR, KIND_LABEL } from "../types/artifact";
+import { ARTIFACT_KIND_ORDER, KIND_COLOR } from "../types/artifact";
 import styles from "./NewProjectDialog.module.scss";
 
-const KIND_META: Record<ArtifactKind, { icon: ReactNode; desc: string; templates: string[] }> = {
+const KIND_META: Record<ArtifactKind, { icon: ReactNode; templates: string[] }> = {
   web: {
     icon: <GlobalOutlined />,
-    desc: "做完就能发给别人：落地页 / 作品集 / 博客",
     templates: ["落地页", "作品集", "博客", "管理后台"],
   },
   miniprogram: {
     icon: <MobileOutlined />,
-    desc: "资讯小程序：家长打开网页，你还能下载微信工程",
     templates: ["资讯小程序", "活动报名", "商城小程序"],
   },
   smarthome: {
     icon: <HomeOutlined />,
-    desc: "房间 / 设备 / 场景联动 + 设备面板仿真",
     templates: ["灯光场景", "温控联动", "安防演示"],
   },
   iot: {
     icon: <ApiOutlined />,
-    desc: "智慧窗控 / 灌溉 / 鱼塘 · 先仿真再选 ESP32 真机",
-    templates: ["智慧窗控", "智慧灌溉", "鱼塘增氧", "HP-01 Air Beacon", "HP-02 Desk Rover", "HP-03 Room Node"],
+    templates: [
+      "智慧窗控",
+      "智慧灌溉",
+      "鱼塘增氧",
+      "HP-01 Air Beacon",
+      "HP-02 Desk Rover",
+      "HP-03 Room Node",
+    ],
   },
   toy: {
     icon: <RobotOutlined />,
-    desc: "硬件积木 + 数字孪生仿真",
     templates: ["互动玩具", "传感器演示"],
   },
   free: {
     icon: <ExperimentOutlined />,
-    desc: "Pair programming · Monaco first",
     templates: ["空白项目", "脚本草稿"],
   },
   exercise: {
     icon: <CodeOutlined />,
-    desc: "积木 / 代码 / AI 辅导，适合课程",
     templates: ["空白练习", "Hello World", "排序算法"],
   },
 };
@@ -85,6 +88,7 @@ export function NewProjectDialog({
   initialLanguage = "javascript",
   initialIntent,
 }: NewProjectDialogProps) {
+  useLocaleStore((s) => s.locale);
   const [step, setStep] = useState<"kind" | "template">("kind");
   const [selectedKind, setSelectedKind] = useState<ArtifactKind | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -137,7 +141,7 @@ export function NewProjectDialog({
 
   const handleCreate = () => {
     if (!selectedKind || !selectedTemplate) return;
-    const name = projectName.trim() || `我的${KIND_LABEL[selectedKind]}`;
+    const name = projectName.trim() || untitledArtifactName(selectedKind);
     onConfirm(selectedKind, name, language, {
       templateId: selectedTemplate,
       intent: initialIntent,
@@ -156,10 +160,10 @@ export function NewProjectDialog({
       styles={{ mask: { background: "rgba(0,0,0,0.75)" } }}
       title={
         <div className={styles.dialogHeader}>
-          <span>新建项目</span>
+          <span>{t("project.title")}</span>
           {step === "template" && (
             <button type="button" className={styles.backBtn} onClick={() => setStep("kind")}>
-              ← 返回
+              ← {t("project.back")}
             </button>
           )}
         </div>
@@ -167,7 +171,7 @@ export function NewProjectDialog({
     >
       {step === "kind" && (
         <div className={styles.dialog}>
-          <p className={styles.dialogSub}>选择创作模式 / 作品类型</p>
+          <p className={styles.dialogSub}>{t("project.pickKind")}</p>
           <div className={styles.kindGrid}>
             {ARTIFACT_KIND_ORDER.map((kind) => {
               const opt = KIND_META[kind];
@@ -181,8 +185,8 @@ export function NewProjectDialog({
                   onClick={() => handleSelectKind(kind)}
                 >
                   <div className={styles.kindCardIcon}>{opt.icon}</div>
-                  <div className={styles.kindCardLabel}>{KIND_LABEL[kind]}</div>
-                  <div className={styles.kindCardDesc}>{opt.desc}</div>
+                  <div className={styles.kindCardLabel}>{kindLabel(kind)}</div>
+                  <div className={styles.kindCardDesc}>{t(`project.desc.${kind}`)}</div>
                   {selectedKind === kind && (
                     <div className={styles.kindCardCheck}>
                       <CheckOutlined />
@@ -206,23 +210,23 @@ export function NewProjectDialog({
                 background: `${KIND_COLOR[selectedKind]}15`,
               }}
             >
-              {kindMeta.icon} <span>{KIND_LABEL[selectedKind]}</span>
+              {kindMeta.icon} <span>{kindLabel(selectedKind)}</span>
             </div>
-            <span className={styles.templateStepSub}>选择起始模板与语言</span>
+            <span className={styles.templateStepSub}>{t("project.pickTemplate")}</span>
           </div>
 
           <div className={styles.templateGrid}>
-            {kindMeta.templates.map((t) => (
+            {kindMeta.templates.map((tmpl) => (
               <button
-                key={t}
+                key={tmpl}
                 type="button"
-                className={`${styles.templateCard} ${selectedTemplate === t ? styles.templateCardSelected : ""}`}
+                className={`${styles.templateCard} ${selectedTemplate === tmpl ? styles.templateCardSelected : ""}`}
                 style={{ "--kind-color": KIND_COLOR[selectedKind] } as CSSProperties}
-                onClick={() => setSelectedTemplate(t)}
+                onClick={() => setSelectedTemplate(tmpl)}
               >
                 <AppstoreOutlined className={styles.templateCardIcon} />
-                <span className={styles.templateCardLabel}>{t}</span>
-                {selectedTemplate === t && (
+                <span className={styles.templateCardLabel}>{tmpl}</span>
+                {selectedTemplate === tmpl && (
                   <span className={styles.templateCardCheck}>
                     <CheckOutlined />
                   </span>
@@ -234,7 +238,7 @@ export function NewProjectDialog({
           {selectedKind !== "iot" && (
             <div className={styles.nameField}>
               <label className={styles.nameLabel} htmlFor="artifact-language">
-                编程语言
+                {t("project.language")}
               </label>
               <Select
                 id="artifact-language"
@@ -249,13 +253,13 @@ export function NewProjectDialog({
 
           <div className={styles.nameField}>
             <label className={styles.nameLabel} htmlFor="artifact-name">
-              项目名称
+              {t("project.name")}
             </label>
             <input
               id="artifact-name"
               type="text"
               className={styles.nameInput}
-              placeholder={`我的${KIND_LABEL[selectedKind]}`}
+              placeholder={untitledArtifactName(selectedKind)}
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
             />
@@ -263,7 +267,7 @@ export function NewProjectDialog({
 
           <div className={styles.modalActions}>
             <Button onClick={handleCancel} size="large" className={styles.cancelBtn}>
-              取消
+              {t("project.cancel")}
             </Button>
             <Button
               type="primary"
@@ -272,7 +276,7 @@ export function NewProjectDialog({
               disabled={!selectedTemplate}
               onClick={handleCreate}
             >
-              创建项目 <ArrowRightOutlined />
+              {t("project.create")} <ArrowRightOutlined />
             </Button>
           </div>
         </div>

@@ -489,7 +489,9 @@ body {
   border-radius: 8px !important;
   border-left: 3px solid transparent !important;
   background: #161b26 !important;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .blocklyTreeRow:not(.blocklyTreeSelected):hover {
@@ -880,6 +882,38 @@ body {
 .check-pending {
   color: #8b949e;
   margin: 8px 12px;
+}
+
+.lesson-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #8b949e;
+}
+
+.lesson-picker select {
+  background: #21262d;
+  color: #e6edf3;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.lesson-celebration {
+  padding: 12px;
+}
+
+.lesson-celebration h3 {
+  margin: 0 0 8px;
+  color: #3fb950;
+}
+
+.lesson-submitted {
+  margin: 0 0 8px;
+  color: #8b949e;
+  font-size: 13px;
 }
 
 .btn-primary {

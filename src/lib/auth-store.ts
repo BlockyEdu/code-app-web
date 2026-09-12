@@ -63,6 +63,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
       set({ loading: true });
       try {
+        // 401 is refreshed once inside httpRequest; OIDC 501 is not treated as success.
         const user = await httpRequest<AuthUser>("/auth/me");
         set({ user, loading: false, initialized: true });
       } catch {

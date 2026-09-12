@@ -1,5 +1,6 @@
 import en from "../../public/locales/en/common.json";
 import zh from "../../public/locales/zh/common.json";
+import { useLocaleStore } from "./locale-store";
 
 export type AppLocale = "en" | "zh";
 
@@ -16,6 +17,9 @@ function lookup(dict: Dict, key: string): string | undefined {
 }
 
 export function getLocale(): AppLocale {
+  const ui = useLocaleStore.getState().locale;
+  if (ui === "en-US") return "en";
+  if (ui === "zh-CN") return "zh";
   if (typeof window === "undefined") return "zh";
   const stored = window.localStorage.getItem("blockyedu_locale");
   if (stored === "en" || stored === "zh") return stored;

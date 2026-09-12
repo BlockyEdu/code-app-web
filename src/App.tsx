@@ -6,6 +6,7 @@ import {
   setUnauthorizedHandler,
 } from "./lib/api";
 import { useAuthStore } from "./lib/auth-store";
+import { t } from "./lib/i18n";
 import { useMembershipStore } from "./lib/membership-store";
 import { isLaunchPath, isWorkspacePath } from "./lib/navigate";
 import { AuthCallbackPage } from "./pages/AuthCallbackPage";
@@ -31,7 +32,7 @@ export default function App() {
     setUnauthorizedHandler(openLoginPrompt);
     setEntitlementRequiredHandler((err: EntitlementRequiredError) => {
       const edu = import.meta.env.VITE_EDU_APP_URL?.replace(/\/$/, "") || "http://localhost:18082";
-      const go = window.confirm(`${err.message}\n\n前往套餐页升级？`);
+      const go = window.confirm(t("membership.upgradeConfirm", { message: err.message }));
       if (go) window.location.href = `${edu}/membership`;
     });
   }, [openLoginPrompt]);

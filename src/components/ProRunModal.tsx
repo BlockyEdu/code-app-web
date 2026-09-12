@@ -1,6 +1,6 @@
 import { t } from "../lib/i18n";
 import { useMembershipStore } from "../lib/membership-store";
-import { PLAN_LABELS } from "../lib/membership-types";
+import { planLabel } from "../lib/membership-types";
 
 interface ProRunModalProps {
   onClose: () => void;
@@ -16,7 +16,7 @@ export function ProRunModal({ onClose }: ProRunModalProps) {
       <div className="modal-card modal-card--pro">
         <h3>{t("membership.checkoutTitle")}</h3>
         <p>
-          {PLAN_LABELS[plan]}
+          {planLabel(plan)}
           {trialActive && trialEndsAt ? `（${t("membership.trialTag")} ${trialEndsAt}）` : ""}
         </p>
         {trialActive ? <p>{t("membership.exportWarning")}</p> : null}

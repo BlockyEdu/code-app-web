@@ -8,11 +8,14 @@ import { ConsolePanel } from "../components/ConsolePanel";
 import { EditorToolbar } from "../components/EditorToolbar";
 import { FloatingAiPanel } from "../components/FloatingAiPanel";
 import { MonacoEditorPanel } from "../components/MonacoEditorPanel";
+import { useArtifactAutosave } from "../hooks/useArtifactAutosave";
 import { api } from "../lib/api";
 import { type BlogPostView, usesHostedPosts } from "../lib/app-studio/app-schema";
 import { renderBlogHtml } from "../lib/app-studio/blog-html";
 import { filesToMap } from "../lib/artifact-files";
 import { runPreview } from "../lib/execute";
+import { errorCodeOf } from "../lib/http";
+import { t } from "../lib/i18n";
 import { parseWorkspaceArtifactId } from "../lib/navigate";
 import { type RuntimeKind, runTargetProgram } from "../lib/targets";
 import { track } from "../lib/telemetry";
@@ -86,6 +89,7 @@ export function CreateWorkspace() {
 
   const [isRunning, setIsRunning] = useState(false);
   const showPreview = rightPreviewOpen && !isConsoleKind(artifactKind);
+  useArtifactAutosave();
 
   // Load artifact from `/workspace/:id` on mount / path change.
   useEffect(() => {
@@ -101,7 +105,10 @@ export function CreateWorkspace() {
     const kind = params.get("kind");
     const template = params.get("template");
     if (kind !== "iot" || !template || parseWorkspaceArtifactId() || artifactId) return;
-    void createNewArtifact("iot", template, "javascript", { templateId: template, intent: "learn" });
+    void createNewArtifact("iot", template, "javascript", {
+      templateId: template,
+      intent: "learn",
+    });
   }, [artifactId, createNewArtifact]);
 
   useEffect(() => {
@@ -117,6 +124,7 @@ export function CreateWorkspace() {
 
   const publishWebIframe = useCallback(
     async (htmlDocument: string, silent = false) => {
+      let usedFallback = false;
       if (artifactId) {
         try {
           if (webPreviewSessionId) {
@@ -124,7 +132,7 @@ export function CreateWorkspace() {
             const url = updated.isolation?.embedUrl;
             if (url) {
               setWebPreview({ embedUrl: url, srcDoc: null, sessionId: updated.id });
-              if (!silent) appendConsole("[info] 已刷新隔离预览会话");
+              if (!silent) appendConsole(`[info] ${t("preview.sessionRefreshed")}`);
               return;
             }
           }
@@ -136,15 +144,24 @@ export function CreateWorkspace() {
           const url = session.isolation?.embedUrl;
           if (url) {
             setWebPreview({ embedUrl: url, srcDoc: null, sessionId: session.id });
-            if (!silent) appendConsole("[info] 已创建隔离 iframe 预览（opaque origin / sandbox）");
+            if (!silent) appendConsole(`[info] ${t("preview.sessionCreated")}`);
             return;
           }
-        } catch {
-          if (!silent) appendConsole("[warn] 预览会话不可用，回退到本地 srcdoc 沙箱");
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          const code = errorCodeOf(err);
+          const codePart = code ? ` ${code}` : "";
+          appendConsole(`[error] ${t("preview.sessionFailed", { code: codePart, message })}`);
+          if (code === "PREVIEW-ERR-EXPIRED" || message.includes("PREVIEW-ERR-EXPIRED")) {
+            setWebPreview({ sessionId: null });
+            appendConsole(`[info] ${t("preview.expiredReset")}`);
+          }
+          appendConsole(`[warn] ${t("preview.fallbackSrcdoc")}`);
+          usedFallback = true;
         }
       }
       setWebPreview({ embedUrl: null, srcDoc: htmlDocument, sessionId: null });
-      if (!silent) appendConsole("[info] 本地 srcdoc 沙箱预览（未登录或不走服务端）");
+      if (!silent && !usedFallback) appendConsole(`[info] ${t("preview.srcdocLocal")}`);
     },
     [artifactId, webPreviewSessionId, setWebPreview, appendConsole],
   );
@@ -226,7 +243,7 @@ export function CreateWorkspace() {
       clearConsole();
       try {
         const packSlug = useWorkspaceStore.getState().iotPackSlug || "smart-window";
-        appendConsole("[info] 真机会话走 code-server 代理，浏览器不持有凭据");
+        appendConsole(`[info] ${t("run.liveProxy")}`);
         const result = await api.runIotLabLive({
           packSlug,
           code,
@@ -234,7 +251,7 @@ export function CreateWorkspace() {
         });
         appendConsole(`[live] ${result.decision ?? result.status} ${result.reason ?? ""}`);
         if (result.command === null || result.exportOnly) {
-          appendConsole("[warn] 未形成真机控制（会话缺失或仅导出）");
+          appendConsole(`[warn] ${t("run.liveMissing")}`);
         }
       } catch (err) {
         appendConsole(`[error] ${err instanceof Error ? err.message : String(err)}`);
@@ -250,12 +267,12 @@ export function CreateWorkspace() {
       clearConsole();
       try {
         if (!artifactId) {
-          appendConsole("[error] Save the artifact before firmware sim");
+          appendConsole(`[error] ${t("run.saveBeforeFirmware")}`);
           return;
         }
         await saveCurrentArtifact();
         const sku = boardSku || "board.espressif.esp32-s3-devkitc-1";
-        appendConsole("[info] Isolated MCU build (not Piston)…");
+        appendConsole(`[info] ${t("run.firmwareBuild")}`);
         const toolchain =
           sku.includes("nucleo") || sku.includes(".st.") ? "stm32cube" : "arduino-esp32";
         const build = await api.createFirmwareBuild({
@@ -284,7 +301,9 @@ export function CreateWorkspace() {
           }
         }
         if (ran.status === "export_only") {
-          appendConsole("[sim] export_only — not a live pass (need wokwi-cli + firmware.bin, or qemu + firmware.elf)");
+          appendConsole(
+            "[sim] export_only — not a live pass (need wokwi-cli + firmware.bin, or qemu + firmware.elf)",
+          );
         }
         setFirmwareSim({
           adapter: ran.adapter || sim.adapter,
@@ -294,7 +313,11 @@ export function CreateWorkspace() {
           assertions: ran.assertions,
           exportFiles: ran.exportFiles,
         });
-        track("hardware.sim.completed", { artifactId, adapter: ran.adapter || sim.adapter, status: ran.status });
+        track("hardware.sim.completed", {
+          artifactId,
+          adapter: ran.adapter || sim.adapter,
+          status: ran.status,
+        });
       } catch (err) {
         appendConsole(`[error] ${err instanceof Error ? err.message : String(err)}`);
       } finally {
@@ -328,7 +351,9 @@ export function CreateWorkspace() {
 
         if (artifactKind === "iot" && result.finalState.iot) {
           const passed = result.finalState.iot.assertions.filter((a) => a.ok).length;
-          appendConsole(`[assert] ${passed}/${result.finalState.iot.assertions.length} 通过`);
+          appendConsole(
+            `[assert] ${t("run.iotAssertPass", { passed, total: result.finalState.iot.assertions.length })}`,
+          );
           const params = new URLSearchParams(window.location.search);
           const courseId = params.get("courseId");
           const chapterId = params.get("chapter");
@@ -351,9 +376,9 @@ export function CreateWorkspace() {
                   }),
                 },
               );
-              appendConsole("[info] 已回写课时实验证据");
+              appendConsole(`[info] ${t("run.lessonEvidenceOk")}`);
             } catch {
-              appendConsole("[warn] 课时证据回写失败（需登录 edu-server）");
+              appendConsole(`[warn] ${t("run.lessonEvidenceFail")}`);
             }
           }
         }
@@ -385,6 +410,7 @@ export function CreateWorkspace() {
                 artifactId,
                 previewSessionId: preview.id,
               });
+              useWorkspaceStore.getState().setSmarthomeSessionId(sim.id);
               await api.runSmarthomeSession(sim.id);
             } catch {
               /* offline / unauthenticated */
@@ -402,7 +428,7 @@ export function CreateWorkspace() {
     setBottomOpen(true);
     clearConsole();
     try {
-      appendConsole("[info] 预览运行（浏览器）…");
+      appendConsole(`[info] ${t("run.consoleLog")}`);
       const result = await runPreview(languageId, code);
       if (result.error) appendConsole(`[error] ${result.error}`);
       result.logs.forEach(appendConsole);
@@ -485,14 +511,23 @@ export function CreateWorkspace() {
                 </Panel>
               </>
             )}
+
+            {aiOpen && (
+              <>
+                <PanelResizeHandle className={styles.hResizeHandle} />
+                <Panel defaultSize="20" minSize="16" maxSize="32" className={styles.panelFull}>
+                  <FloatingAiPanel
+                    open={aiOpen}
+                    onOpenChange={setAiOpen}
+                    onToggle={toggleAiOpen}
+                    mode="workspace"
+                    variant="dock"
+                  />
+                </Panel>
+              </>
+            )}
           </PanelGroup>
         </div>
-        <FloatingAiPanel
-          open={aiOpen}
-          onOpenChange={setAiOpen}
-          onToggle={toggleAiOpen}
-          mode="workspace"
-        />
       </div>
     </AppProviders>
   );

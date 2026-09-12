@@ -4,12 +4,15 @@
  * useEffect(fetch) appears as duplicate network traffic.
  */
 
+import { shouldAttemptRefresh } from "./auth-refresh";
+import { t } from "./i18n";
+
 export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 
 export class UnauthorizedError extends Error {
   readonly status = 401;
 
-  constructor(message = "请先登录") {
+  constructor(message = t("auth.needSignIn")) {
     super(message);
     this.name = "UnauthorizedError";
   }
@@ -67,6 +70,42 @@ export type HttpRequestInit = RequestInit & {
   skipAuthHandlers?: boolean;
 };
 
+type HttpRequestInternal = HttpRequestInit & {
+  /** Internal: original request already retried after a refresh. */
+  alreadyRetried?: boolean;
+};
+
+let refreshInflight: Promise<boolean> | null = null;
+
+async function persistAccessToken(accessToken: string) {
+  const storage = typeof globalThis !== "undefined" ? globalThis.localStorage : undefined;
+  storage?.setItem("blockyedu_token", accessToken);
+}
+
+/** One coalesced POST /auth/refresh. 501/401/network → false (not success). */
+async function refreshAccessToken(): Promise<boolean> {
+  if (refreshInflight) return refreshInflight;
+
+  refreshInflight = (async () => {
+    try {
+      const data = await httpRequest<{ accessToken?: unknown }>("/auth/refresh", {
+        method: "POST",
+        skipAuthHandlers: true,
+        coalesce: false,
+      });
+      if (typeof data.accessToken !== "string" || !data.accessToken) return false;
+      persistAccessToken(data.accessToken);
+      return true;
+    } catch {
+      return false;
+    }
+  })().finally(() => {
+    refreshInflight = null;
+  });
+
+  return refreshInflight;
+}
+
 function coalesceKey(path: string, init?: HttpRequestInit): string | null {
   const opt = init?.coalesce;
   if (opt === false) return null;
@@ -77,47 +116,94 @@ function coalesceKey(path: string, init?: HttpRequestInit): string | null {
   return `${method} ${API_BASE}${path} ${body}`;
 }
 
-async function parseErrorBody(res: Response): Promise<string> {
+type ErrorBody = { message?: unknown; error?: unknown; code?: unknown };
+
+function readErrorCode(json: ErrorBody): string | undefined {
+  if (typeof json.code === "string" && json.code.trim()) return json.code.trim();
+  if (json.error && typeof json.error === "object") {
+    const nested = (json.error as { code?: unknown }).code;
+    if (typeof nested === "string" && nested.trim()) return nested.trim();
+  }
+  if (json.message && typeof json.message === "object") {
+    const nested = (json.message as { code?: unknown }).code;
+    if (typeof nested === "string" && nested.trim()) return nested.trim();
+  }
+  return undefined;
+}
+
+function readErrorMessage(json: ErrorBody, fallback: string): string {
+  if (typeof json.message === "string" && json.message.trim()) return json.message;
+  if (json.message && typeof json.message === "object") {
+    const nested = (json.message as { message?: unknown }).message;
+    if (typeof nested === "string" && nested.trim()) return nested;
+  }
+  if (typeof json.error === "string" && json.error.trim() && json.error !== "Service Unavailable") {
+    return json.error;
+  }
+  if (json.error && typeof json.error === "object") {
+    const nested = (json.error as { message?: unknown }).message;
+    if (typeof nested === "string" && nested.trim()) return nested;
+  }
+  return fallback;
+}
+
+async function parseErrorBody(res: Response): Promise<{ message: string; code?: string }> {
   let raw = "";
   try {
     raw = await res.text();
   } catch {
-    return res.statusText;
+    return { message: res.statusText };
   }
   try {
-    const json = JSON.parse(raw) as { message?: unknown; error?: unknown };
-    if (typeof json.message === "string" && json.message.trim()) return json.message;
-    if (json.message && typeof json.message === "object") {
-      const nested = json.message as { message?: unknown };
-      if (typeof nested.message === "string" && nested.message.trim()) return nested.message;
-    }
-    if (
-      typeof json.error === "string" &&
-      json.error.trim() &&
-      json.error !== "Service Unavailable"
-    ) {
-      return json.error;
-    }
-    if (json.error && typeof json.error === "object") {
-      const nested = json.error as { message?: unknown };
-      if (typeof nested.message === "string" && nested.message.trim()) return nested.message;
-    }
+    const json = JSON.parse(raw) as ErrorBody;
+    return {
+      message: readErrorMessage(json, raw.trim() || res.statusText),
+      code: readErrorCode(json),
+    };
   } catch {
     /* not JSON */
   }
-  return raw.trim() || res.statusText;
+  return { message: raw.trim() || res.statusText };
 }
 
-async function execute<T>(path: string, init?: HttpRequestInit): Promise<T> {
-  const { coalesce: _coalesce, skipAuthHandlers, ...fetchInit } = init ?? {};
+/** WEB-ERR-* / PREVIEW-ERR-* (and other API codes) from a thrown request error. */
+export function errorCodeOf(err: unknown): string | undefined {
+  if (
+    err &&
+    typeof err === "object" &&
+    "code" in err &&
+    typeof (err as { code: unknown }).code === "string"
+  ) {
+    const code = (err as { code: string }).code.trim();
+    if (code) return code;
+  }
+  const msg = err instanceof Error ? err.message : typeof err === "string" ? err : "";
+  return msg.match(/\b((?:WEB|PREVIEW|SMARTHOME)-ERR-[A-Z0-9-]+)\b/)?.[1];
+}
+
+async function execute<T>(path: string, init?: HttpRequestInternal): Promise<T> {
+  const { coalesce: _coalesce, skipAuthHandlers, alreadyRetried, ...fetchInit } = init ?? {};
   const res = await fetch(`${API_BASE}${path}`, {
     ...fetchInit,
     headers: authHeaders(fetchInit.headers),
   });
 
   if (res.status === 401) {
+    if (
+      shouldAttemptRefresh({
+        status: res.status,
+        alreadyRetried,
+        skipAuthHandlers,
+        path,
+      })
+    ) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return execute<T>(path, { ...init, alreadyRetried: true });
+      }
+    }
     if (!skipAuthHandlers) onUnauthorized?.();
-    throw new UnauthorizedError("请先登录后再使用云端功能");
+    throw new UnauthorizedError(t("auth.needSignInCloud"));
   }
 
   if (res.status === 402) {
@@ -127,16 +213,19 @@ async function execute<T>(path: string, init?: HttpRequestInit): Promise<T> {
     } catch {
       /* ignore */
     }
-    const err = new EntitlementRequiredError(
-      payload.error?.message || "需要 Pro / Ultra / 企业订阅",
-      { code: payload.error?.code, featureCode: payload.error?.featureCode },
-    );
+    const err = new EntitlementRequiredError(payload.error?.message || t("membership.needPaid"), {
+      code: payload.error?.code,
+      featureCode: payload.error?.featureCode,
+    });
     if (!skipAuthHandlers) onEntitlementRequired?.(err);
     throw err;
   }
 
   if (!res.ok) {
-    throw new Error((await parseErrorBody(res)) || res.statusText);
+    const parsed = await parseErrorBody(res);
+    const err = new Error(parsed.message || res.statusText);
+    if (parsed.code) Object.assign(err, { code: parsed.code });
+    throw err;
   }
 
   if (res.status === 204) {
@@ -171,6 +260,7 @@ export function httpRequest<T>(path: string, init?: HttpRequestInit): Promise<T>
 export function clearHttpInflight(keyPrefix?: string) {
   if (!keyPrefix) {
     inflight.clear();
+    refreshInflight = null;
     return;
   }
   for (const key of inflight.keys()) {

@@ -2,6 +2,7 @@
  * Build isolated HTML documents for kind=web Artifact preview.
  * Never executes UGC in the parent page (no new Function / DOM inject on host).
  */
+import { t } from "./i18n";
 import type { WorldState } from "./targets";
 
 const DOC_CSP =
@@ -32,14 +33,14 @@ export function buildHtmlFromWorld(world: WorldState): string {
         `<button type="button" class="btn" onclick="alert('${msg}')">${escapeHtml(el.text)}</button>`,
       );
     } else if (el.kind === "image") {
-      parts.push(`<div class="card">🖼 ${escapeHtml(el.text || "图片")}</div>`);
+      parts.push(`<div class="card">🖼 ${escapeHtml(el.text || t("preview.imageFallback"))}</div>`);
     } else if (el.kind === "notice") {
       parts.push(`<aside class="notice">${escapeHtml(el.text)}</aside>`);
     }
   }
 
   if (parts.length === 0) {
-    parts.push(`<p class="muted">暂无内容。在积木中添加页面元素后再次预览。</p>`);
+    parts.push(`<p class="muted">${escapeHtml(t("preview.emptyBlocks"))}</p>`);
   }
 
   const notices = world.web.notices
@@ -49,7 +50,7 @@ export function buildHtmlFromWorld(world: WorldState): string {
   const body = `
 <main style="background:${escapeAttr(bg)};color:#e2e8f0;min-height:100vh;padding:24px;box-sizing:border-box">
   <header style="margin-bottom:16px">
-    <div style="font-size:12px;color:#94a3b8">BlockyEdu · 隔离预览</div>
+    <div style="font-size:12px;color:#94a3b8">${escapeHtml(t("preview.isolatedBanner"))}</div>
     <h1 style="margin:4px 0 0;font-size:22px;color:${escapeAttr(primary)}">${title}</h1>
   </header>
   ${parts.join("\n  ")}

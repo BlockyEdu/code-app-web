@@ -1,16 +1,17 @@
-import { useWorkspaceStore } from '../stores/workspace';
+import { t } from "../lib/i18n";
+import { useLocaleStore } from "../lib/locale-store";
+import { useWorkspaceStore } from "../stores/workspace";
 
 export function BlocklyUnsupportedNotice() {
+  useLocaleStore((s) => s.locale);
   const plugin = useWorkspaceStore((s) => s.getActiveLanguagePlugin());
   const setEditorMode = useWorkspaceStore((s) => s.setEditorMode);
 
   return (
     <div className="blockly-unsupported">
-      <p>
-        <strong>{plugin?.name ?? '当前语言'}</strong> 不支持积木模式，请使用专业模式编辑。
-      </p>
-      <button type="button" className="btn-primary-inline" onClick={() => setEditorMode('monaco')}>
-        切换到专业模式
+      <p>{t("blockly.unsupported", { name: plugin?.name ?? "" })}</p>
+      <button type="button" className="btn-primary-inline" onClick={() => setEditorMode("monaco")}>
+        {t("blockly.switchPro")}
       </button>
     </div>
   );

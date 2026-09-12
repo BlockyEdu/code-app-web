@@ -509,3 +509,67 @@
   color: $color-text-secondary;
   line-height: 1.6;
 }
+
+.injectBar {
+  @include flex-col($space-2);
+}
+
+.injectGroup {
+  @include flex-col($space-1);
+}
+
+.injectLabel {
+  font-size: $font-size-xs;
+  color: $color-text-muted;
+}
+
+.injectSensorRow {
+  @include flex-row($space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.injectSelect,
+.injectInput {
+  height: 28px;
+  border: 1px solid $color-border;
+  background: $color-bg-base;
+  color: $color-text-primary;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  padding: 0 $space-2;
+}
+
+.injectInput {
+  width: 72px;
+}
+
+.injectBtn {
+  padding: 6px 12px;
+  border: 1px solid $color-border;
+  background: $color-bg-base;
+  color: $color-text-secondary;
+  border-radius: $radius-md;
+  font-size: $font-size-xs;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: $color-kind-smarthome;
+    color: $color-kind-smarthome;
+  }
+}
+
+.injectDeviceBtn {
+  font: inherit;
+  width: 100%;
+  color: inherit;
+}
+
+.sceneBtn:disabled,
+.injectBtn:disabled,
+.injectSelect:disabled,
+.injectInput:disabled,
+.injectDeviceBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

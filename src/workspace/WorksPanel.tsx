@@ -2,9 +2,12 @@ import { ReloadOutlined } from "@ant-design/icons";
 import { Button, Empty, message, Spin } from "antd";
 import { useWorkItems } from "../hooks/useWorkItems";
 import { useAuthStore } from "../lib/auth-store";
+import { t } from "../lib/i18n";
+import { kindLabel } from "../lib/kind-label";
+import { useLocaleStore } from "../lib/locale-store";
 import type { WorkItem } from "../lib/work-items";
 import { useWorkspaceStore } from "../stores/workspace";
-import { KIND_COLOR, KIND_LABEL } from "../types/artifact";
+import { KIND_COLOR } from "../types/artifact";
 import styles from "./WorksPanel.module.scss";
 
 function formatTime(iso: string): string {
@@ -17,6 +20,7 @@ function formatTime(iso: string): string {
 }
 
 export function WorksPanel() {
+  useLocaleStore((s) => s.locale);
   const user = useAuthStore((s) => s.user);
   const artifactId = useWorkspaceStore((s) => s.artifactId);
   const currentProject = useWorkspaceStore((s) => s.currentProject);
@@ -27,7 +31,7 @@ export function WorksPanel() {
   const { items, loading, refresh } = useWorkItems({
     enabled: Boolean(user),
     onError: (err) => {
-      message.error(err instanceof Error ? err.message : "加载作品失败");
+      message.error(err instanceof Error ? err.message : t("works.loadFailed"));
     },
   });
 
@@ -38,10 +42,10 @@ export function WorksPanel() {
       } else {
         await openLegacyProject(item.id);
       }
-      message.success("已打开作品");
+      message.success(t("works.opened"));
       void refresh();
     } catch (err) {
-      message.error(err instanceof Error ? err.message : "打开失败");
+      message.error(err instanceof Error ? err.message : t("works.openFailed"));
     }
   };
 
@@ -53,13 +57,13 @@ export function WorksPanel() {
   return (
     <div className={styles.worksPanel}>
       <div className={styles.header}>
-        <span className={styles.title}>我的作品</span>
+        <span className={styles.title}>{t("works.mine")}</span>
         <button
           type="button"
           className={styles.iconBtn}
           onClick={() => void refresh()}
-          title="刷新"
-          aria-label="刷新"
+          title={t("works.refresh")}
+          aria-label={t("works.refresh")}
         >
           <ReloadOutlined spin={loading} />
         </button>
@@ -68,7 +72,7 @@ export function WorksPanel() {
       {!user ? (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description="登录后同步云端作品与练习"
+          description={t("works.signInSync")}
           className={styles.empty}
         />
       ) : loading && items.length === 0 ? (
@@ -78,11 +82,11 @@ export function WorksPanel() {
       ) : items.length === 0 ? (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description="还没有作品"
+          description={t("works.empty")}
           className={styles.empty}
         >
           <Button type="primary" size="small" onClick={() => setShowNewProjectDialog(true)}>
-            新建作品
+            {t("works.new")}
           </Button>
         </Empty>
       ) : (
@@ -101,13 +105,13 @@ export function WorksPanel() {
                   <span
                     className={styles.kindDot}
                     style={{ background: color }}
-                    title={KIND_LABEL[item.kind]}
+                    title={kindLabel(item.kind)}
                   />
                   <span className={styles.itemBody}>
                     <span className={styles.itemTitle}>{item.title}</span>
                     <span className={styles.itemMeta}>
-                      {KIND_LABEL[item.kind]}
-                      {legacy ? " · 旧项目" : ""}
+                      {kindLabel(item.kind)}
+                      {legacy ? ` · ${t("works.legacy")}` : ""}
                       {item.language ? ` · ${item.language}` : ""}
                       {" · "}
                       {formatTime(item.updatedAt)}

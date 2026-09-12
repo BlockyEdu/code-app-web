@@ -1,3 +1,5 @@
+import { t } from "../lib/i18n";
+import { useLocaleStore } from "../lib/locale-store";
 import { isAppStudioKind, useWorkspaceStore } from "../stores/workspace";
 
 /**
@@ -5,6 +7,7 @@ import { isAppStudioKind, useWorkspaceStore } from "../stores/workspace";
  * Mode switching lives in the header Segmented control.
  */
 export function EditorToolbar() {
+  useLocaleStore((s) => s.locale);
   const editorMode = useWorkspaceStore((s) => s.editorMode);
   const monacoManuallyEdited = useWorkspaceStore((s) => s.monacoManuallyEdited);
   const getActiveLanguagePlugin = useWorkspaceStore((s) => s.getActiveLanguagePlugin);
@@ -17,10 +20,10 @@ export function EditorToolbar() {
 
   if (blogStudio) {
     const copy: Record<string, { badge: string; desc: string }> = {
-      design: { badge: "Design", desc: "页面树与组件属性 · 写回 app.schema.json" },
-      data: { badge: "Data", desc: "文章 CRUD · draft / published" },
-      logic: { badge: "Logic", desc: "事件链路只读 · 点击卡片打开详情" },
-      code: { badge: "Code", desc: "编辑 styles.css / extensions.js" },
+      design: { badge: t("editor.surfaceDesign"), desc: t("editor.surfaceDesignDesc") },
+      data: { badge: t("editor.surfaceData"), desc: t("editor.surfaceDataDesc") },
+      logic: { badge: t("editor.surfaceLogic"), desc: t("editor.surfaceLogicDesc") },
+      code: { badge: t("editor.surfaceCode"), desc: t("editor.surfaceCodeDesc") },
     };
     const cur = copy[surfaceMode] ?? copy.design;
     return (
@@ -37,15 +40,15 @@ export function EditorToolbar() {
     <div className={`editor-toolbar editor-toolbar--${editorMode}`}>
       <div className="editor-toolbar-mode">
         <span className={`mode-badge mode-badge--${editorMode}`}>
-          {isBlockly ? "积木模式" : "专业模式"}
+          {isBlockly ? t("editor.toolbarBlocks") : t("editor.toolbarPro")}
         </span>
         <span className="mode-desc">
           {langPlugin ? `${langPlugin.name} · ` : ""}
           {isBlockly
-            ? "拖拽积木编程；顶部可切换专业模式"
+            ? t("editor.toolbarBlocksHint")
             : monacoManuallyEdited
-              ? "已手改代码 · 回到积木将丢失未同步修改"
-              : "Monaco 专业编辑 · 顶部可切回积木"}
+              ? t("editor.toolbarProDirty")
+              : t("editor.toolbarProHint")}
         </span>
       </div>
     </div>

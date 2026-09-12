@@ -1,7 +1,10 @@
-import { useWorkspaceStore } from '../stores/workspace';
+import { t } from "../lib/i18n";
+import { useLocaleStore } from "../lib/locale-store";
+import { useWorkspaceStore } from "../stores/workspace";
 
 export function ConsolePanel() {
   // Avoid object selectors: new refs each snapshot → infinite re-render (Zustand v5).
+  useLocaleStore((s) => s.locale);
   const consoleOutput = useWorkspaceStore((s) => s.consoleOutput);
   const lastRunError = useWorkspaceStore((s) => s.lastRunError);
   const setAiOpen = useWorkspaceStore((s) => s.setAiOpen);
@@ -10,7 +13,7 @@ export function ConsolePanel() {
   return (
     <div className="console-panel">
       <div className="panel-header">
-        控制台
+        {t("console.title")}
         {lastRunError && (
           <button
             type="button"
@@ -20,12 +23,12 @@ export function ConsolePanel() {
               setAiOpen(true);
             }}
           >
-            问 AI
+            {t("console.askAi")}
           </button>
         )}
       </div>
       <pre className="console-output">
-        {consoleOutput.length === 0 ? '// 运行代码后输出将显示在这里' : consoleOutput.join('\n')}
+        {consoleOutput.length === 0 ? t("console.empty") : consoleOutput.join("\n")}
       </pre>
     </div>
   );

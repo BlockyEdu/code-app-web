@@ -1,6 +1,8 @@
 import { LogoutOutlined, UserOutlined } from "@ant-design/icons";
 import { Avatar, Button, Dropdown } from "antd";
 import type { AuthUser } from "../lib/auth-store";
+import { t } from "../lib/i18n";
+import { useLocaleStore } from "../lib/locale-store";
 import styles from "./UserAvatarMenu.module.scss";
 
 interface UserAvatarMenuProps {
@@ -15,7 +17,9 @@ function initialOf(name: string): string {
   return trimmed.slice(0, 1).toUpperCase();
 }
 
-export function UserAvatarMenu({ user, onLogout, logoutLabel = "退出登录" }: UserAvatarMenuProps) {
+export function UserAvatarMenu({ user, onLogout, logoutLabel }: UserAvatarMenuProps) {
+  useLocaleStore((s) => s.locale);
+  const label = logoutLabel ?? t("hub.logout");
   return (
     <Dropdown
       trigger={["hover"]}
@@ -45,7 +49,7 @@ export function UserAvatarMenu({ user, onLogout, logoutLabel = "退出登录" }:
             icon={<LogoutOutlined />}
             onClick={onLogout}
           >
-            {logoutLabel}
+            {label}
           </Button>
         </div>
       )}

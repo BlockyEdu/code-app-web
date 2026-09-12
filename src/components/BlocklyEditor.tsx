@@ -3,6 +3,8 @@ import { javascriptGenerator } from "blockly/javascript";
 import { useEffect, useRef } from "react";
 import { buildToolbox, ensureTargetGenerators } from "../lib/blockly-config";
 import { BLOCKYEDU_BLOCKLY_THEME } from "../lib/blockly-theme";
+import { t } from "../lib/i18n";
+import { useLocaleStore } from "../lib/locale-store";
 import { useWorkspaceStore } from "../stores/workspace";
 import "blockly/blocks";
 import "blockly/javascript";
@@ -21,6 +23,8 @@ export function BlocklyEditor() {
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);
   const applyingRef = useRef(false);
   const lastWrittenXmlRef = useRef("");
+  useLocaleStore((s) => s.locale);
+  const startComment = t("blockly.startComment");
   const artifactKind = useWorkspaceStore((s) => s.artifactKind);
   const iotPackSlug = useWorkspaceStore((s) => s.iotPackSlug);
   const blockXml = useWorkspaceStore((s) => s.blockXml);
@@ -32,6 +36,7 @@ export function BlocklyEditor() {
   // Remount workspace when kind changes (toolbox + starter XML differ per kind).
   useEffect(() => {
     if (!containerRef.current) return;
+    void iotPackSlug;
 
     ensureTargetGenerators();
 
@@ -73,7 +78,7 @@ export function BlocklyEditor() {
         setBlockXml(xml);
       }
       const generated = javascriptGenerator.workspaceToCode(workspace);
-      const nextCode = generated || "// 拖入积木开始编程";
+      const nextCode = generated || t("blockly.startComment");
       if (nextCode !== useWorkspaceStore.getState().code) {
         setCode(nextCode);
       }
@@ -127,6 +132,16 @@ export function BlocklyEditor() {
       applyingRef.current = false;
     }
   }, [blockXml]);
+
+  useEffect(() => {
+    const workspace = workspaceRef.current;
+    if (!workspace) return;
+    const generated = javascriptGenerator.workspaceToCode(workspace);
+    if (generated) return;
+    if (startComment !== useWorkspaceStore.getState().code) {
+      setCode(startComment);
+    }
+  }, [startComment, setCode]);
 
   return <div ref={containerRef} className="blockly-container" />;
 }

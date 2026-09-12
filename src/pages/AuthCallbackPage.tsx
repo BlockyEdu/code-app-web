@@ -1,17 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
-import { useAuthStore } from '../lib/auth-store';
+import { useEffect, useRef, useState } from "react";
+import { useAuthStore } from "../lib/auth-store";
+import { t } from "../lib/i18n";
 import {
   consumePostLoginPath,
   idpHandleCallback,
   idpHandlePopupCallback,
   isDirectIdpEnabled,
   isOidcPopupWindow,
-} from '../lib/idp';
-import { clearAuthHash, readTokenFromHash } from '../lib/sso';
+} from "../lib/idp";
+import { useLocaleStore } from "../lib/locale-store";
+import { clearAuthHash, readTokenFromHash } from "../lib/sso";
 
 export function AuthCallbackPage() {
+  useLocaleStore((s) => s.locale);
   const fetchMe = useAuthStore((s) => s.fetchMe);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const started = useRef(false);
 
   useEffect(() => {
@@ -26,31 +29,29 @@ export function AuthCallbackPage() {
             return;
           }
           const { accessToken, returnUrl } = await idpHandleCallback();
-          localStorage.setItem('blockyedu_token', accessToken);
+          localStorage.setItem("blockyedu_token", accessToken);
           await fetchMe();
-          const dest = consumePostLoginPath(
-            (returnUrl || '/').replace(/^\/?/, '/') || '/',
-          );
-          window.location.replace(dest.startsWith('http') ? '/' : dest);
+          const dest = consumePostLoginPath((returnUrl || "/").replace(/^\/?/, "/") || "/");
+          window.location.replace(dest.startsWith("http") ? "/" : dest);
           return;
         } catch (e) {
-          setError(e instanceof Error ? e.message : 'SSO 登录失败');
+          setError(e instanceof Error ? e.message : t("authCallback.ssoFailed"));
           return;
         }
       }
 
       const token = readTokenFromHash();
       if (!token) {
-        setError('未收到登录令牌，请重新登录');
+        setError(t("authCallback.noToken"));
         return;
       }
-      localStorage.setItem('blockyedu_token', token);
+      localStorage.setItem("blockyedu_token", token);
       clearAuthHash();
       try {
         await fetchMe();
-        window.location.replace('/');
+        window.location.replace("/");
       } catch {
-        setError('登录状态无效，请重试');
+        setError(t("authCallback.invalid"));
       }
     };
     void run();
@@ -60,8 +61,12 @@ export function AuthCallbackPage() {
     return (
       <div className="auth-callback-page">
         <p className="error">{error}</p>
-        <button type="button" className="btn-ghost" onClick={() => window.location.replace('/login')}>
-          返回登录
+        <button
+          type="button"
+          className="btn-ghost"
+          onClick={() => window.location.replace("/login")}
+        >
+          {t("authCallback.back")}
         </button>
       </div>
     );
@@ -69,7 +74,7 @@ export function AuthCallbackPage() {
 
   return (
     <div className="auth-callback-page">
-      <p className="muted">正在完成登录…</p>
+      <p className="muted">{t("authCallback.completing")}</p>
     </div>
   );
 }

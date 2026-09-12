@@ -1,20 +1,23 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from "react";
+import type { CodeRuntimeConfig } from "../lib/api";
+import { UnauthorizedError } from "../lib/api";
+import { useAuthStore } from "../lib/auth-store";
 import {
   fetchRuntimeConfig,
   formatExecuteResult,
   isElectronHost,
+  type RunTier,
   runCloudPro,
   runLocalPro,
   runPreview,
-  type RunTier,
-} from '../lib/execute';
-import type { CodeRuntimeConfig } from '../lib/api';
-import { UnauthorizedError } from '../lib/api';
-import { useAuthStore } from '../lib/auth-store';
-import { useWorkspaceStore } from '../stores/workspace';
-import { ProRunModal } from './ProRunModal';
+} from "../lib/execute";
+import { t } from "../lib/i18n";
+import { useLocaleStore } from "../lib/locale-store";
+import { useWorkspaceStore } from "../stores/workspace";
+import { ProRunModal } from "./ProRunModal";
 
 export function RunControls() {
+  useLocaleStore((s) => s.locale);
   const { code, languageId, clearConsole, appendConsole } = useWorkspaceStore();
   const user = useAuthStore((s) => s.user);
   const openLogin = useAuthStore((s) => s.openLoginPrompt);
@@ -29,12 +32,14 @@ export function RunControls() {
         setRuntime({
           preview: { engines: [] },
           pro: { enabled: true, canExecute: false },
-          piston: { reachable: false, url: '' },
+          piston: { reachable: false, url: "" },
           supportedLanguages: [],
         }),
       );
   }, []);
 
+  // Re-fetch after login; `user` is the signal, not a value used inside.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: user identity change
   useEffect(() => {
     refreshRuntime();
   }, [refreshRuntime, user]);
@@ -48,15 +53,15 @@ export function RunControls() {
     clearConsole();
     setBusy(tier);
     try {
-      if (tier === 'preview') {
-        appendConsole('[info] 预览运行（浏览器）…');
+      if (tier === "preview") {
+        appendConsole(`[info] ${t("run.consoleLog")}`);
         const result = await runPreview(languageId, code);
         if (result.error) appendConsole(`[error] ${result.error}`);
         result.logs.forEach(appendConsole);
         return;
       }
-      if (tier === 'local') {
-        appendConsole('[info] 本地 Pro 运行（Electron + Docker Piston）…');
+      if (tier === "local") {
+        appendConsole(`[info] ${t("run.localProLog")}`);
         const result = await runLocalPro(languageId, code);
         if (result.error) appendConsole(`[error] ${result.error}`);
         result.logs.forEach(appendConsole);
@@ -64,19 +69,19 @@ export function RunControls() {
       }
       if (!user) {
         openLogin();
-        appendConsole('[info] 请先登录以使用 Pro 云端运行');
+        appendConsole(`[info] ${t("run.needLogin")}`);
         return;
       }
       if (!runtime?.pro.canExecute) {
         setShowProModal(true);
-        appendConsole('[info] 需要 BlockyEdu Pro 订阅（演示账号 prolearner / pro123）');
+        appendConsole(`[info] ${t("run.needPro")}`);
         return;
       }
       if (!runtime?.piston.reachable) {
-        appendConsole('[error] Piston 沙箱未启动，请联系管理员或本地 docker compose up piston');
+        appendConsole(`[error] ${t("run.pistonDown")}`);
         return;
       }
-      appendConsole('[info] Pro 云端运行（Piston）…');
+      appendConsole(`[info] ${t("run.cloudProLog")}`);
       const result = await runCloudPro(languageId, code);
       formatExecuteResult(result).forEach(appendConsole);
     } catch (err) {
@@ -94,41 +99,45 @@ export function RunControls() {
           type="button"
           className="btn-run btn-run--preview"
           disabled={busy !== null}
-          onClick={() => runTier('preview')}
-          title="浏览器内免费预览（JS / typescript.js / Pyodide）"
+          onClick={() => runTier("preview")}
+          title={t("run.consoleTitle")}
         >
-          {busy === 'preview' ? '…' : '▶'} 预览
+          {busy === "preview" ? "…" : "▶"} {t("run.console")}
         </button>
         {isElectronHost() ? (
           <button
             type="button"
             className="btn-run btn-run--local"
             disabled={busy !== null}
-            onClick={() => runTier('local')}
-            title="本机 Docker Piston"
+            onClick={() => runTier("local")}
+            title={t("run.localProTitle")}
           >
-            {busy === 'local' ? '…' : '▶'} 本地 Pro
+            {busy === "local" ? "…" : "▶"} {t("run.localPro")}
           </button>
         ) : (
           <button
             type="button"
-            className={`btn-run btn-run--pro ${canPro ? '' : 'btn-run--locked'}`}
+            className={`btn-run btn-run--pro ${canPro ? "" : "btn-run--locked"}`}
             disabled={busy !== null}
-            onClick={() => runTier('cloud')}
+            onClick={() => runTier("cloud")}
             title={
               canPro
-                ? '云端 Piston 完整运行（付费）'
-                : `Pro 云端运行需订阅；沙箱: ${runtime?.piston.reachable ? '在线' : '离线'}`
+                ? t("run.cloudProTitle")
+                : t("run.lockedTitle", {
+                    status: runtime?.piston.reachable
+                      ? t("run.sandboxOnline")
+                      : t("run.sandboxOffline"),
+                  })
             }
           >
-            {busy === 'cloud' ? '…' : '▶'} Pro
+            {busy === "cloud" ? "…" : "▶"} Pro
             {!canPro && <span className="run-pro-badge">Pro</span>}
           </button>
         )}
         {runtime && (
           <span className="run-status" title={runtime.piston.url}>
-            {runtime.piston.reachable ? '沙箱在线' : '沙箱离线'}
-            {runtime.pro.canExecute ? ' · 已开通 Pro' : ''}
+            {runtime.piston.reachable ? t("run.sandboxUp") : t("run.sandboxDown")}
+            {runtime.pro.canExecute ? t("run.proActive") : ""}
           </span>
         )}
       </div>

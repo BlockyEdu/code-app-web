@@ -1,13 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import {
-  getLanguagePlugin,
-  listCoreLanguages,
-  listExtensionLanguages,
-} from '../plugins';
-import { useWorkspaceStore } from '../stores/workspace';
-import { LanguageSwitchModal } from './LanguageSwitchModal';
+import { useEffect, useRef, useState } from "react";
+import { t } from "../lib/i18n";
+import { useLocaleStore } from "../lib/locale-store";
+import { getLanguagePlugin, listCoreLanguages, listExtensionLanguages } from "../plugins";
+import { useWorkspaceStore } from "../stores/workspace";
+import { LanguageSwitchModal } from "./LanguageSwitchModal";
 
 export function LanguageSelector() {
+  useLocaleStore((s) => s.locale);
   const languageId = useWorkspaceStore((s) => s.languageId);
   const editorMode = useWorkspaceStore((s) => s.editorMode);
   const setLanguage = useWorkspaceStore((s) => s.setLanguage);
@@ -22,8 +21,8 @@ export function LanguageSelector() {
         setShowMore(false);
       }
     };
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
   }, [showMore]);
 
   const core = listCoreLanguages();
@@ -35,7 +34,7 @@ export function LanguageSelector() {
     const target = getLanguagePlugin(id);
     const current = getLanguagePlugin(languageId);
     const needsConfirm =
-      editorMode === 'monaco' &&
+      editorMode === "monaco" &&
       current?.blockly &&
       !target?.blockly &&
       useWorkspaceStore.getState().monacoManuallyEdited;
@@ -58,13 +57,13 @@ export function LanguageSelector() {
   return (
     <>
       <div className="language-selector">
-        <span className="language-selector-label">语言</span>
+        <span className="language-selector-label">{t("language.label")}</span>
         <div className="language-pills">
           {core.map((lang) => (
             <button
               key={lang.id}
               type="button"
-              className={`lang-pill ${languageId === lang.id ? 'active' : ''}`}
+              className={`lang-pill ${languageId === lang.id ? "active" : ""}`}
               onClick={() => requestSwitch(lang.id)}
               title={lang.description}
             >
@@ -74,24 +73,24 @@ export function LanguageSelector() {
           <div className="lang-more-wrap" ref={moreRef}>
             <button
               type="button"
-              className={`lang-pill lang-pill--more ${extensions.some((e) => e.id === languageId) ? 'active' : ''}`}
+              className={`lang-pill lang-pill--more ${extensions.some((e) => e.id === languageId) ? "active" : ""}`}
               onClick={() => setShowMore((v) => !v)}
               aria-expanded={showMore}
             >
-              更多 ▾
+              {t("language.more")} ▾
             </button>
             {showMore && (
               <div className="lang-dropdown">
-                <p className="lang-dropdown-title">扩展语言（插件）</p>
+                <p className="lang-dropdown-title">{t("language.extensions")}</p>
                 {extensions.map((lang) => (
                   <button
                     key={lang.id}
                     type="button"
-                    className={`lang-dropdown-item ${languageId === lang.id ? 'active' : ''}`}
+                    className={`lang-dropdown-item ${languageId === lang.id ? "active" : ""}`}
                     onClick={() => requestSwitch(lang.id)}
                   >
                     <span>{lang.name}</span>
-                    <span className="lang-plugin-badge">插件</span>
+                    <span className="lang-plugin-badge">{t("language.plugin")}</span>
                   </button>
                 ))}
               </div>
@@ -101,23 +100,22 @@ export function LanguageSelector() {
         {active && (
           <span className="language-meta" title={active.description}>
             {active.name}
-            {active.tier === 'extension' && ' · 需插件运行'}
-            {!active.blockly && active.tier === 'core' && ' · 专业模式'}
+            {active.tier === "extension" && ` · ${t("language.needsPlugin")}`}
+            {!active.blockly && active.tier === "core" && ` · ${t("language.proOnly")}`}
           </span>
         )}
       </div>
 
       {pending && (
         <LanguageSwitchModal
-          title="切换编程语言"
+          title={t("language.switchTitle")}
           tone="warn"
-          confirmLabel="确认切换"
+          confirmLabel={t("language.switchConfirm")}
           onCancel={() => setPending(null)}
           onConfirm={confirmSwitch}
         >
-          <p>切换语言将加载该语言的代码缓冲区；当前未保存的手改可能丢失。</p>
+          <p>{t("language.switchBody")}</p>
           <p>
-            目标：
             <strong>{getLanguagePlugin(pending)?.name}</strong>
           </p>
         </LanguageSwitchModal>
