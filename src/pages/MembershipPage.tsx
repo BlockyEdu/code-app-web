@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { QRCode } from "antd";
 import { api } from "../lib/api";
 import {
   type CheckoutAction,
@@ -10,6 +11,10 @@ import {
 } from "../lib/commerce";
 import { t } from "../lib/i18n";
 import { useMembershipStore } from "../lib/membership-store";
+
+function isPaidLikeOrderStatus(status: unknown): boolean {
+  return status === "paid" || status === "fulfilled";
+}
 
 function itemsOf(payload: unknown): CommerceJson[] {
   if (Array.isArray(payload)) return payload as CommerceJson[];
@@ -35,6 +40,36 @@ export function MembershipPage() {
   const [action, setAction] = useState<CheckoutAction | null>(null);
   const [orderId, setOrderId] = useState("");
   const [status, setStatus] = useState("");
+  const pollStopped = useRef(false);
+
+  useEffect(() => {
+    pollStopped.current = false;
+  }, [orderId, action?.kind]);
+
+  useEffect(() => {
+    if (action?.kind !== "qr" || !orderId) return;
+    let cancelled = false;
+    const poll = async () => {
+      if (pollStopped.current) return;
+      try {
+        const order = await api.commerceOrderStatus(orderId);
+        if (cancelled || pollStopped.current || !isPaidLikeOrderStatus(order.status)) return;
+        pollStopped.current = true;
+        await api.commerceCompleteOrder(orderId, {});
+        await useMembershipStore.getState().fetchMembership();
+        setStatus(t("membership.complete"));
+        setAction(null);
+      } catch {
+        /* ignore transient poll errors */
+      }
+    };
+    void poll();
+    const timer = window.setInterval(() => void poll(), 4000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [action?.kind, orderId]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -147,9 +182,10 @@ export function MembershipPage() {
         ))}
       </fieldset>
       {action?.kind === "qr" ? (
-        <p>
-          {t("membership.qr")} <code>{action.qrPayload}</code>
-        </p>
+        <div style={{ marginTop: 16 }}>
+          <p>{t("membership.qr")}</p>
+          <QRCode value={action.qrPayload} size={168} />
+        </div>
       ) : null}
       {action?.kind === "manual" ? (
         <p>
