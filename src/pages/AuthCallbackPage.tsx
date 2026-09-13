@@ -31,6 +31,10 @@ export function AuthCallbackPage() {
           const { accessToken, returnUrl } = await idpHandleCallback();
           localStorage.setItem("blockyedu_token", accessToken);
           await fetchMe();
+          if (!useAuthStore.getState().user) {
+            setError(t("authCallback.ssoFailed"));
+            return;
+          }
           const dest = consumePostLoginPath((returnUrl || "/").replace(/^\/?/, "/") || "/");
           window.location.replace(dest.startsWith("http") ? "/" : dest);
           return;
