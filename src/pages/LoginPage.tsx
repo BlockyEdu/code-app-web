@@ -57,6 +57,7 @@ export function LoginPage() {
             themeColor="#3a84ff"
             mode="redirect"
             returnUrl={returnUrl}
+            showRegister
             onOidcSession={onOidcSession}
             labels={{
               title: t("login.title"),
