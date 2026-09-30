@@ -16,11 +16,11 @@
     "test": "rstest"
   },
   "dependencies": {
-    "@ant-design/icons": "^6.3.2",
-    "@luminaryworks/auth-dev-proxy": "^0.2.1",
+    "@ant-design/icons": "^6.3.4",
+    "@luminaryworks/auth-dev-proxy": "^0.2.2",
     "@luminaryworks/auth-react": "^0.5.0",
     "@monaco-editor/react": "^4.7.0",
-    "antd": "^6.6.4",
+    "antd": "^6.6.5",
     "blockly": "^13.2.0",
     "nanoid": "3.3.18",
     "oidc-client-ts": "^3.5.0",
@@ -31,17 +31,18 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.6",
-    "@rsbuild/core": "^2.1.9",
-    "@rsbuild/plugin-react": "^2.1.0",
+    "@rsbuild/core": "^2.2.11",
+    "@rsbuild/plugin-react": "^2.1.1",
     "@rsbuild/plugin-sass": "^2.0.1",
     "@rstest/core": "^0.11.5",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "jsdom": "^29.1.1",
     "sass": "^1.102.0",
-    "typescript": "5.9.3"
+    "typescript": "6.0.3"
   },
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=24.0.0",
+    "pnpm": ">=11"
   }
 }

@@ -292,7 +292,10 @@
     "intentBuild": "Build a project",
     "intentBuildSub": "Software, electronics, IoT templates",
     "intentShip": "Ship a product",
-    "intentShipSub": "Golden-path hardware to a manufacturing pack"
+    "intentShipSub": "Golden-path hardware to a manufacturing pack",
+    "trialBanner": "This is the programming trial after an open course. Start one small exercise. The open course stays free.",
+    "trialProjectName": "Open-course exercise",
+    "trialStart": "Start exercise"
   },
   "editor": {
     "blockly": "Blocks",

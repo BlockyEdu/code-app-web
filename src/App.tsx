@@ -30,6 +30,7 @@ export default function App() {
   const isWorkspace = isWorkspacePath(path);
   const isMembership = path === "/membership";
   const isLaunch = isLaunchPath(path);
+  const isCreateTrial = path === "/create";
 
   useEffect(() => {
     setUnauthorizedHandler(openLoginPrompt);
@@ -73,5 +74,5 @@ export default function App() {
     return <CreateWorkspace />;
   }
 
-  return <ProjectsHub />;
+  return <ProjectsHub trial={isCreateTrial} />;
 }

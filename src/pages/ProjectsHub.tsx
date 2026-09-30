@@ -1,6 +1,6 @@
 import { PlusOutlined, ReloadOutlined } from "@ant-design/icons";
-import { App as AntdApp, Button, Empty, Segmented, Spin } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { Alert, App as AntdApp, Button, Empty, Segmented, Spin } from "antd";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppProviders } from "../components/AppProviders";
 import { FloatingAiPanel } from "../components/FloatingAiPanel";
 import { LocaleSwitcher } from "../components/LocaleSwitcher";
@@ -31,7 +31,7 @@ function formatTime(iso: string): string {
   }
 }
 
-function ProjectsHubInner() {
+function ProjectsHubInner({ trial = false }: { trial?: boolean }) {
   const { message } = AntdApp.useApp();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -68,12 +68,15 @@ function ProjectsHubInner() {
     },
   });
 
+  const trialOpened = useRef(false);
+
   useEffect(() => {
     if (!authInitialized) return;
     if (user) return;
-    rememberPostLoginPath("/");
+    const next = trial ? `${window.location.pathname}${window.location.search}` : "/";
+    rememberPostLoginPath(next);
     navigate("/login");
-  }, [authInitialized, user]);
+  }, [authInitialized, user, trial]);
 
   const filtered = useMemo(() => {
     let next = items;
@@ -109,6 +112,15 @@ function ProjectsHubInner() {
     setPrefillIntent(intent);
     setShowNewProjectDialog(true);
   };
+
+  useEffect(() => {
+    if (!trial || !user || trialOpened.current) return;
+    trialOpened.current = true;
+    setPrefillKind("exercise");
+    setPrefillName(t("hub.trialProjectName"));
+    setPrefillIntent("learn");
+    setShowNewProjectDialog(true);
+  }, [setShowNewProjectDialog, trial, user]);
 
   const handleCreate = async (
     kind: ArtifactKind,
@@ -192,6 +204,23 @@ function ProjectsHubInner() {
           <UserAvatarMenu user={user} onLogout={logout} logoutLabel={t("hub.logout")} />
         </div>
       </header>
+      {trial ? (
+        <Alert
+          type="info"
+          showIcon
+          banner
+          message={t("hub.trialBanner")}
+          action={
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => openCreate("exercise", t("hub.trialProjectName"), "learn")}
+            >
+              {t("hub.trialStart")}
+            </Button>
+          }
+        />
+      ) : null}
 
       <main className={styles.main}>
         <section className={styles.hero}>
@@ -332,10 +361,10 @@ function ProjectsHubInner() {
   );
 }
 
-export function ProjectsHub() {
+export function ProjectsHub({ trial = false }: { trial?: boolean }) {
   return (
     <AppProviders>
-      <ProjectsHubInner />
+      <ProjectsHubInner trial={trial} />
     </AppProviders>
   );
 }

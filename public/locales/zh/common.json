@@ -292,7 +292,10 @@
     "intentBuild": "Build a project",
     "intentBuildSub": "软件、电子、IoT 模板",
     "intentShip": "Ship a product",
-    "intentShipSub": "金路径硬件到制造包"
+    "intentShipSub": "金路径硬件到制造包",
+    "trialBanner": "这是公开课之后的编程试听。先做一个小练习，不会把公开课正文变成付费内容。",
+    "trialProjectName": "公开课练习",
+    "trialStart": "开始练习"
   },
   "editor": {
     "blockly": "积木模式",
