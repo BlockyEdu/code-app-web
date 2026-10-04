@@ -15,8 +15,8 @@ importers:
         specifier: ^0.2.2
         version: 0.2.2
       '@luminaryworks/auth-react':
-        specifier: ^0.5.0
-        version: 0.5.0(react@19.2.8)
+        specifier: ^0.7.1
+        version: 0.7.1(react@19.2.8)
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.56.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -272,9 +272,9 @@ packages:
     resolution: {integrity: sha512-g/SOo02z89YCg546FZpxHlBuLKSnmu8t8MU6N1Jm+VnTJmniRRXy3ppRaX63ZVvkV+l58nbUUzqj7zxPkkXU1w==}
     engines: {node: '>=24.0.0'}
 
-  '@luminaryworks/auth-react@0.5.0':
-    resolution: {integrity: sha512-tZWbtucJoIrl/Ew1Wi+httq4qN6xeDfiBeo8S1x0dMB6iPHKcayS7y/eETeKxvRJst/osK4MP8ysFvkltxr0Hw==}
-    engines: {node: '>=24.0.0'}
+  '@luminaryworks/auth-react@0.7.1':
+    resolution: {integrity: sha512-+a3DCkRFX4ofZM/uk19MCESAssXK5/Omw44hBFlpB5mHVmXgOeHot06FFZup7HQWIPQRxMB5OUVpeqGKPBOP7w==}
+    engines: {node: '>=24.0.0', pnpm: '>=11'}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
 
@@ -1532,7 +1532,7 @@ snapshots:
 
   '@luminaryworks/auth-dev-proxy@0.2.2': {}
 
-  '@luminaryworks/auth-react@0.5.0(react@19.2.8)':
+  '@luminaryworks/auth-react@0.7.1(react@19.2.8)':
     dependencies:
       oidc-client-ts: 3.5.0
       react: 19.2.8
