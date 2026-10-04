@@ -5,7 +5,7 @@ import {
   sellableOfferings,
   stripClientPriceFields,
 } from "./commerce";
-import { EN_COMMON, flattenLocaleKeys, ZH_COMMON } from "./i18n";
+import { EN_COMMON, FR_COMMON, flattenLocaleKeys, ZH_COMMON } from "./i18n";
 
 describe("isFreeLabel", () => {
   it("treats Chinese and English unsubscribed labels as free-ish", () => {
@@ -21,7 +21,9 @@ describe("isFreeLabel", () => {
 
 describe("locale parity", () => {
   it("keeps en/zh keys aligned without Free commercial labels", () => {
-    expect(flattenLocaleKeys(EN_COMMON).sort()).toEqual(flattenLocaleKeys(ZH_COMMON).sort());
+    const enKeys = flattenLocaleKeys(EN_COMMON).sort();
+    expect(enKeys).toEqual(flattenLocaleKeys(ZH_COMMON).sort());
+    expect(enKeys).toEqual(flattenLocaleKeys(FR_COMMON).sort());
     const values = [
       ...Object.entries(EN_COMMON.membership),
       ...Object.entries(ZH_COMMON.membership),
@@ -34,6 +36,7 @@ describe("locale parity", () => {
   it("does not ship i18n defaultValue in locale dictionaries", () => {
     expect(JSON.stringify(EN_COMMON)).not.toContain("defaultValue");
     expect(JSON.stringify(ZH_COMMON)).not.toContain("defaultValue");
+    expect(JSON.stringify(FR_COMMON)).not.toContain("defaultValue");
   });
 });
 

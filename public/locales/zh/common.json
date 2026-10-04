@@ -565,7 +565,13 @@
     "localLead": "本地开发登录（VITE_ALLOW_LOCAL_LOGIN）",
     "username": "用户名",
     "passwordPh": "密码",
-    "localSubmit": "本地登录"
+    "localSubmit": "本地登录",
+    "termsLead": "我已阅读并同意",
+    "termsAnd": "和",
+    "platformTerms": "《LuminaryWorks 用户协议》",
+    "productTerms": "《BlockyEdu 用户协议》",
+    "privacy": "《隐私政策》",
+    "consentRequired": "请先同意用户协议后再继续。"
   },
   "authCallback": {
     "ssoFailed": "SSO 登录失败",

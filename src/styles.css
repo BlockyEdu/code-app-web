@@ -344,6 +344,14 @@ body {
   cursor: pointer;
 }
 
+.login-terms-error {
+  margin: 0;
+  color: #ffd0d0;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
 .btn-run:hover {
   background: #2ea043;
 }

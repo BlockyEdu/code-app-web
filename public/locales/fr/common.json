@@ -279,7 +279,7 @@
     "createOk": "Project created",
     "createFailed": "Failed to create",
     "openFailed": "Failed to open",
-    "logout": "Sign out",
+    "logout": "Se déconnecter",
     "all": "All",
     "navDiscover": "Discover",
     "navLearn": "Learn",
@@ -343,7 +343,7 @@
     "switchBody": "Buffers for each language are kept separately."
   },
   "confirm": {
-    "cancel": "Cancel"
+    "cancel": "Annuler"
   },
   "files": {
     "title": "Files",
@@ -484,7 +484,7 @@
     "backDesignConfirm": "Return to Design"
   },
   "project": {
-    "cancel": "Cancel",
+    "cancel": "Annuler",
     "title": "New project",
     "back": "Back",
     "pickKind": "Choose a creation mode",
@@ -552,26 +552,26 @@
     "signIn": "Sign in to load ESP32 / STM32 modules."
   },
   "login": {
-    "ssoLead": "Sign in with your LuminaryWorks account",
-    "title": "Sign in to the coding workspace",
-    "subtitle": "Continue coding with your unified account",
-    "identifier": "Email / username",
-    "password": "Password",
-    "submitPassword": "Continue",
-    "submitSso": "Sign in with unified account",
-    "hint": "Enterprise SSO and MFA are handled by the identity provider.",
-    "experienceUnavailable": "Password login is unavailable. Use the unified account.",
-    "missingClient": "Unified login is not configured (missing VITE_IDP_CLIENT_ID)",
-    "localLead": "Local development login (VITE_ALLOW_LOCAL_LOGIN)",
-    "username": "Username",
-    "passwordPh": "Password",
-    "localSubmit": "Local sign-in",
-    "termsLead": "I have read and agree to the",
-    "termsAnd": "and",
-    "platformTerms": "LuminaryWorks Terms",
-    "productTerms": "BlockyEdu Terms",
-    "privacy": "Privacy Policy",
-    "consentRequired": "Please agree to the terms before continuing."
+    "ssoLead": "Connectez-vous avec votre compte LuminaryWorks",
+    "title": "Connexion à l'espace de programmation",
+    "subtitle": "Continuez à coder avec votre compte unifié",
+    "identifier": "E-mail / nom d'utilisateur",
+    "password": "Mot de passe",
+    "submitPassword": "Continuer",
+    "submitSso": "Se connecter avec le compte unifié",
+    "hint": "Le SSO d'entreprise et la MFA sont gérés par le fournisseur d'identité.",
+    "experienceUnavailable": "La connexion par mot de passe est indisponible. Utilisez le compte unifié.",
+    "missingClient": "La connexion unifiée n'est pas configurée (VITE_IDP_CLIENT_ID manquant)",
+    "localLead": "Connexion de développement local (VITE_ALLOW_LOCAL_LOGIN)",
+    "username": "Nom d'utilisateur",
+    "passwordPh": "Mot de passe",
+    "localSubmit": "Connexion locale",
+    "termsLead": "J'ai lu et j'accepte",
+    "termsAnd": "et",
+    "platformTerms": "Conditions LuminaryWorks",
+    "productTerms": "Conditions BlockyEdu",
+    "privacy": "Politique de confidentialité",
+    "consentRequired": "Acceptez les conditions avant de continuer."
   },
   "authCallback": {
     "ssoFailed": "SSO sign-in failed",
@@ -632,7 +632,7 @@
     "proSandbox": "[hint] Pro users can run this language in the cloud sandbox with Pro run"
   },
   "header": {
-    "logout": "Sign out",
+    "logout": "Se déconnecter",
     "login": "Sign in",
     "close": "Close",
     "username": "Username",

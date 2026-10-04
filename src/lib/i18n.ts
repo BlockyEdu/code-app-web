@@ -1,8 +1,9 @@
 import en from "../../public/locales/en/common.json";
+import fr from "../../public/locales/fr/common.json";
 import zh from "../../public/locales/zh/common.json";
 import { useLocaleStore } from "./locale-store";
 
-export type AppLocale = "en" | "zh";
+type CatalogLocale = "en" | "zh" | "fr";
 
 type Dict = Record<string, unknown>;
 
@@ -16,19 +17,16 @@ function lookup(dict: Dict, key: string): string | undefined {
   return typeof cur === "string" ? cur : undefined;
 }
 
-export function getLocale(): AppLocale {
+export function getLocale(): CatalogLocale {
   const ui = useLocaleStore.getState().locale;
-  if (ui === "en-US") return "en";
-  if (ui === "zh-CN") return "zh";
-  if (typeof window === "undefined") return "zh";
-  const stored = window.localStorage.getItem("blockyedu_locale");
-  if (stored === "en" || stored === "zh") return stored;
-  return window.navigator.language.toLowerCase().startsWith("zh") ? "zh" : "en";
+  if (ui === "zh-CN" || ui === "zh-TW") return "zh";
+  if (ui === "fr") return "fr";
+  return "en";
 }
 
 export function t(key: string, vars?: Record<string, string | number>): string {
   const locale = getLocale();
-  const dict = (locale === "en" ? en : zh) as Dict;
+  const dict = (locale === "fr" ? fr : locale === "en" ? en : zh) as Dict;
   let value = lookup(dict, key) ?? key;
   if (vars) {
     for (const [name, replacement] of Object.entries(vars)) {
@@ -51,3 +49,4 @@ export function flattenLocaleKeys(dict: unknown, prefix = ""): string[] {
 
 export const EN_COMMON = en;
 export const ZH_COMMON = zh;
+export const FR_COMMON = fr;

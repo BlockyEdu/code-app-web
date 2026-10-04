@@ -108,7 +108,7 @@ describe("httpRequest coalescing", () => {
 
   it("sends Accept-Language from the UI locale", async () => {
     stubLocalStorage();
-    useLocaleStore.getState().setLocale("en-US");
+    useLocaleStore.getState().setLocale("en");
     let accept = "";
     globalThis.fetch = (async (_input, init) => {
       accept = new Headers(init?.headers).get("Accept-Language") ?? "";
@@ -124,6 +124,10 @@ describe("httpRequest coalescing", () => {
     useLocaleStore.getState().setLocale("zh-CN");
     await httpRequest("/health?reset=1");
     expect(accept).toBe("zh-CN");
+
+    useLocaleStore.getState().setLocale("fr");
+    await httpRequest("/health?reset=2");
+    expect(accept).toBe("fr");
   });
 });
 

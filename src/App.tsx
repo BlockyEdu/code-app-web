@@ -13,6 +13,7 @@ import { isLaunchPath, isWorkspacePath } from "./lib/navigate";
 import { AuthCallbackPage } from "./pages/AuthCallbackPage";
 import { LaunchPage } from "./pages/LaunchPage";
 import { LoginPage } from "./pages/LoginPage";
+import { LegalPrivacyPage, LegalTermsPage } from "./pages/LegalPages";
 import { MembershipPage } from "./pages/MembershipPage";
 import { ProjectsHub } from "./pages/ProjectsHub";
 import { CreateWorkspace } from "./workspace/CreateWorkspace";
@@ -27,6 +28,8 @@ export default function App() {
   const path = usePathname();
   const isAuthCallback = path === "/auth/callback";
   const isLogin = path === "/login";
+  const isLegalTerms = path === "/legal/terms";
+  const isLegalPrivacy = path === "/legal/privacy";
   const isWorkspace = isWorkspacePath(path);
   const isMembership = path === "/membership";
   const isLaunch = isLaunchPath(path);
@@ -60,6 +63,12 @@ export default function App() {
 
   if (isLogin) {
     return <LoginPage />;
+  }
+  if (isLegalTerms) {
+    return <LegalTermsPage product="BlockyEdu 编程工作台" />;
+  }
+  if (isLegalPrivacy) {
+    return <LegalPrivacyPage product="BlockyEdu 编程工作台" />;
   }
 
   if (isMembership) {
