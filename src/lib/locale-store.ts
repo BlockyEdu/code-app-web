@@ -10,6 +10,7 @@ import ptPT from "antd/locale/pt_PT";
 import zhCN from "antd/locale/zh_CN";
 import zhTW from "antd/locale/zh_TW";
 import { create } from "zustand";
+import { detectClientPreferredLocale } from "./preferred-locale";
 
 export const APP_LOCALES = [
   "zh-CN",
@@ -39,6 +40,36 @@ export const LOCALE_LABELS: Record<AppLocale, string> = {
   fr: "Français",
 };
 
+/** Same 10-locale picker as edu-app-web / `@luminaryworks/auth-react` LoginCanvas. */
+export const LOGIN_LOCALE_OPTIONS = APP_LOCALES.map((code) => ({
+  code,
+  label: LOCALE_LABELS[code],
+  short:
+    code === "zh-CN"
+      ? "简"
+      : code === "zh-TW"
+        ? "繁"
+        : code === "ja"
+          ? "JA"
+          : code === "ko"
+            ? "KO"
+            : code === "en"
+              ? "EN"
+              : code === "pt"
+                ? "PT"
+                : code === "nl"
+                  ? "NL"
+                  : code === "it"
+                    ? "IT"
+                    : code === "es"
+                      ? "ES"
+                      : "FR",
+})) as ReadonlyArray<{ code: AppLocale; label: string; short: string }>;
+
+export function isAppLocale(value: string): value is AppLocale {
+  return (APP_LOCALES as readonly string[]).includes(value);
+}
+
 const STORAGE_KEY = "blockyedu_ui_locale";
 
 export function normalizeAppLocale(value: string | null | undefined): AppLocale | null {
@@ -50,9 +81,9 @@ export function normalizeAppLocale(value: string | null | undefined): AppLocale 
 
 function readStored(): AppLocale {
   try {
-    return normalizeAppLocale(localStorage.getItem(STORAGE_KEY)) ?? "zh-CN";
+    return detectClientPreferredLocale(localStorage.getItem(STORAGE_KEY));
   } catch {
-    return "zh-CN";
+    return detectClientPreferredLocale(null);
   }
 }
 
@@ -91,7 +122,7 @@ interface LocaleState {
   setLocale: (locale: AppLocale) => void;
 }
 
-const initial = typeof window !== "undefined" ? readStored() : ("zh-CN" as AppLocale);
+const initial = typeof window !== "undefined" ? readStored() : ("en" as AppLocale);
 
 export const useLocaleStore = create<LocaleState>((set) => ({
   locale: initial,

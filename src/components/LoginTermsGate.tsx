@@ -3,10 +3,11 @@ import type { CSSProperties } from "react";
 import { useState } from "react";
 import { t } from "../lib/i18n";
 
-const TOS_KEY = "blockyedu.code.tos.login.v2";
+/** Shared with edu-app-web so one consent state covers both BlockyEdu surfaces. */
+const TOS_KEY = "blockyedu.tos.login.v3";
 const CARD_INK = "#14212b";
 const STAGE_INK = "#f7fbff";
-const STAGE_LINK = "#79b8ff";
+const STAGE_LINK = "#d6e9ff";
 
 function legalUrls() {
   const env = import.meta.env as Record<string, string | undefined>;
@@ -54,7 +55,7 @@ export function LoginTermsCheckbox({
   const urls = legalUrls();
   const onCard = surface === "card";
   const linkStyle: CSSProperties = {
-    color: onCard ? "var(--lw-auth-theme, #3a84ff)" : STAGE_LINK,
+    color: onCard ? "var(--lw-auth-theme, #2563eb)" : STAGE_LINK,
   };
   return (
     <label
@@ -75,26 +76,22 @@ export function LoginTermsCheckbox({
         onChange={(event) => onChange(event.target.checked)}
         style={{
           marginTop: 3,
-          accentColor: onCard ? "var(--lw-auth-theme, #3a84ff)" : STAGE_LINK,
+          accentColor: onCard ? "var(--lw-auth-theme, #2563eb)" : STAGE_LINK,
         }}
       />
       <span>
-        {t("login.termsLead")}{" "}
-        <a href={urls.platformTermsUrl} target="_blank" rel="noopener noreferrer" style={linkStyle}>
-          {t("login.platformTerms")}
-        </a>{" "}
-        {t("login.termsAnd")}{" "}
+        {t("login.agreeBefore")}{" "}
         <a href={urls.productTermsUrl} target="_blank" rel="noopener noreferrer" style={linkStyle}>
-          {t("login.productTerms")}
+          {t("login.userAgreement")}
         </a>{" "}
-        {t("login.termsAnd")}{" "}
+        {t("login.agreeAnd")}
         <a
           href={urls.productPrivacyUrl}
           target="_blank"
           rel="noopener noreferrer"
           style={linkStyle}
         >
-          {t("login.privacy")}
+          {t("login.privacyPolicy")}
         </a>
       </span>
     </label>

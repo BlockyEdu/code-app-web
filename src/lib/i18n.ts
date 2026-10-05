@@ -1,11 +1,45 @@
 import en from "../../public/locales/en/common.json";
+import es from "../../public/locales/es/common.json";
 import fr from "../../public/locales/fr/common.json";
+import it from "../../public/locales/it/common.json";
+import ja from "../../public/locales/ja/common.json";
+import ko from "../../public/locales/ko/common.json";
+import nl from "../../public/locales/nl/common.json";
+import pt from "../../public/locales/pt/common.json";
 import zh from "../../public/locales/zh/common.json";
-import { useLocaleStore } from "./locale-store";
-
-type CatalogLocale = "en" | "zh" | "fr";
+import zhTW from "../../public/locales/zh-TW/common.json";
+import { type AppLocale, useLocaleStore } from "./locale-store";
 
 type Dict = Record<string, unknown>;
+
+function catalog(locale: AppLocale): Dict {
+  switch (locale) {
+    case "zh-CN":
+      return zh as Dict;
+    case "zh-TW":
+      return zhTW as Dict;
+    case "ja":
+      return ja as Dict;
+    case "ko":
+      return ko as Dict;
+    case "pt":
+      return pt as Dict;
+    case "nl":
+      return nl as Dict;
+    case "it":
+      return it as Dict;
+    case "es":
+      return es as Dict;
+    case "fr":
+      return fr as Dict;
+    case "en":
+      return en as Dict;
+    default: {
+      const unexpected: never = locale;
+      return unexpected;
+    }
+  }
+}
 
 function lookup(dict: Dict, key: string): string | undefined {
   const parts = key.split(".");
@@ -17,23 +51,26 @@ function lookup(dict: Dict, key: string): string | undefined {
   return typeof cur === "string" ? cur : undefined;
 }
 
-export function getLocale(): CatalogLocale {
-  const ui = useLocaleStore.getState().locale;
-  if (ui === "zh-CN" || ui === "zh-TW") return "zh";
-  if (ui === "fr") return "fr";
-  return "en";
+export function getLocale(): AppLocale {
+  return useLocaleStore.getState().locale;
 }
 
-export function t(key: string, vars?: Record<string, string | number>): string {
-  const locale = getLocale();
-  const dict = (locale === "fr" ? fr : locale === "en" ? en : zh) as Dict;
-  let value = lookup(dict, key) ?? key;
+export function tFor(
+  locale: AppLocale,
+  key: string,
+  vars?: Record<string, string | number>,
+): string {
+  let value = lookup(catalog(locale), key) ?? lookup(en as Dict, key) ?? key;
   if (vars) {
     for (const [name, replacement] of Object.entries(vars)) {
       value = value.replaceAll(`{{${name}}}`, String(replacement));
     }
   }
   return value;
+}
+
+export function t(key: string, vars?: Record<string, string | number>): string {
+  return tFor(getLocale(), key, vars);
 }
 
 export function flattenLocaleKeys(dict: unknown, prefix = ""): string[] {
