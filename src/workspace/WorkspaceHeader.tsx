@@ -1,9 +1,11 @@
 import {
   ApiOutlined,
+  ArrowLeftOutlined,
   CaretRightOutlined,
   CheckOutlined,
   CloudUploadOutlined,
   CodeOutlined,
+  EllipsisOutlined,
   ExperimentOutlined,
   GlobalOutlined,
   HomeOutlined,
@@ -14,11 +16,10 @@ import {
   SaveOutlined,
 } from "@ant-design/icons";
 import { Button, Dropdown, type MenuProps, message, Segmented, Tooltip } from "antd";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { LanguageSelector } from "../components/LanguageSelector";
 import { LayoutIcon } from "../components/LayoutIcon";
 import { LocaleSwitcher } from "../components/LocaleSwitcher";
-import { LogoMark } from "../components/Logo";
 import { ModeSwitchModal } from "../components/ModeSwitchModal";
 import { RunControls } from "../components/RunControls";
 import { UserAvatarMenu } from "../components/UserAvatarMenu";
@@ -27,7 +28,6 @@ import { api } from "../lib/api";
 import { usesHostedPosts } from "../lib/app-studio/app-schema";
 import { useAuthStore } from "../lib/auth-store";
 import { t } from "../lib/i18n";
-import { isDirectIdpEnabled } from "../lib/idp";
 import { kindLabel } from "../lib/kind-label";
 import { useLocaleStore } from "../lib/locale-store";
 import { navigate } from "../lib/navigate";
@@ -96,6 +96,7 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
   const logout = useAuthStore((s) => s.logout);
   useLocaleStore((s) => s.locale);
   const openLoginPrompt = useAuthStore((s) => s.openLoginPrompt);
+  const ensureSignedIn = useAuthStore((s) => s.ensureSignedIn);
   const { aiOpts, ready } = useAiSettings();
 
   const [modeModal, setModeModal] = useState<"upgrade" | "restore" | "backDesign" | null>(null);
@@ -116,19 +117,24 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
     !appStudio &&
     !isHardwareKind(artifactKind) &&
     (isTargetBlockKind(artifactKind) || Boolean(plugin?.blockly));
+  const saveState = artifactId == null ? "local" : saveDirty ? "unsaved" : "saved";
+  const saveStateLabel =
+    saveState === "local"
+      ? t("workspace.localDraft")
+      : saveState === "unsaved"
+        ? t("workspace.unsaved")
+        : t("workspace.saved");
+  const saveButtonLabel = saveDirty ? t("workspace.save") : t("workspace.saved");
 
   const goLogin = () => {
-    if (isDirectIdpEnabled()) {
-      window.location.href = "/login";
-      return;
-    }
     openLoginPrompt();
   };
 
   const handleSave = async () => {
-    if (!user) {
-      goLogin();
-      return;
+    if (!useAuthStore.getState().user) {
+      message.info(t("workspace.loginToSave"));
+      const signedIn = await ensureSignedIn();
+      if (!signedIn) return;
     }
     if (!artifactId) {
       message.warning(t("workspace.saveNeedArtifact"));
@@ -149,7 +155,6 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
       setModeModal("upgrade");
       return;
     }
-    // → blockly
     if (monacoManuallyEdited) {
       setModeModal("restore");
       return;
@@ -273,6 +278,9 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
     },
   ];
 
+  const showRun = isSimKind || hardware;
+  const showPreview = canPublishWeb && !appStudio;
+
   return (
     <>
       <header className={styles.header}>
@@ -280,27 +288,31 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
           <Tooltip title={t("layout.back")}>
             <button
               type="button"
-              className={styles.hubBtn}
+              className={styles.iconBtn}
               onClick={() => navigate("/")}
               aria-label={t("layout.back")}
             >
-              <LogoMark size={22} />
-              <span className={styles.hubLabel}>{t("layout.hub")}</span>
+              <ArrowLeftOutlined />
             </button>
           </Tooltip>
-          <div className={styles.artifactInfo}>
-            <span className={styles.artifactName}>
-              {artifactName}
-              {saveDirty ? " ·" : ""}
-            </span>
-            <span
-              className={styles.kindChip}
-              style={{ color, borderColor: `${color}40`, background: `${color}18` }}
-            >
-              {KIND_ICON[artifactKind]}
-              <span>{kindLabel(artifactKind)}</span>
-            </span>
+          <div className={styles.titleWrap}>
+            <ArtifactTitle name={artifactName} />
           </div>
+          <span className={styles.kindChip} style={{ ["--kind" as string]: color }}>
+            {KIND_ICON[artifactKind]}
+            <span>{kindLabel(artifactKind)}</span>
+          </span>
+          <span
+            className={`${styles.saveStatus} ${
+              saveState === "local"
+                ? styles.saveLocal
+                : saveState === "unsaved"
+                  ? styles.saveUnsaved
+                  : styles.saveSaved
+            }`}
+          >
+            {saveStateLabel}
+          </span>
         </div>
 
         <div className={styles.headerCenter}>
@@ -331,27 +343,7 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
         </div>
 
         <div className={styles.headerRight}>
-          <Tooltip
-            title={
-              !user
-                ? t("workspace.saveHintLogin")
-                : saveStatus === "saved" && !saveDirty
-                  ? t("workspace.saved")
-                  : t("workspace.saveHint")
-            }
-          >
-            <Button
-              type={saveDirty ? "primary" : "default"}
-              size="small"
-              icon={<SaveOutlined />}
-              loading={saveStatus === "saving"}
-              onClick={() => void handleSave()}
-            >
-              {saveDirty ? t("workspace.save") : t("workspace.saved")}
-            </Button>
-          </Tooltip>
-
-          {(isSimKind || hardware) && (
+          {showRun && (
             <Button
               type="primary"
               size="small"
@@ -365,33 +357,10 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
           )}
 
           {isConsoleKind(artifactKind) && <RunControls />}
-          {isConsoleKind(artifactKind) && <LanguageSelector />}
 
-          {hardware && artifactId && (
-            <Tooltip title={t("launch.hint")}>
-              <Button
-                size="small"
-                icon={<RocketOutlined />}
-                onClick={() => navigate(`/launch/${artifactId}`)}
-              >
-                {t("launch.desk")}
-              </Button>
-            </Tooltip>
-          )}
-
-          {canPublishWeb && (
+          {showPreview && (
             <Button
               type="primary"
-              size="small"
-              icon={<CloudUploadOutlined />}
-              onClick={() => setPublishOpen(true)}
-            >
-              {t("publish.ship")}
-            </Button>
-          )}
-
-          {canPublishWeb && !appStudio && (
-            <Button
               size="small"
               icon={isRunning ? <ReloadOutlined spin /> : <CaretRightOutlined />}
               onClick={onRun}
@@ -401,19 +370,75 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
             </Button>
           )}
 
+          <Tooltip title={saveDirty ? t("workspace.saveHint") : t("workspace.saved")}>
+            <Button
+              type={saveDirty ? "primary" : "default"}
+              size="small"
+              icon={<SaveOutlined />}
+              loading={saveStatus === "saving"}
+              aria-label={saveButtonLabel}
+              onClick={() => void handleSave()}
+            >
+              <span className={styles.optionalLabel}>{saveButtonLabel}</span>
+            </Button>
+          </Tooltip>
+
           <Dropdown menu={{ items: layoutItems }} trigger={["click"]} placement="bottomRight">
-            <button type="button" className={styles.layoutBtn} title={t("layout.panels")}>
-              <LayoutIcon
-                showLeft={leftOpen}
-                showPreview={rightPreviewOpen && previewSupported}
-                showConsole={bottomOpen}
-                showAi={aiOpen}
-              />
-              <span>{t("layout.menu")}</span>
-            </button>
+            <Tooltip title={t("layout.panels")}>
+              <button type="button" className={styles.layoutBtn} aria-label={t("layout.panels")}>
+                <LayoutIcon
+                  showLeft={leftOpen}
+                  showPreview={rightPreviewOpen && previewSupported}
+                  showConsole={bottomOpen}
+                  showAi={aiOpen}
+                />
+                <span className={styles.optionalLabel}>{t("layout.menu")}</span>
+              </button>
+            </Tooltip>
           </Dropdown>
 
-          <LocaleSwitcher />
+          <Dropdown
+            trigger={["click"]}
+            placement="bottomRight"
+            popupRender={() => (
+              <div className={styles.morePanel}>
+                {isConsoleKind(artifactKind) ? <LanguageSelector /> : null}
+                {canPublishWeb ? (
+                  <button
+                    type="button"
+                    className={styles.moreItem}
+                    onClick={() => setPublishOpen(true)}
+                  >
+                    <CloudUploadOutlined />
+                    {t("publish.ship")}
+                  </button>
+                ) : null}
+                {hardware && artifactId ? (
+                  <button
+                    type="button"
+                    className={styles.moreItem}
+                    title={t("launch.hint")}
+                    onClick={() => navigate(`/launch/${artifactId}`)}
+                  >
+                    <RocketOutlined />
+                    {t("launch.desk")}
+                  </button>
+                ) : null}
+                <div className={styles.moreLocale}>
+                  <span>{t("locale.switcherTitle")}</span>
+                  <LocaleSwitcher />
+                </div>
+              </div>
+            )}
+          >
+            <Tooltip title={t("workspace.more")}>
+              <button type="button" className={styles.moreBtn} aria-label={t("workspace.more")}>
+                <EllipsisOutlined />
+                <span className={styles.optionalLabel}>{t("workspace.more")}</span>
+              </button>
+            </Tooltip>
+          </Dropdown>
+
           {user ? (
             <UserAvatarMenu user={user} onLogout={logout} />
           ) : (
@@ -464,5 +489,63 @@ export function WorkspaceHeader({ isRunning, onRun }: WorkspaceHeaderProps) {
         <PublishWebDialog open={publishOpen} onClose={() => setPublishOpen(false)} />
       )}
     </>
+  );
+}
+
+function ArtifactTitle({ name }: { name: string }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const cancelRef = useRef(false);
+
+  useEffect(() => {
+    if (!editing) setDraft(name);
+  }, [editing, name]);
+
+  useEffect(() => {
+    if (editing) inputRef.current?.select();
+  }, [editing]);
+
+  const commit = () => {
+    if (cancelRef.current) {
+      cancelRef.current = false;
+      setDraft(name);
+      return;
+    }
+    const next = draft.trim();
+    setEditing(false);
+    if (!next || next === name) return;
+    useWorkspaceStore.setState({
+      artifactName: next,
+      projectName: next,
+      saveDirty: true,
+    });
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        className={styles.titleInput}
+        value={draft}
+        aria-label={t("workspace.rename")}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.currentTarget.blur();
+          if (event.key === "Escape") {
+            cancelRef.current = true;
+            setEditing(false);
+            event.currentTarget.blur();
+          }
+        }}
+      />
+    );
+  }
+
+  return (
+    <button type="button" className={styles.titleBtn} title={name} onClick={() => setEditing(true)}>
+      {name}
+    </button>
   );
 }

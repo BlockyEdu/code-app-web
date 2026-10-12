@@ -1,0 +1,87 @@
+@use '../styles/variables' as *;
+
+.page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: $space-6;
+  margin-top: -$space-6;
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $space-4;
+}
+
+.lead {
+  margin: 0;
+  font-size: $site-font-body;
+  font-weight: $font-weight-medium;
+  line-height: $site-line-title;
+  color: $site-text-secondary;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.chip {
+  height: 32px;
+  padding: 0 $space-3;
+  border: 1px solid $site-border;
+  border-radius: $radius-full;
+  background: $site-card;
+  color: $site-text-secondary;
+  font-family: inherit;
+  font-size: $site-font-sm;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $site-primary;
+    color: $site-primary;
+  }
+}
+
+.chipOn {
+  border-color: transparent;
+  background: $site-primary;
+  color: #ffffff;
+
+  &:hover {
+    color: #ffffff;
+  }
+}
+
+.grid {
+  display: grid;
+  gap: $space-4;
+  grid-template-columns: 1fr;
+}
+
+.empty {
+  margin: 0;
+  color: $site-text-secondary;
+  font-size: $site-font-body;
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 960px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

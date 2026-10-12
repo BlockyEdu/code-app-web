@@ -1,0 +1,100 @@
+@use '../styles/variables' as *;
+
+.footer {
+  display: flex;
+  justify-content: center;
+  background: $site-card;
+  border-top: 1px solid $site-border;
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  width: min($site-content, calc(100% - 48px));
+  padding: $space-8 0 $space-6;
+}
+
+.top {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $space-4;
+  min-width: 0;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: $site-text;
+  font-family: inherit;
+  font-size: $site-font-body;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid $site-primary;
+    outline-offset: 4px;
+    border-radius: $radius-sm;
+  }
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-1 $space-5;
+}
+
+.link {
+  border: none;
+  background: transparent;
+  padding: $space-1 0;
+  color: $site-text-secondary;
+  font-family: inherit;
+  font-size: $site-font-sm;
+  font-weight: $font-weight-medium;
+  line-height: 1.4;
+  cursor: pointer;
+
+  &:hover {
+    color: $site-primary;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $site-primary;
+    outline-offset: 3px;
+    border-radius: $radius-sm;
+  }
+}
+
+.copy {
+  margin: $space-6 0 0;
+  padding-top: $space-4;
+  border-top: 1px solid $site-border;
+  color: $site-text-muted;
+  font-size: $site-font-xs;
+  line-height: 1.4;
+}
+
+@media (min-width: 960px) {
+  .inner {
+    padding: $space-10 0 $space-6;
+  }
+
+  .top {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-8;
+  }
+
+  .links {
+    justify-content: flex-end;
+  }
+}

@@ -1,0 +1,347 @@
+@use '../../styles/variables' as *;
+
+$mock-height: 264px;
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: $space-4;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  min-width: 0;
+  padding: $space-5;
+  border: 1px solid $site-border;
+  border-radius: $site-radius-card;
+  background: $site-card;
+  box-shadow: $site-shadow;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: $site-font-body;
+  line-height: $site-line-title;
+  font-weight: $font-weight-bold;
+  color: $site-text;
+}
+
+.cardLead {
+  margin: 0;
+  max-width: $site-measure;
+  font-size: $site-font-sm;
+  line-height: $site-line-body;
+  color: $site-text-secondary;
+}
+
+.mock {
+  height: $mock-height;
+  overflow: hidden;
+  border-radius: $radius-xl;
+  background: #11151d;
+  color: #cbd5e1;
+}
+
+// Block mode
+.blockMock {
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr);
+}
+
+.toolbox {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: $space-3 $space-2;
+  background: #181c23;
+}
+
+.cat {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-width: 0;
+  padding: 6px $space-2;
+  border-left: 3px solid transparent;
+  border-radius: $radius-md;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: $font-weight-medium;
+  line-height: 1.2;
+
+  i {
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+    background: var(--cat);
+  }
+}
+
+.catOn {
+  border-left-color: var(--cat);
+  background: rgba(148, 163, 184, 0.12);
+  color: #ffffff;
+}
+
+.canvas {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: $space-6 $space-5;
+  background-color: #11151d;
+  background-image: radial-gradient(#1f2633 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.pill {
+  width: fit-content;
+  max-width: 100%;
+  padding: 11px $space-4;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: $font-weight-semibold;
+  line-height: 1.3;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.16);
+}
+
+.hat {
+  padding-top: 18px;
+  border-radius: 20px 20px 10px 10px;
+}
+
+.pillEvent {
+  background: $block-event;
+}
+
+.pillSensor {
+  background: $block-sensor;
+}
+
+.pillDevice {
+  background: $block-device;
+}
+
+.pillLoop {
+  background: $block-loop;
+}
+
+.nest {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: $space-5;
+  padding-left: $space-2;
+  border-left: 4px solid $block-sensor;
+}
+
+// Pro mode
+.proMock {
+  display: flex;
+  flex-direction: column;
+}
+
+.proMain {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 148px minmax(0, 1fr);
+  min-height: 0;
+}
+
+.tree {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: $space-3 $space-2;
+  background: #181c23;
+  font-size: 12px;
+}
+
+.treeHead {
+  padding: 0 $space-2 $space-2;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 5px $space-2;
+  overflow: hidden;
+  border-radius: $radius-md;
+  color: #94a3b8;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: $font-mono;
+  font-size: 11px;
+}
+
+.fileOn {
+  background: rgba(37, 99, 235, 0.22);
+  color: #ffffff;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  min-width: 0;
+  padding: 0 $space-3 $space-2;
+}
+
+.tab {
+  align-self: flex-start;
+  margin: 0 (-$space-3);
+  padding: 6px $space-3;
+  border-bottom: 2px solid $site-primary;
+  background: #181c23;
+  color: #ffffff;
+  font-family: $font-mono;
+  font-size: 11px;
+}
+
+.terminal {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: $space-2 $space-3 $space-3;
+  border-top: 1px solid #232b38;
+  background: #0b0e14;
+}
+
+.terminalHead {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.terminalLine {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #86efac;
+  font-family: $font-mono;
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+// AI dock strip
+.ai {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-3 $space-4;
+  margin-top: $space-4;
+  padding: $space-3 $space-4;
+  border: 1px solid $site-border;
+  border-radius: $site-radius-card;
+  background: $site-card;
+  box-shadow: $site-shadow;
+}
+
+.aiLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $site-font-sm;
+  font-weight: $font-weight-semibold;
+  color: $site-text;
+}
+
+.aiIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: $radius-lg;
+  background: $color-primary-light;
+  color: $site-primary;
+}
+
+.aiInput {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 7px $space-3;
+  border: 1px solid $site-border;
+  border-radius: $radius-full;
+  background: $site-bg;
+  color: $site-text-muted;
+  font-size: $site-font-sm;
+  line-height: 1.4;
+}
+
+.aiChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.aiChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 $space-3;
+  border-radius: $radius-full;
+  background: $color-primary-muted;
+  color: $site-primary;
+  font-size: $site-font-sm;
+  font-weight: $font-weight-medium;
+}
+
+@media (min-width: 960px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: $space-5;
+  }
+}
+
+@media (max-width: 639px) {
+  .blockMock {
+    grid-template-columns: 104px minmax(0, 1fr);
+  }
+
+  .proMock {
+    height: auto;
+    min-height: $mock-height;
+  }
+
+  .proMain {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tree {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: $space-1;
+    padding: $space-2;
+  }
+
+  .treeHead,
+  .file:last-child {
+    display: none;
+  }
+
+  .editor {
+    padding-top: $space-2;
+  }
+}

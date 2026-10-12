@@ -100,7 +100,12 @@
     "firstExercise": "私の最初の演習",
     "unnamedExercise": "無題の演習",
     "unnamedArtifact": "無題のアーティファクト",
-    "shipGoal": "ページとコンテンツを完成させて、ライブリンクを共有するか、またはzipをダウンロードします"
+    "shipGoal": "ページとコンテンツを完成させて、ライブリンクを共有するか、またはzipをダウンロードします",
+    "localDraft": "この端末の下書き",
+    "unsaved": "未保存の変更",
+    "loginToSave": "クラウドに保存するにはログインしてください",
+    "more": "その他",
+    "rename": "名前を変更"
   },
   "run": {
     "console": "コンソール実行",
@@ -579,7 +584,8 @@
     "agreeBefore": "私は読んで同意しました",
     "agreeAnd": "および",
     "userAgreement": "ユーザー契約",
-    "privacyPolicy": "プライバシーポリシー"
+    "privacyPolicy": "プライバシーポリシー",
+    "trialDeletion": "トライアルとデータ削除ポリシー"
   },
   "authCallback": {
     "ssoFailed": "SSOサインイン失敗",
@@ -878,7 +884,8 @@
     "iotWait": "%1 秒待つ",
     "iotWaitTip": "シミュレーションクロック待機",
     "iotStop": "非常停止",
-    "iotStopTip": "ローカルキルスイッチ — アクチュエータを直ちに停止"
+    "iotStopTip": "ローカルキルスイッチ — アクチュエータを直ちに停止",
+    "emptyHint": "ブロックをここにドラッグして始めます。"
   },
   "iotCh": {
     "rain": "雨",
@@ -894,7 +901,12 @@
     "level_pct": "水位",
     "temp": "水温",
     "aerator": "エアレーター",
-    "spray": "スプレー"
+    "spray": "スプレー",
+    "humidity": "湿度",
+    "led": "LED",
+    "relay": "リレー",
+    "speed": "速度",
+    "heading": "方位"
   },
   "iotCmd": {
     "open": "窓を開ける",
@@ -1067,7 +1079,19 @@
     "badNode": "サポートされていないコンポーネント {{type}}",
     "badSiteField": "不正なサイトフィールド {{field}}",
     "missingNode": "ノード {{nodeId}} が見つかりません",
-    "badOp": "サポートされていない操作 {{op}}"
+    "badOp": "サポートされていない操作 {{op}}",
+    "myEvent": "イベント申込",
+    "myShop": "ミニショップ",
+    "taglineEvent": "一つの活動の申込を集めます",
+    "taglineShop": "開ける短い商品リスト",
+    "heroEvent": "イベントに申し込む",
+    "heroEventSub": "タイトルを変えてから、データに回を追加します。",
+    "heroShop": "ショップへようこそ",
+    "heroShopSub": "この紹介を変えてから、データに最初の商品を追加します。",
+    "events": "回",
+    "products": "商品",
+    "emptyEvents": "まだ回がありません",
+    "emptyProducts": "まだ商品がありません"
   },
   "pairMission": {
     "title": "最初の成功実行を得る",
@@ -1107,5 +1131,349 @@
   },
   "chrome": {
     "brandTitle": "BlockyEdu — 学べ、作れ、船を渡す"
+  },
+  "home": {
+    "hero": {
+      "title": "言葉にする。作る。動くところを見る。",
+      "sub": "ブロックかコード、机の上の機器、そして結果が見えるスマホ。",
+      "placeholder": "雨が降ったら窓を閉じて、スマホに表示する",
+      "promptLabel": "作りたいものを書いてください",
+      "submit": "始める",
+      "examplesLabel": "アイデアを試す",
+      "example1": "雨が降ったら窓を閉める",
+      "example2": "室温を表示するページ",
+      "example3": "暗くなったら明かりを付ける",
+      "example4": "機器の状態を見せるミニプログラム"
+    },
+    "chain": {
+      "title": "ルールから窓とスマホへ",
+      "lead": "雨を検知し、窓が閉まり、スマホが追従します。ブロックとコードは同じルールです。",
+      "run": "実行",
+      "replay": "もう一度",
+      "open": "サンプルを開く",
+      "loading": "デモを読み込み中",
+      "paneLogic": "ロジック",
+      "paneDevice": "機器",
+      "paneMqtt": "メッセージ",
+      "panePhone": "スマホ",
+      "capLogic": "ブロックと JavaScript",
+      "capDevice": "スマート窓",
+      "capMqtt": "テレメトリと命令",
+      "capPhone": "スマホ上の状態",
+      "blocks": "ブロック",
+      "code": "コード",
+      "tickerEmpty": "メッセージはまだありません",
+      "stepsLabel": "何が起きるか",
+      "blkEvent": "シーン開始時",
+      "blkIf": "雨を検知したら",
+      "blkClose": "窓を閉める",
+      "phoneState": "窓",
+      "phoneOpen": "開",
+      "phoneClosed": "閉",
+      "phoneRaining": "雨",
+      "phoneDry": "晴れ",
+      "phoneLocked": "雨の間はロック",
+      "steps": {
+        "rain": "雨が降り始める",
+        "telemetry": "機器が報告する",
+        "command": "閉命令",
+        "window": "窓が閉まる",
+        "phone": "スマホが更新される"
+      }
+    },
+    "modes": {
+      "title": "ブロックでもコードでも、同じ作品",
+      "lead": "まずブロックで作り、JavaScript を見たくなったらファイルを開きます。",
+      "blockTitle": "ブロック",
+      "blockLead": "ルールをつなぐ：雨が降ったら窓を閉め、それから待つ。",
+      "proTitle": "コード",
+      "proLead": "同じルールを JavaScript で書き、横にハードウェアのファイルがあります。",
+      "files": "ファイル",
+      "terminal": "コンソール",
+      "catDevices": "機器",
+      "blkWait": "1 秒待つ",
+      "aiLabel": "作品の中の AI",
+      "aiAsk": "なぜ窓は開いたまま？",
+      "aiExplain": "説明",
+      "aiFix": "修正",
+      "aiGenerate": "生成"
+    },
+    "caps": {
+      "title": "今つくれるもの",
+      "lead": "ボード、メッセージ、ウェブサイト、AI。予定の項目には印が付きます。",
+      "available": "利用可",
+      "beta": "ベータ",
+      "planned": "予定",
+      "noteSimulation": "ブラウザ内シミュレーション",
+      "noteBrowser": "ブラウザ MQTT",
+      "layers": {
+        "chips": "ボードとセンサー",
+        "comm": "接続と更新",
+        "apps": "アプリ",
+        "vision": "カメラ",
+        "ai": "AI"
+      },
+      "items": {
+        "esp32s3": "ESP32-S3",
+        "esp32c3": "ESP32-C3",
+        "stm32": "STM32",
+        "sensors": "センサー",
+        "mqtt": "MQTT",
+        "kit": "教室キット",
+        "ota": "無線更新",
+        "websites": "ウェブサイト",
+        "miniprograms": "ミニプログラム",
+        "host": "ホスティング",
+        "camera": "カメラ",
+        "aiGenerate": "生成",
+        "aiExplain": "説明",
+        "aiDebug": "デバッグ"
+      }
+    },
+    "tracks": {
+      "title": "サンプル",
+      "lead": "サンプルを開いて、自分用に変える。",
+      "all": "すべてのサンプル",
+      "iot": "機器",
+      "apps": "ウェブとミニプログラム",
+      "basics": "最初の一歩"
+    },
+    "path": {
+      "title": "サンプルをたどる道",
+      "lead": "最初の練習からミニプログラムまで、短い作品が五つ。",
+      "stepLabel": "手順 {{n}}",
+      "open": "開く",
+      "course": "コース",
+      "s1": {
+        "title": "最初の練習",
+        "body": "短いプログラムを変えて、表示を見る。"
+      },
+      "s2": {
+        "title": "AI に聞く",
+        "body": "同じ練習のまま、コードの説明を AI に頼む。"
+      },
+      "s3": {
+        "title": "エアビーコン",
+        "body": "温度と湿度を読み、リレーを切り替える。"
+      },
+      "s4": {
+        "title": "スマート窓",
+        "body": "雨で窓が閉まり、スマホに状態が出る。"
+      },
+      "s5": {
+        "title": "ニュースのミニプログラム",
+        "body": "一覧と詳細ページのある小さなアプリ。"
+      }
+    }
+  },
+  "site": {
+    "navSamples": "サンプル",
+    "navProjects": "作品",
+    "navCourses": "コース",
+    "newProject": "新しい作品",
+    "signIn": "ログイン",
+    "browseSamples": "サンプルをすべて見る",
+    "footerAbout": "このサイトについて",
+    "footerTerms": "利用規約",
+    "footerPrivacy": "プライバシー",
+    "footerNav": "サイト"
+  },
+  "samples": {
+    "title": "サンプル",
+    "lead": "サンプルを選んで、エディタで開きます。",
+    "categoryAll": "すべて",
+    "categoryWeb": "ウェブサイト",
+    "categoryMiniprogram": "ミニプログラム",
+    "categorySmarthome": "スマートホーム",
+    "categoryIot": "IoT",
+    "categoryBasics": "プログラミング入門",
+    "empty": "この分類にはまだサンプルがありません。",
+    "open": "開く",
+    "minutes": "約 {{count}} 分",
+    "levelBeginner": "入門",
+    "levelAdvanced": "応用",
+    "replaceDraft": "このブラウザには下書きがあります。このサンプルで置き換えますか？",
+    "landing": {
+      "name": "ランディングページ",
+      "blurb": "公開して共有できる1ページのサイトを作ります。"
+    },
+    "portfolio": {
+      "name": "ポートフォリオ",
+      "blurb": "作品を載せ、詳細ページを開けます。"
+    },
+    "blog": {
+      "name": "ブログ",
+      "blurb": "記事を書き、一覧から開きます。"
+    },
+    "news": {
+      "name": "ニュースミニプログラム",
+      "blurb": "記事一覧を作り、WeChat プロジェクトも書き出せます。"
+    },
+    "window": {
+      "name": "スマート窓",
+      "blurb": "雨が降ったら閉め、暑ければ換気します。"
+    },
+    "air": {
+      "name": "エアビーコン",
+      "blurb": "ESP32 で温度と湿度を読み取ります。"
+    },
+    "rover": {
+      "name": "デスクローバー",
+      "blurb": "小さなロボットを走らせ、LED を点滅させます。"
+    },
+    "room": {
+      "name": "ルームノード",
+      "blurb": "部屋を感知し、リレーを切り替えます。"
+    },
+    "living": {
+      "name": "リビングの照明",
+      "blurb": "一つのシーンで照明とカーテンを操作します。"
+    },
+    "pet": {
+      "name": "デスクペット",
+      "blurb": "動いて、光って、話すおもちゃです。"
+    },
+    "pair": {
+      "name": "ペア演習",
+      "blurb": "ブロックをいくつか置いて、結果を見ます。"
+    },
+    "irrigation": {
+      "name": "スマート灌漑",
+      "blurb": "土が乾いたら水やりし、雨の日は休みます。"
+    },
+    "pond": {
+      "name": "池の曝気",
+      "blurb": "溶存酸素が下がったらエアレーターを回します。"
+    },
+    "climate": {
+      "name": "温度シーン",
+      "blurb": "サーモスタットのシーンで部屋を快適に保ちます。"
+    },
+    "security": {
+      "name": "防犯デモ",
+      "blurb": "ドアセンサーを警戒し、アラームの様子を見ます。"
+    },
+    "event": {
+      "name": "イベント申込",
+      "blurb": "ミニプログラムでサークル活動の申込を集めます。"
+    },
+    "shop": {
+      "name": "ミニショップ",
+      "blurb": "商品を並べ、商品ページを開きます。"
+    },
+    "sensor": {
+      "name": "センサーおもちゃ",
+      "blurb": "おもちゃのセンサーを読んで反応します。"
+    },
+    "hello": {
+      "name": "Hello World",
+      "blurb": "最初の一行を表示し、その文を変えます。"
+    },
+    "sort": {
+      "name": "並べ替え",
+      "blurb": "コードで数値のリストを並べ替えます。"
+    }
+  },
+  "about": {
+    "title": "BlockyEdu について",
+    "lead": "ウェブサイト、ミニプログラム、機器を作りながら学ぶ。",
+    "missionTitle": "このサイトの目的",
+    "missionBody": "作りたいものを言葉にし、ブロックかコードで組み立て、動くところを見る。ブラウザの中で、ボードがあればその上でも。",
+    "ecoTitle": "LuminaryWorks の仲間",
+    "ecoLead": "BlockyEdu は他の製品と並びます。それぞれ自分の役割だけを担います。",
+    "contact": "連絡",
+    "coursePlatform": "コースプラットフォームを開く",
+    "eco": {
+      "syncrobrain": {
+        "name": "SyncroBrain",
+        "line": "ファームウェアと機器キット。"
+      },
+      "vistacast": {
+        "name": "VistaCast",
+        "line": "教室と配信の映像。"
+      },
+      "dataluminary": {
+        "name": "DataLuminary",
+        "line": "データの見え方と洞察。"
+      }
+    },
+    "orgs": {
+      "title": "学校と企業向け",
+      "lead": "コースプラットフォームは自前のサーバーで動かせます。",
+      "classroomTitle": "授業と進捗",
+      "classroomBody": "コース、課題、誰が終えたか。",
+      "privateTitle": "自分たちの環境",
+      "privateBody": "アカウントとコースデータは、自分たちで管理する基盤に置きます。",
+      "exportTitle": "作品は持ち出せる",
+      "exportBody": "作品はファイルのまま残り、このサイトの外でも開けます。"
+    }
+  },
+  "projects": {
+    "title": "作品",
+    "filterAll": "すべて",
+    "draftTitle": "この端末の下書き",
+    "emptyTitle": "作品はまだありません",
+    "startFromSample": "サンプルから始める",
+    "updatedAt": "{{time}} に更新"
+  },
+  "stage": {
+    "circuit": "回路",
+    "scene": "シーン",
+    "reset": "リセット",
+    "timeline": "タイムライン",
+    "assertions": "チェック",
+    "noEvents": "イベントはまだありません",
+    "on": "オン",
+    "off": "オフ",
+    "device": "機器",
+    "simNotHardware": "これはシミュレーションで、机の上のボードではありません。",
+    "board": {
+      "esp32s3": "ESP32-S3",
+      "esp32c3": "ESP32-C3",
+      "nucleo": "Nucleo-F401RE"
+    },
+    "run": {
+      "sim": "シミュレーション",
+      "live": "実機",
+      "firmware": "ファームウェア"
+    },
+    "sceneTitle": {
+      "window": "スマート窓",
+      "irrigation": "灌漑",
+      "pond": "池",
+      "beacon": "エアビーコン",
+      "room": "部屋ノード",
+      "rover": "卓上ローバー",
+      "home": "スマートホーム",
+      "toy": "おもちゃ"
+    },
+    "unit": {
+      "c": "°C",
+      "pct": "%",
+      "lpm": "L/分",
+      "mgl": "mg/L",
+      "deg": "°"
+    },
+    "module": {
+      "relay12v": "12V リレー",
+      "limit": "リミットスイッチ",
+      "rain": "雨センサー",
+      "soil": "土壌水分",
+      "float": "フロートスイッチ",
+      "bme280": "BME280",
+      "motor": "モータードライバ",
+      "oled": "OLED ディスプレイ",
+      "relay": "リレー",
+      "led": "LED",
+      "button": "ボタン"
+    },
+    "readout": {
+      "speed": "速度",
+      "heading": "方位",
+      "led": "LED",
+      "relay": "リレー",
+      "distance": "距離",
+      "comfort": "快適度"
+    }
   }
 }

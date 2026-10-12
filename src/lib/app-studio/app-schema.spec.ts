@@ -35,4 +35,11 @@ test("landing and news templates parse", () => {
   const news = defaultSchemaForTemplate("资讯小程序");
   expect(parseAppSchema(news).issues).toEqual([]);
   expect(news.templateId).toBe("资讯小程序");
+  const event = defaultSchemaForTemplate("活动报名");
+  expect(parseAppSchema(event).issues).toEqual([]);
+  expect(event.templateId).toBe("活动报名");
+  const shop = defaultSchemaForTemplate("商城小程序");
+  expect(parseAppSchema(shop).issues).toEqual([]);
+  expect(shop.templateId).toBe("商城小程序");
+  expect(shop.pages[0]?.nodes.find((n) => n.id === "list")?.props.heading).toBeTruthy();
 });

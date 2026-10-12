@@ -13,6 +13,7 @@ import {
 import type { WorldState } from "../lib/targets";
 import { useWorkspaceStore } from "../stores/workspace";
 import styles from "./PreviewPanel.module.scss";
+import { DeviceStage } from "./stage/DeviceStage";
 
 const SCENES = ["home", "away", "sleep", "movie"] as const;
 const SENSOR_KINDS = ["temperature", "humidity"] as const;
@@ -57,9 +58,6 @@ export function SmarthomePreview({ world }: { world: WorldState | null }) {
   const home = world?.home;
   const rooms = Object.keys(home?.lights ?? { living: 1, bedroom: 1, kitchen: 1 });
   const knownScene = home?.scene && SCENES.includes(home.scene as (typeof SCENES)[number]);
-  const timeline = home?.timeline?.length
-    ? home.timeline.slice(-8)
-    : [t("preview.homeIdle1"), t("preview.homeIdle2")];
 
   const mergeWorld = useCallback(
     (raw: unknown) => {
@@ -170,107 +168,104 @@ export function SmarthomePreview({ world }: { world: WorldState | null }) {
   };
 
   return (
-    <div className={styles.homePreview}>
-      <div className={styles.homeNotice}>
-        {t("preview.homeVirtual")}
-        {" · "}
-        {knownScene
-          ? t("preview.homeScene", { scene: sceneLabel(home?.scene ?? "") })
-          : t("preview.homeNotLive")}
-        {home ? ` · ${t("preview.homeAc", { temp: home.temperature })}` : ""}
-      </div>
-      <div className={styles.injectBar}>
-        <div className={styles.injectGroup}>
-          <span className={styles.injectLabel}>{t("preview.injectScene")}</span>
-          <div className={styles.sceneRow}>
-            {SCENES.map((scene) => (
+    <div className={styles.deviceHost}>
+      <DeviceStage kind="smarthome">
+        <div className={styles.stageControls}>
+          <div className={styles.homeNotice}>
+            {t("preview.homeVirtual")}
+            {" · "}
+            {knownScene
+              ? t("preview.homeScene", { scene: sceneLabel(home?.scene ?? "") })
+              : t("preview.homeNotLive")}
+            {home ? ` · ${t("preview.homeAc", { temp: home.temperature })}` : ""}
+          </div>
+          <div className={styles.injectBar}>
+            <div className={styles.injectGroup}>
+              <span className={styles.injectLabel}>{t("preview.injectScene")}</span>
+              <div className={styles.sceneRow}>
+                {SCENES.map((scene) => (
+                  <button
+                    key={scene}
+                    type="button"
+                    className={styles.sceneBtn}
+                    disabled={busy}
+                    onClick={() => void inject({ type: "scene", scene })}
+                  >
+                    {t(`scene.${scene}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className={styles.injectGroup}>
+              <span className={styles.injectLabel}>{t("preview.injectSensor")}</span>
+              <div className={styles.injectSensorRow}>
+                <select
+                  className={styles.injectSelect}
+                  value={sensorKind}
+                  disabled={busy}
+                  onChange={(ev) => setSensorKind(ev.target.value as (typeof SENSOR_KINDS)[number])}
+                >
+                  {SENSOR_KINDS.map((kind) => (
+                    <option key={kind} value={kind}>
+                      {t(`sensor.${kind}`)}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className={styles.injectInput}
+                  type="number"
+                  value={sensorValue}
+                  disabled={busy}
+                  onChange={(ev) => setSensorValue(ev.target.value)}
+                />
+                <button
+                  type="button"
+                  className={styles.injectBtn}
+                  disabled={busy}
+                  onClick={injectSensor}
+                >
+                  {t("preview.injectSensor")}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className={styles.deviceGrid}>
+            {rooms.map((room) => {
+              const light = home?.lights[room];
+              return (
+                <button
+                  key={room}
+                  type="button"
+                  className={`${styles.deviceCard} ${styles.injectDeviceBtn} ${light?.on ? styles.deviceCardOn : ""}`}
+                  disabled={busy}
+                  onClick={() => void inject({ type: "device_toggle", room })}
+                >
+                  <span className={styles.deviceName}>
+                    {t("preview.lightName", { room: roomLabel(room) })}
+                  </span>
+                  <span className={styles.deviceMeta}>{t("preview.lightMeta")}</span>
+                  <span className={styles.deviceStatus}>
+                    {light?.on ? "ON" : "OFF"} · {light?.brightness ?? 0}%
+                  </span>
+                </button>
+              );
+            })}
+            {Object.entries(home?.devices ?? {}).map(([key, on]) => (
               <button
-                key={scene}
+                key={key}
                 type="button"
-                className={styles.sceneBtn}
+                className={`${styles.deviceCard} ${styles.injectDeviceBtn} ${on ? styles.deviceCardOn : ""}`}
                 disabled={busy}
-                onClick={() => void inject({ type: "scene", scene })}
+                onClick={() => void inject({ type: "device_toggle", clientKey: key })}
               >
-                {t(`scene.${scene}`)}
+                <span className={styles.deviceName}>{deviceLabel(key)}</span>
+                <span className={styles.deviceMeta}>{t("preview.deviceMeta")}</span>
+                <span className={styles.deviceStatus}>{on ? "ON" : "OFF"}</span>
               </button>
             ))}
           </div>
         </div>
-        <div className={styles.injectGroup}>
-          <span className={styles.injectLabel}>{t("preview.injectSensor")}</span>
-          <div className={styles.injectSensorRow}>
-            <select
-              className={styles.injectSelect}
-              value={sensorKind}
-              disabled={busy}
-              onChange={(ev) => setSensorKind(ev.target.value as (typeof SENSOR_KINDS)[number])}
-            >
-              {SENSOR_KINDS.map((kind) => (
-                <option key={kind} value={kind}>
-                  {t(`sensor.${kind}`)}
-                </option>
-              ))}
-            </select>
-            <input
-              className={styles.injectInput}
-              type="number"
-              value={sensorValue}
-              disabled={busy}
-              onChange={(ev) => setSensorValue(ev.target.value)}
-            />
-            <button
-              type="button"
-              className={styles.injectBtn}
-              disabled={busy}
-              onClick={injectSensor}
-            >
-              {t("preview.injectSensor")}
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className={styles.deviceGrid}>
-        {rooms.map((room) => {
-          const light = home?.lights[room];
-          return (
-            <button
-              key={room}
-              type="button"
-              className={`${styles.deviceCard} ${styles.injectDeviceBtn} ${light?.on ? styles.deviceCardOn : ""}`}
-              disabled={busy}
-              onClick={() => void inject({ type: "device_toggle", room })}
-            >
-              <span className={styles.deviceName}>
-                {t("preview.lightName", { room: roomLabel(room) })}
-              </span>
-              <span className={styles.deviceMeta}>{t("preview.lightMeta")}</span>
-              <span className={styles.deviceStatus}>
-                {light?.on ? "ON" : "OFF"} · {light?.brightness ?? 0}%
-              </span>
-            </button>
-          );
-        })}
-        {Object.entries(home?.devices ?? {}).map(([key, on]) => (
-          <button
-            key={key}
-            type="button"
-            className={`${styles.deviceCard} ${styles.injectDeviceBtn} ${on ? styles.deviceCardOn : ""}`}
-            disabled={busy}
-            onClick={() => void inject({ type: "device_toggle", clientKey: key })}
-          >
-            <span className={styles.deviceName}>{deviceLabel(key)}</span>
-            <span className={styles.deviceMeta}>{t("preview.deviceMeta")}</span>
-            <span className={styles.deviceStatus}>{on ? "ON" : "OFF"}</span>
-          </button>
-        ))}
-      </div>
-      <div className={styles.homeLog}>
-        {timeline.map((line) => (
-          <div key={line} className={styles.homeLogLine}>
-            {line}
-          </div>
-        ))}
-      </div>
+      </DeviceStage>
     </div>
   );
 }

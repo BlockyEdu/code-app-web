@@ -7,6 +7,7 @@
  */
 import * as Blockly from "blockly";
 import type { ArtifactKind } from "../../types/artifact";
+import { STUDIO_BLOCK } from "../blockly-theme";
 import { t } from "../i18n";
 import { starterIotCode, starterIotXml } from "./iot-lab";
 
@@ -21,12 +22,6 @@ export type ValueReader = (block: Blockly.Block, name: string, fallback: string)
 function xmlText(value: string): string {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
-
-const COLOR_WEB = 210;
-const COLOR_MINIAPP = 120;
-const COLOR_HOME = 180;
-const COLOR_TOY = 30;
-const COLOR_IOT = 165;
 
 type DropdownOptions = Array<[string, string]>;
 
@@ -72,6 +67,11 @@ function buildIotChannels(): DropdownOptions {
     [t("iotCh.temp"), "temp"],
     [t("iotCh.aerator"), "aerator"],
     [t("iotCh.spray"), "spray"],
+    [t("iotCh.humidity"), "humidity"],
+    [t("iotCh.relay"), "relay"],
+    [t("iotCh.speed"), "speed"],
+    [t("iotCh.heading"), "heading"],
+    [t("iotCh.led"), "led"],
   ];
 }
 
@@ -116,7 +116,7 @@ function buildWebsiteBlocks(): BlockSpec[] {
         args0: [{ type: "input_value", name: "TEXT", check: "String" }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_WEB,
+        style: STUDIO_BLOCK.lists,
         tooltip: t("blocks.webSetTitleTip"),
       },
       generator: (block, readValue) => `web.setTitle(${readValue(block, "TEXT", "''")});\n`,
@@ -139,7 +139,7 @@ function buildWebsiteBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_WEB,
+        style: STUDIO_BLOCK.text,
         tooltip: t("blocks.webAddHeadingTip"),
       },
       generator: (block, readValue) =>
@@ -152,7 +152,7 @@ function buildWebsiteBlocks(): BlockSpec[] {
         args0: [{ type: "input_value", name: "TEXT", check: "String" }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_WEB,
+        style: STUDIO_BLOCK.text,
         tooltip: t("blocks.webAddTextTip"),
       },
       generator: (block, readValue) => `web.addText(${readValue(block, "TEXT", "''")});\n`,
@@ -167,7 +167,7 @@ function buildWebsiteBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_WEB,
+        style: STUDIO_BLOCK.text,
         tooltip: t("blocks.webAddCardTip"),
       },
       generator: (block, readValue) =>
@@ -183,7 +183,7 @@ function buildWebsiteBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_WEB,
+        style: STUDIO_BLOCK.event,
         tooltip: t("blocks.webAddButtonTip"),
       },
       generator: (block, readValue) =>
@@ -216,7 +216,7 @@ function buildWebsiteBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_WEB,
+        style: STUDIO_BLOCK.lists,
         tooltip: t("blocks.webSetThemeTip"),
       },
       generator: (block) =>
@@ -229,7 +229,7 @@ function buildWebsiteBlocks(): BlockSpec[] {
         args0: [{ type: "input_value", name: "CAPTION", check: "String" }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_WEB,
+        style: STUDIO_BLOCK.text,
         tooltip: t("blocks.webAddImageTip"),
       },
       generator: (block, readValue) => `web.addImageBox(${readValue(block, "CAPTION", "''")});\n`,
@@ -249,7 +249,7 @@ function buildMiniappBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_MINIAPP,
+        style: STUDIO_BLOCK.text,
         tooltip: t("blocks.mpCreatePageTip"),
       },
       generator: (block, readValue) =>
@@ -275,7 +275,7 @@ function buildMiniappBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_MINIAPP,
+        style: STUDIO_BLOCK.text,
         tooltip: t("blocks.mpAddComponentTip"),
       },
       generator: (block, readValue) =>
@@ -291,7 +291,7 @@ function buildMiniappBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_MINIAPP,
+        style: STUDIO_BLOCK.variables,
         tooltip: t("blocks.mpSetDataTip"),
       },
       generator: (block, readValue) =>
@@ -308,7 +308,7 @@ function buildMiniappBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_MINIAPP,
+        style: STUDIO_BLOCK.variables,
         tooltip: t("blocks.mpBindDataTip"),
       },
       generator: (block, readValue) =>
@@ -324,7 +324,7 @@ function buildMiniappBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_MINIAPP,
+        style: STUDIO_BLOCK.functions,
         tooltip: t("blocks.mpAddNavTip"),
       },
       generator: (block, readValue) =>
@@ -337,7 +337,7 @@ function buildMiniappBlocks(): BlockSpec[] {
         args0: [{ type: "field_input", name: "PAGE", text: "home" }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_MINIAPP,
+        style: STUDIO_BLOCK.functions,
         tooltip: t("blocks.mpNavigateTip"),
       },
       generator: (block) => `mp.navigate('${block.getFieldValue("PAGE")}');\n`,
@@ -349,7 +349,7 @@ function buildMiniappBlocks(): BlockSpec[] {
         args0: [{ type: "input_value", name: "TEXT", check: "String" }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_MINIAPP,
+        style: STUDIO_BLOCK.variables,
         tooltip: t("blocks.mpToastTip"),
       },
       generator: (block, readValue) => `mp.showToast(${readValue(block, "TEXT", "''")});\n`,
@@ -377,7 +377,7 @@ function buildSmarthomeBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_HOME,
+        style: STUDIO_BLOCK.device,
         tooltip: t("blocks.homeSetLightTip"),
       },
       generator: (block) =>
@@ -397,7 +397,7 @@ function buildSmarthomeBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_HOME,
+        style: STUDIO_BLOCK.device,
         tooltip: t("blocks.homeSetBrightnessTip"),
       },
       generator: (block, readValue) =>
@@ -410,7 +410,7 @@ function buildSmarthomeBlocks(): BlockSpec[] {
         args0: [{ type: "input_value", name: "VALUE", check: "Number" }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_HOME,
+        style: STUDIO_BLOCK.device,
         tooltip: t("blocks.homeSetTempTip"),
       },
       generator: (block, readValue) => `home.setTemperature(${readValue(block, "VALUE", "26")});\n`,
@@ -427,7 +427,7 @@ function buildSmarthomeBlocks(): BlockSpec[] {
           },
         ],
         output: "Number",
-        colour: COLOR_HOME,
+        style: STUDIO_BLOCK.sensor,
         tooltip: t("blocks.homeReadSensorTip"),
       },
       generator: (block) => `home.readSensor('${block.getFieldValue("SENSOR")}')`,
@@ -446,7 +446,7 @@ function buildSmarthomeBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_HOME,
+        style: STUDIO_BLOCK.sensor,
         tooltip: t("blocks.homeTriggerSensorTip"),
       },
       generator: (block, readValue) =>
@@ -470,7 +470,7 @@ function buildSmarthomeBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_HOME,
+        style: STUDIO_BLOCK.scene,
         tooltip: t("blocks.homeRunSceneTip"),
       },
       generator: (block) => `home.runScene('${block.getFieldValue("SCENE")}');\n`,
@@ -498,7 +498,7 @@ function buildSmarthomeBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_HOME,
+        style: STUDIO_BLOCK.device,
         tooltip: t("blocks.homeSetDeviceTip"),
       },
       generator: (block) =>
@@ -511,7 +511,7 @@ function buildSmarthomeBlocks(): BlockSpec[] {
         args0: [{ type: "input_value", name: "SECONDS", check: "Number" }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_HOME,
+        style: STUDIO_BLOCK.scene,
         tooltip: t("blocks.homeWaitTip"),
       },
       generator: (block, readValue) => `home.wait(${readValue(block, "SECONDS", "1")});\n`,
@@ -541,7 +541,7 @@ function buildToyBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_TOY,
+        style: STUDIO_BLOCK.device,
         tooltip: t("blocks.toyMoveTip"),
       },
       generator: (block, readValue) =>
@@ -553,7 +553,7 @@ function buildToyBlocks(): BlockSpec[] {
         message0: t("blocks.toyStop"),
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_TOY,
+        style: STUDIO_BLOCK.device,
         tooltip: t("blocks.toyStopTip"),
       },
       generator: () => "toy.stop();\n",
@@ -576,7 +576,7 @@ function buildToyBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_TOY,
+        style: STUDIO_BLOCK.device,
         tooltip: t("blocks.toyServoTip"),
       },
       generator: (block, readValue) =>
@@ -601,7 +601,7 @@ function buildToyBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_TOY,
+        style: STUDIO_BLOCK.device,
         tooltip: t("blocks.toyLedTip"),
       },
       generator: (block) => `toy.setLed('${block.getFieldValue("COLOR")}');\n`,
@@ -624,7 +624,7 @@ function buildToyBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_TOY,
+        style: STUDIO_BLOCK.device,
         tooltip: t("blocks.toyBuzzTip"),
       },
       generator: (block) => `toy.buzz('${block.getFieldValue("TONE")}');\n`,
@@ -645,7 +645,7 @@ function buildToyBlocks(): BlockSpec[] {
           },
         ],
         output: "Number",
-        colour: COLOR_TOY,
+        style: STUDIO_BLOCK.sensor,
         tooltip: t("blocks.toyReadTip"),
       },
       generator: (block) => `toy.readSensor('${block.getFieldValue("SENSOR")}')`,
@@ -657,7 +657,7 @@ function buildToyBlocks(): BlockSpec[] {
         args0: [{ type: "input_value", name: "SECONDS", check: "Number" }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_TOY,
+        style: STUDIO_BLOCK.loops,
         tooltip: t("blocks.toyWaitTip"),
       },
       generator: (block, readValue) => `toy.wait(${readValue(block, "SECONDS", "1")});\n`,
@@ -669,7 +669,7 @@ function buildToyBlocks(): BlockSpec[] {
         args0: [{ type: "input_value", name: "TEXT", check: "String" }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_TOY,
+        style: STUDIO_BLOCK.device,
         tooltip: t("blocks.toySayTip"),
       },
       generator: (block, readValue) => `toy.say(${readValue(block, "TEXT", "''")});\n`,
@@ -688,7 +688,7 @@ function buildIotBlocks(): BlockSpec[] {
         message0: t("blocks.iotRead"),
         args0: [{ type: "field_dropdown", name: "CHANNEL", options: channels }],
         output: "Number",
-        colour: COLOR_IOT,
+        style: STUDIO_BLOCK.sensor,
         tooltip: t("blocks.iotReadTip"),
       },
       generator: (block) => `iot.readChannel('${block.getFieldValue("CHANNEL")}')`,
@@ -703,7 +703,7 @@ function buildIotBlocks(): BlockSpec[] {
         ],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_IOT,
+        style: STUDIO_BLOCK.sensor,
         tooltip: t("blocks.iotSetTip"),
       },
       generator: (block, readValue) =>
@@ -716,7 +716,7 @@ function buildIotBlocks(): BlockSpec[] {
         args0: [{ type: "field_dropdown", name: "COMMAND", options: commands }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_IOT,
+        style: STUDIO_BLOCK.device,
         tooltip: t("blocks.iotCmdTip"),
       },
       generator: (block) => `iot.command('${block.getFieldValue("COMMAND")}');\n`,
@@ -728,7 +728,7 @@ function buildIotBlocks(): BlockSpec[] {
         args0: [{ type: "field_dropdown", name: "SCENE", options: scenes }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_IOT,
+        style: STUDIO_BLOCK.device,
         tooltip: t("blocks.iotSceneTip"),
       },
       generator: (block) => `iot.evaluateScene('${block.getFieldValue("SCENE")}');\n`,
@@ -740,7 +740,7 @@ function buildIotBlocks(): BlockSpec[] {
         args0: [{ type: "input_value", name: "SECONDS", check: "Number" }],
         previousStatement: null,
         nextStatement: null,
-        colour: COLOR_IOT,
+        style: STUDIO_BLOCK.scene,
         tooltip: t("blocks.iotWaitTip"),
       },
       generator: (block, readValue) => `iot.wait(${readValue(block, "SECONDS", "1")});\n`,
@@ -751,7 +751,7 @@ function buildIotBlocks(): BlockSpec[] {
         message0: t("blocks.iotStop"),
         previousStatement: null,
         nextStatement: null,
-        colour: 0,
+        style: STUDIO_BLOCK.scene,
         tooltip: t("blocks.iotStopTip"),
       },
       generator: () => `iot.emergencyStop();\n`,

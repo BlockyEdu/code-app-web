@@ -168,6 +168,11 @@
   letter-spacing: 0.07em;
 }
 
+.boardName {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .sectionActions {
   @include flex-row();
   gap: $space-1;
@@ -405,9 +410,29 @@
   }
 }
 
+.moduleHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.moduleSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
 .moduleLabel {
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .moduleDesc {

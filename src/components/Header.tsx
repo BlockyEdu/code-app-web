@@ -23,10 +23,6 @@ export function Header() {
   };
 
   const goLogin = () => {
-    if (isDirectIdpEnabled()) {
-      window.location.href = "/login";
-      return;
-    }
     openLoginPrompt();
   };
 
@@ -80,7 +76,6 @@ export function Header() {
           <a className="btn-ghost" href="/login">
             {t("header.sso")}
           </a>
-          <span className="login-tip">{t("header.demoTip")}</span>
         </form>
       )}
     </header>

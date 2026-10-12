@@ -12,6 +12,14 @@ export function isCodeStandalone(): boolean {
   return getDeployProfile() === "code-standalone";
 }
 
+/** Private programming deploys keep the login wall. Official site does not. */
+export function requireLoginOnEntry(): boolean {
+  const raw = import.meta.env.VITE_REQUIRE_LOGIN?.trim().toLowerCase();
+  if (raw === "true" || raw === "1") return true;
+  if (raw === "false" || raw === "0") return false;
+  return isCodeStandalone();
+}
+
 export function isEduLoginLinked(): boolean {
   const url = import.meta.env.VITE_EDU_LOGIN_URL?.trim();
   return Boolean(url);

@@ -1,0 +1,158 @@
+/* Studio overrides for Blockly 13 DOM. Scoped so they beat legacy rules in styles.css. */
+
+.blockly-container.blockly-studio {
+  background: #11151d;
+}
+
+.blockly-container.blockly-studio .injectionDiv,
+.blockly-container.blockly-studio .blocklySvg {
+  background: #11151d;
+}
+
+.blockly-container.blockly-studio .blocklyMainBackground {
+  fill: #11151d !important;
+  stroke: none;
+}
+
+.blockly-container.blockly-studio .blocklyToolbox {
+  width: 168px !important;
+  box-sizing: border-box;
+  padding: 8px 6px !important;
+  border-right: 1px solid #1e2633;
+  scrollbar-width: thin;
+  scrollbar-color: #3d4b63 transparent;
+}
+
+.blockly-container.blockly-studio .blocklyToolboxCategoryGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.blockly-container.blockly-studio .blocklyToolboxCategory {
+  height: 36px;
+  min-height: 36px;
+  margin: 0;
+  padding: 0 8px 0 0;
+  border-radius: 8px;
+  border-left: 3px solid transparent !important;
+  background: transparent !important;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.blockly-container.blockly-studio .blocklyToolboxCategory:not(.blocklyToolboxSelected):hover {
+  background: #1a2333 !important;
+}
+
+.blockly-container.blockly-studio .blocklyToolboxCategory.blocklyToolboxSelected {
+  background: #1c2838 !important;
+  border-left-color: var(--studio-accent, #5b8def) !important;
+}
+
+.blockly-container.blockly-studio .blocklyTreeRowContentContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.blockly-container.blockly-studio .blocklyStudioCategoryIcon {
+  visibility: visible !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  flex: 0 0 22px;
+  margin: 0;
+  border-radius: 6px;
+  background-image: none !important;
+}
+
+.blockly-container.blockly-studio .blocklyStudioCategoryIcon svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.blockly-container.blockly-studio .blocklyToolboxCategoryLabel {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: #e8eef7 !important;
+  padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.blockly-container.blockly-studio .blocklyTreeSeparator {
+  border-bottom: 1px solid #243044 !important;
+  height: 0;
+  margin: 6px 4px !important;
+}
+
+.blockly-container.blockly-studio .blocklyFlyout {
+  border-right: 1px solid #1e2633;
+}
+
+.blockly-container.blockly-studio .blocklyFlyoutBackground {
+  fill: #0d1118 !important;
+  fill-opacity: 1 !important;
+}
+
+.blockly-container.blockly-studio .blocklyText {
+  fill: #12100e !important;
+}
+
+.blockly-container.blockly-studio .blocklyFlyoutLabelText {
+  fill: #c5d0e0 !important;
+}
+
+.blockly-container.blockly-studio .blocklyScrollbarHandle {
+  fill: #445068 !important;
+  opacity: 0.55 !important;
+}
+
+.blockly-container.blockly-studio .blocklyScrollbarBackground:hover + .blocklyScrollbarHandle,
+.blockly-container.blockly-studio .blocklyScrollbarHandle:hover {
+  fill: #64748b !important;
+  opacity: 0.85 !important;
+}
+
+.blockly-container.blockly-studio .blocklyZoom > image,
+.blockly-container.blockly-studio .blocklyZoom > svg > image,
+.blockly-container.blockly-studio .blocklyTrash image {
+  filter: invert(1) brightness(1.35);
+  opacity: 0.88;
+}
+
+.blockly-container.blockly-studio .blocklyZoom > rect.blocklyFocusRing {
+  fill: #1a2130;
+  stroke: #2c384c;
+  stroke-width: 1;
+}
+
+.blockly-container.blockly-studio .blocklyZoom > image:hover,
+.blockly-container.blockly-studio .blocklyZoom > svg > image:hover,
+.blockly-container.blockly-studio .blocklyTrash:hover image {
+  opacity: 1;
+}
+
+.blockly-container.blockly-studio .blocklyTrash {
+  opacity: 0.78;
+}
+
+.blockly-container.blockly-studio .blocklyTrash:hover,
+.blockly-container.blockly-studio .blocklyTrash.blocklyTrashOpen {
+  opacity: 1;
+}

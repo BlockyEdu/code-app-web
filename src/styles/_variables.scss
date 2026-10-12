@@ -129,3 +129,40 @@ $z-header: 20;
 $z-overlay: 100;
 $z-modal: 200;
 $z-tooltip: 300;
+
+// Site pages (home, samples, projects). Workspace keeps the dark tokens above.
+$site-bg: #f7f8fb;
+$site-card: #ffffff;
+$site-text: #0f172a;
+$site-text-secondary: #475569;
+$site-text-muted: #64748b;
+$site-border: #e6e8ef;
+$site-primary: #2563eb;
+$site-primary-hover: #1d4ed8;
+$site-radius-card: 16px;
+$site-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.06);
+$site-shadow-hover: 0 1px 2px rgba(16, 24, 40, 0.06), 0 16px 32px rgba(16, 24, 40, 0.1);
+$site-font-display: 48px;
+$site-font-h2: 32px;
+$site-font-h3: 22px;
+$site-font-body: 16px;
+$site-font-sm: 14px;
+$site-font-xs: 12px;
+$site-line-title: 1.2;
+$site-line-body: 1.6;
+$site-measure: 640px;
+$site-section-desktop: 80px;
+$site-section-mobile: 56px;
+$site-header-height: 64px;
+$site-content: 1200px;
+
+// Blockly palette (see blockly-theme.ts) reused by marketing mocks.
+$block-event: #5b8def;
+$block-sensor: #0ea5e9;
+$block-device: #14b8a6;
+$block-loop: #2fb67c;
+$block-math: #7c6cf2;
+$block-scene: #f2685c;
+$block-text: #e2894b;
+$block-var: #e0b33a;
+$site-ink-bg: #0f1623;

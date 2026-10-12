@@ -1,0 +1,57 @@
+@use '../../styles/variables' as *;
+
+.head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $space-4;
+  margin-bottom: $space-6;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: $site-font-h3;
+  line-height: $site-line-title;
+  font-weight: $font-weight-bold;
+  letter-spacing: -0.02em;
+  color: $site-text;
+}
+
+.lead {
+  margin: 0;
+  max-width: $site-measure;
+  font-size: $site-font-body;
+  line-height: $site-line-body;
+  color: $site-text-secondary;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-3;
+}
+
+@media (min-width: 960px) {
+  .head {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: $space-8;
+  }
+
+  .title {
+    font-size: $site-font-h2;
+  }
+
+  .actions {
+    flex-shrink: 0;
+  }
+}

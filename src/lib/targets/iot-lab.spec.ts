@@ -1,10 +1,5 @@
 import { describe, expect, it } from "@rstest/core";
-import {
-  createIotWorld,
-  evaluateIotAssertions,
-  iotApi,
-  starterIotCode,
-} from "./iot-lab";
+import { createIotWorld, evaluateIotAssertions, iotApi, starterIotCode } from "./iot-lab";
 import { runTargetProgram } from "./runtime";
 
 function noopGuard() {}
@@ -53,6 +48,33 @@ describe("IoT lab simulation", () => {
     expect(evaluateIotAssertions(low, ["low-level-deny-spray"])[0]?.ok).toBe(true);
   });
 
+  it("runs hero starters on their own packs", () => {
+    const beacon = runTargetProgram({
+      code: starterIotCode("air-beacon"),
+      kind: "iot",
+      packSlug: "air-beacon",
+    });
+    expect(beacon.finalState.iot?.packSlug).toBe("air-beacon");
+    expect(beacon.finalState.iot?.channels.temperature).toBe(27);
+    expect(beacon.finalState.iot?.channels.humidity).toBe(62);
+    expect(beacon.finalState.iot?.assertions.every((item) => item.ok)).toBe(true);
+
+    const room = runTargetProgram({
+      code: starterIotCode("room-node"),
+      kind: "iot",
+      packSlug: "room-node",
+    });
+    expect(room.finalState.iot?.channels.relay).toBe(1);
+
+    const rover = runTargetProgram({
+      code: starterIotCode("desk-rover"),
+      kind: "iot",
+      packSlug: "desk-rover",
+    });
+    expect(rover.finalState.iot?.channels.speed).toBe(45);
+    expect(rover.finalState.iot?.channels.led).toBe(1);
+  });
+
   it("runs generated window starter without network APIs", () => {
     const result = runTargetProgram({
       code: starterIotCode("smart-window"),
@@ -61,6 +83,8 @@ describe("IoT lab simulation", () => {
     });
     expect(result.status).toBe("success");
     expect(result.finalState.iot?.packSlug).toBe("smart-window");
-    expect(result.finalState.iot?.assertions.some((a) => a.id === "rain-deny-open" && a.ok)).toBe(true);
+    expect(result.finalState.iot?.assertions.some((a) => a.id === "rain-deny-open" && a.ok)).toBe(
+      true,
+    );
   });
 });

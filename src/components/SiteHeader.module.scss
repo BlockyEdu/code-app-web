@@ -1,0 +1,120 @@
+@use '../styles/variables' as *;
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: $z-header;
+  display: flex;
+  justify-content: center;
+  min-height: $site-header-height;
+  background: $site-card;
+  border-bottom: 1px solid $site-border;
+}
+
+.inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2 $space-6;
+  width: min($site-content, calc(100% - 48px));
+  min-width: 0;
+  padding: $space-3 0;
+  container-type: inline-size;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: $site-text;
+  font-family: inherit;
+  font-size: $site-font-body;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.nav {
+  display: flex;
+  order: 3;
+  align-items: center;
+  gap: $space-1;
+  width: 100%;
+  min-width: 0;
+  margin-right: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.navBtn {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: $site-text-secondary;
+  padding: $space-2 $space-3;
+  border-radius: $radius-full;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: $site-font-sm;
+  font-weight: $font-weight-medium;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+
+  &:hover {
+    color: $site-text;
+    background: $site-bg;
+  }
+}
+
+.navBtnActive {
+  color: $site-primary;
+  background: $color-primary-light;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: $space-2;
+  flex-shrink: 0;
+  order: 2;
+  margin-left: auto;
+}
+
+@media (min-width: 960px) {
+  .inner {
+    flex-wrap: nowrap;
+    padding: 0;
+    height: $site-header-height;
+  }
+
+  .nav {
+    order: 0;
+    width: auto;
+    margin-right: auto;
+    overflow: visible;
+  }
+
+  .actions {
+    order: 0;
+    margin-left: 0;
+    flex-wrap: nowrap;
+  }
+}
+
+@container (max-width: 520px) {
+  .actions {
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+}

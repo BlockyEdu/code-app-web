@@ -100,7 +100,12 @@
     "firstExercise": "我的第一个练习",
     "unnamedExercise": "未命名练习",
     "unnamedArtifact": "未命名作品",
-    "shipGoal": "把页面和内容做完，发布后把链接发给家人，或下载 zip 自己部署"
+    "shipGoal": "把页面和内容做完，发布后把链接发给家人，或下载 zip 自己部署",
+    "localDraft": "这台设备上的草稿",
+    "unsaved": "有未保存的更改",
+    "loginToSave": "登录后才能保存到云端",
+    "more": "更多",
+    "rename": "重命名"
   },
   "run": {
     "console": "控制台运行",
@@ -579,7 +584,8 @@
     "agreeBefore": "我已阅读并同意",
     "agreeAnd": "和",
     "userAgreement": "《用户协议》",
-    "privacyPolicy": "《隐私政策》"
+    "privacyPolicy": "《隐私政策》",
+    "trialDeletion": "《试用与数据删除政策》"
   },
   "authCallback": {
     "ssoFailed": "SSO 登录失败",
@@ -878,7 +884,8 @@
     "iotWait": "等待 %1 秒",
     "iotWaitTip": "仿真时钟等待",
     "iotStop": "紧急停止",
-    "iotStopTip": "本地 kill switch，立即停止执行器"
+    "iotStopTip": "本地 kill switch，立即停止执行器",
+    "emptyHint": "把积木拖到这里开始。"
   },
   "iotCh": {
     "rain": "雨量",
@@ -894,7 +901,12 @@
     "level_pct": "水位",
     "temp": "水温",
     "aerator": "增氧",
-    "spray": "喷淋"
+    "spray": "喷淋",
+    "humidity": "湿度",
+    "led": "指示灯",
+    "relay": "继电器",
+    "speed": "速度",
+    "heading": "航向"
   },
   "iotCmd": {
     "open": "开窗",
@@ -1067,7 +1079,19 @@
     "badNode": "不支持的组件 {{type}}",
     "badSiteField": "非法 site 字段 {{field}}",
     "missingNode": "找不到节点 {{nodeId}}",
-    "badOp": "不支持的操作 {{op}}"
+    "badOp": "不支持的操作 {{op}}",
+    "myEvent": "我的活动报名",
+    "myShop": "我的商城",
+    "taglineEvent": "为一次活动收集报名",
+    "taglineShop": "一份可以点开的商品列表",
+    "heroEvent": "报名参加活动",
+    "heroEventSub": "先改标题，再在数据里加上场次。",
+    "heroShop": "欢迎来到商店",
+    "heroShopSub": "先改这段介绍，再在数据里加上第一件商品。",
+    "events": "场次",
+    "products": "商品",
+    "emptyEvents": "还没有场次",
+    "emptyProducts": "还没有商品"
   },
   "pairMission": {
     "title": "完成第一次成功运行",
@@ -1107,5 +1131,349 @@
   },
   "chrome": {
     "brandTitle": "BlockyEdu — 学、做、交付"
+  },
+  "home": {
+    "hero": {
+      "title": "说出来，做出来，看着它跑起来",
+      "sub": "积木或代码、桌上的设备，以及一部能看到结果的手机。",
+      "placeholder": "下雨就关窗，并在手机上显示状态",
+      "promptLabel": "描述你想做的东西",
+      "submit": "开始",
+      "examplesLabel": "试试这些想法",
+      "example1": "下雨就关上窗户",
+      "example2": "做一个显示室温的页面",
+      "example3": "天黑就开灯",
+      "example4": "做一个显示设备状态的小程序"
+    },
+    "chain": {
+      "title": "从一条规则到窗户和手机",
+      "lead": "检测到下雨，窗户关上，手机跟着更新。积木和代码描述的是同一条规则。",
+      "run": "运行",
+      "replay": "再看一遍",
+      "open": "打开示例",
+      "loading": "正在加载演示",
+      "paneLogic": "逻辑",
+      "paneDevice": "设备",
+      "paneMqtt": "消息",
+      "panePhone": "手机",
+      "capLogic": "积木与 JavaScript",
+      "capDevice": "智慧窗",
+      "capMqtt": "遥测与指令",
+      "capPhone": "手机上的状态",
+      "blocks": "积木",
+      "code": "代码",
+      "tickerEmpty": "还没有消息",
+      "stepsLabel": "发生了什么",
+      "blkEvent": "场景开始时",
+      "blkIf": "如果检测到下雨",
+      "blkClose": "关闭窗户",
+      "phoneState": "窗户",
+      "phoneOpen": "开",
+      "phoneClosed": "关",
+      "phoneRaining": "下雨",
+      "phoneDry": "未下雨",
+      "phoneLocked": "下雨时锁定",
+      "steps": {
+        "rain": "开始下雨",
+        "telemetry": "设备上报",
+        "command": "发出关窗指令",
+        "window": "窗户关上",
+        "phone": "手机更新"
+      }
+    },
+    "modes": {
+      "title": "积木或代码，同一个作品",
+      "lead": "先用积木搭。想看 JavaScript 时再打开文件。",
+      "blockTitle": "积木",
+      "blockLead": "把规则拼起来：下雨就关窗，然后等待。",
+      "proTitle": "代码",
+      "proLead": "同一条规则写成 JavaScript，旁边是硬件文件。",
+      "files": "文件",
+      "terminal": "控制台",
+      "catDevices": "设备",
+      "blkWait": "等待 1 秒",
+      "aiLabel": "作品里的 AI",
+      "aiAsk": "窗户为什么还开着？",
+      "aiExplain": "讲解",
+      "aiFix": "修复",
+      "aiGenerate": "生成"
+    },
+    "caps": {
+      "title": "现在就能做的事",
+      "lead": "开发板、消息、网站和 AI。规划中的能力会标明。",
+      "available": "可用",
+      "beta": "测试",
+      "planned": "规划中",
+      "noteSimulation": "在浏览器里仿真",
+      "noteBrowser": "浏览器 MQTT",
+      "layers": {
+        "chips": "开发板与传感器",
+        "comm": "连接与更新",
+        "apps": "应用",
+        "vision": "摄像头",
+        "ai": "AI"
+      },
+      "items": {
+        "esp32s3": "ESP32-S3",
+        "esp32c3": "ESP32-C3",
+        "stm32": "STM32",
+        "sensors": "传感器",
+        "mqtt": "MQTT",
+        "kit": "教室套件",
+        "ota": "空中升级",
+        "websites": "网站",
+        "miniprograms": "小程序",
+        "host": "托管站点",
+        "camera": "摄像头",
+        "aiGenerate": "生成",
+        "aiExplain": "讲解",
+        "aiDebug": "调试"
+      }
+    },
+    "tracks": {
+      "title": "示例",
+      "lead": "打开一个示例，改成你的。",
+      "all": "全部示例",
+      "iot": "设备",
+      "apps": "网站与小程序",
+      "basics": "入门"
+    },
+    "path": {
+      "title": "一条示例路径",
+      "lead": "五个短作品，从第一道练习到小程序。",
+      "stepLabel": "第 {{n}} 步",
+      "open": "打开",
+      "course": "课程",
+      "s1": {
+        "title": "第一道练习",
+        "body": "改一段短程序，看它打印什么。"
+      },
+      "s2": {
+        "title": "问问 AI",
+        "body": "留在这道练习里，让 AI 讲解这段代码。"
+      },
+      "s3": {
+        "title": "空气信标",
+        "body": "读取温湿度，并控制继电器。"
+      },
+      "s4": {
+        "title": "智慧窗",
+        "body": "下雨关窗，手机显示当前状态。"
+      },
+      "s5": {
+        "title": "资讯小程序",
+        "body": "一个带列表和详情页的小应用。"
+      }
+    }
+  },
+  "site": {
+    "navSamples": "示例",
+    "navProjects": "作品",
+    "navCourses": "课程",
+    "newProject": "新建作品",
+    "signIn": "登录",
+    "browseSamples": "浏览全部示例",
+    "footerAbout": "关于",
+    "footerTerms": "条款",
+    "footerPrivacy": "隐私",
+    "footerNav": "站点"
+  },
+  "samples": {
+    "title": "示例",
+    "lead": "选一个示例，在编辑器里打开。",
+    "categoryAll": "全部",
+    "categoryWeb": "网站",
+    "categoryMiniprogram": "小程序",
+    "categorySmarthome": "智能家居",
+    "categoryIot": "物联网",
+    "categoryBasics": "编程入门",
+    "empty": "这个分类里还没有示例。",
+    "open": "打开",
+    "minutes": "约 {{count}} 分钟",
+    "levelBeginner": "入门",
+    "levelAdvanced": "进阶",
+    "replaceDraft": "这台浏览器上已有一份草稿。要用这个示例替换它吗？",
+    "landing": {
+      "name": "落地页",
+      "blurb": "做一页能发布、能分享的网站。"
+    },
+    "portfolio": {
+      "name": "作品集",
+      "blurb": "把作品放上网，点开就能看详情。"
+    },
+    "blog": {
+      "name": "博客",
+      "blurb": "写文章，并从列表打开。"
+    },
+    "news": {
+      "name": "资讯小程序",
+      "blurb": "做一份资讯列表，也可以导出微信项目。"
+    },
+    "window": {
+      "name": "智慧窗控",
+      "blurb": "下雨关窗，太热就通风。"
+    },
+    "air": {
+      "name": "空气监测",
+      "blurb": "在 ESP32 上读取温度和湿度。"
+    },
+    "rover": {
+      "name": "桌面小车",
+      "blurb": "让小车开动，并闪一下灯。"
+    },
+    "room": {
+      "name": "房间节点",
+      "blurb": "感知房间，并控制继电器。"
+    },
+    "living": {
+      "name": "客厅灯光",
+      "blurb": "在一个场景里开关灯和窗帘。"
+    },
+    "pet": {
+      "name": "桌面宠物",
+      "blurb": "会动、会亮、会说话的玩具。"
+    },
+    "pair": {
+      "name": "结对练习",
+      "blurb": "拖几块积木，看看运行结果。"
+    },
+    "irrigation": {
+      "name": "智慧灌溉",
+      "blurb": "土壤干了就浇水，下雨就跳过。"
+    },
+    "pond": {
+      "name": "鱼塘增氧",
+      "blurb": "溶氧偏低时打开增氧机。"
+    },
+    "climate": {
+      "name": "温控联动",
+      "blurb": "用温控场景把房间保持在舒适温度。"
+    },
+    "security": {
+      "name": "安防演示",
+      "blurb": "布防门磁，观察告警场景。"
+    },
+    "event": {
+      "name": "活动报名",
+      "blurb": "用小程序收集一次社团活动的报名。"
+    },
+    "shop": {
+      "name": "商城小程序",
+      "blurb": "列出几件商品，并打开商品页。"
+    },
+    "sensor": {
+      "name": "传感器玩具",
+      "blurb": "读取玩具上的传感器并做出反应。"
+    },
+    "hello": {
+      "name": "Hello World",
+      "blurb": "打印第一行字，再改掉这句话。"
+    },
+    "sort": {
+      "name": "排序算法",
+      "blurb": "用代码把一组数字排好序。"
+    }
+  },
+  "about": {
+    "title": "关于 BlockyEdu",
+    "lead": "通过做网站、小程序和设备来学习。",
+    "missionTitle": "这个站点用来做什么",
+    "missionBody": "先说出你想做的东西，再用积木或代码做出来，看着它运行——在浏览器里，有开发板时也可以在板上。",
+    "ecoTitle": "LuminaryWorks 家族",
+    "ecoLead": "BlockyEdu 和其他产品并列。每样产品只做自己的事。",
+    "contact": "联系",
+    "coursePlatform": "打开课程平台",
+    "eco": {
+      "syncrobrain": {
+        "name": "SyncroBrain",
+        "line": "固件与设备套件。"
+      },
+      "vistacast": {
+        "name": "VistaCast",
+        "line": "课堂与直播视频。"
+      },
+      "dataluminary": {
+        "name": "DataLuminary",
+        "line": "数据视图与洞察。"
+      }
+    },
+    "orgs": {
+      "title": "面向学校与企业",
+      "lead": "课程平台可以跑在你自己的服务器上。",
+      "classroomTitle": "课堂与进度",
+      "classroomBody": "课程、作业，以及谁已经完成。",
+      "privateTitle": "自己的部署",
+      "privateBody": "账号和课程数据放在你掌控的环境里。",
+      "exportTitle": "作品可以带走",
+      "exportBody": "作品以文件形式保留，可以在本站之外打开。"
+    }
+  },
+  "projects": {
+    "title": "作品",
+    "filterAll": "全部",
+    "draftTitle": "这台设备上的草稿",
+    "emptyTitle": "还没有作品",
+    "startFromSample": "从示例开始",
+    "updatedAt": "更新于 {{time}}"
+  },
+  "stage": {
+    "circuit": "电路",
+    "scene": "场景",
+    "reset": "重置",
+    "timeline": "时间线",
+    "assertions": "检查",
+    "noEvents": "还没有事件",
+    "on": "开",
+    "off": "关",
+    "device": "设备",
+    "simNotHardware": "这是仿真，不是桌上的开发板。",
+    "board": {
+      "esp32s3": "ESP32-S3",
+      "esp32c3": "ESP32-C3",
+      "nucleo": "Nucleo-F401RE"
+    },
+    "run": {
+      "sim": "仿真",
+      "live": "真机",
+      "firmware": "固件"
+    },
+    "sceneTitle": {
+      "window": "智慧窗",
+      "irrigation": "灌溉",
+      "pond": "水塘",
+      "beacon": "空气信标",
+      "room": "房间节点",
+      "rover": "桌面小车",
+      "home": "智能家居",
+      "toy": "玩具"
+    },
+    "unit": {
+      "c": "°C",
+      "pct": "%",
+      "lpm": "升/分",
+      "mgl": "毫克/升",
+      "deg": "°"
+    },
+    "module": {
+      "relay12v": "12V 继电器",
+      "limit": "限位开关",
+      "rain": "雨量传感器",
+      "soil": "土壤湿度",
+      "float": "浮球开关",
+      "bme280": "BME280",
+      "motor": "电机驱动",
+      "oled": "OLED 显示屏",
+      "relay": "继电器",
+      "led": "指示灯",
+      "button": "按钮"
+    },
+    "readout": {
+      "speed": "速度",
+      "heading": "航向",
+      "led": "指示灯",
+      "relay": "继电器",
+      "distance": "距离",
+      "comfort": "舒适度"
+    }
   }
 }

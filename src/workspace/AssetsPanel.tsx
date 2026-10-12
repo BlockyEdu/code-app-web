@@ -12,7 +12,15 @@ import {
   UploadOutlined,
 } from "@ant-design/icons";
 import { App as AntdApp, Tooltip } from "antd";
-import { type ChangeEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { LessonPanel } from "../components/LessonPanel";
 import { ProjectPanel } from "../components/ProjectPanel";
 import { type ArtifactVersion, api } from "../lib/api";
@@ -28,6 +36,12 @@ import {
   versionHasFiles,
 } from "../lib/artifact-versions";
 import { type FileTreeNode, filesToTree } from "../lib/file-tree";
+import {
+  STATIC_MODULES,
+  type StaticModule,
+  staticBoard,
+  staticModule,
+} from "../lib/hardware-catalog-static";
 import { errorCodeOf } from "../lib/http";
 import { t } from "../lib/i18n";
 import { useLocaleStore } from "../lib/locale-store";
@@ -119,9 +133,7 @@ function FileTree() {
       message.success(t("files.uploadOk", { path: asset.path }));
     } catch (err) {
       const code = errorCodeOf(err);
-      message.error(
-        code ? t("files.uploadFailedCode", { code }) : t("files.uploadFailed"),
-      );
+      message.error(code ? t("files.uploadFailedCode", { code }) : t("files.uploadFailed"));
     } finally {
       setUploading(false);
     }
@@ -360,21 +372,65 @@ function VersionsStrip() {
   );
 }
 
+type CatalogCard = {
+  sku: string;
+  name: string;
+  color: string;
+  detail: string;
+};
+
+function moduleTitle(mod: StaticModule): string {
+  if (!mod.nameKey) return mod.sku;
+  const label = t(mod.nameKey);
+  return label === mod.nameKey ? mod.sku : label;
+}
+
+function staticCatalogCards(activeLocale: string): CatalogCard[] {
+  void activeLocale;
+  return STATIC_MODULES.map((mod) => ({
+    sku: mod.sku,
+    name: moduleTitle(mod),
+    color: mod.color,
+    detail: mod.pins.join(" · "),
+  }));
+}
+
 function ModulesPanel({ kind }: { kind: ArtifactKind }) {
-  const [items, setItems] = useState<
-    Array<{ sku: string; name: string; bus: string; voltage: string }>
-  >([]);
+  const locale = useLocaleStore((s) => s.locale);
+  const [items, setItems] = useState<CatalogCard[]>(() => staticCatalogCards(locale));
   const [compat, setCompat] = useState<string | null>(null);
   const boardSku = useWorkspaceStore((s) => s.boardSku);
-  useLocaleStore((s) => s.locale);
 
   useEffect(() => {
     if (!isHardwareKind(kind)) return;
+    setItems(staticCatalogCards(locale));
+    let cancelled = false;
     void api
       .listHardwareModules(boardSku ?? undefined)
-      .then((r) => setItems(r.items))
-      .catch(() => setItems([]));
-  }, [kind, boardSku]);
+      .then((result) => {
+        if (cancelled || result.items.length === 0) return;
+        setItems(
+          result.items.map((item) => {
+            const known = staticModule(item.sku);
+            return {
+              sku: item.sku,
+              name: item.name || (known ? moduleTitle(known) : item.sku),
+              color: known?.color ?? "#64748b",
+              detail:
+                known && known.pins.length > 0
+                  ? known.pins.join(" · ")
+                  : `${item.bus} · ${item.voltage}`,
+            };
+          }),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setItems(staticCatalogCards(locale));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [kind, boardSku, locale]);
 
   if (!isHardwareKind(kind)) {
     return <div className={styles.mutedPad}>{t("modules.filesHint")}</div>;
@@ -397,28 +453,30 @@ function ModulesPanel({ kind }: { kind: ArtifactKind }) {
       <div className={styles.sectionHeader}>
         <span className={styles.sectionTitle}>
           {t("modules.catalog")}
-          {boardSku ? ` · ${boardSku}` : ""}
+          {boardSku ? (
+            <>
+              {" · "}
+              <span className={styles.boardName}>{t(staticBoard(boardSku).nameKey)}</span>
+            </>
+          ) : null}
         </span>
       </div>
       {compat && <p className={styles.compatNote}>{compat}</p>}
       <div className={styles.modulesGrid}>
-        {items.length === 0 ? (
-          <p className={styles.mutedPad}>{t("modules.signIn")}</p>
-        ) : (
-          items.map((m) => (
-            <button
-              key={m.sku}
-              type="button"
-              className={styles.moduleCard}
-              onClick={() => void check(m.sku)}
-            >
-              <span className={styles.moduleLabel}>{m.name}</span>
-              <span className={styles.moduleDesc}>
-                {m.sku} · {m.bus} · {m.voltage}
-              </span>
-            </button>
-          ))
-        )}
+        {items.map((item) => (
+          <button
+            key={item.sku}
+            type="button"
+            className={styles.moduleCard}
+            onClick={() => void check(item.sku)}
+          >
+            <span className={styles.moduleHead}>
+              <i className={styles.moduleSwatch} style={{ background: item.color }} />
+              <span className={styles.moduleLabel}>{item.name}</span>
+            </span>
+            <span className={styles.moduleDesc}>{item.detail || item.sku}</span>
+          </button>
+        ))}
       </div>
     </div>
   );

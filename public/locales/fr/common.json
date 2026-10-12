@@ -100,7 +100,12 @@
     "firstExercise": "Mon premier exercice",
     "unnamedExercise": "Exercice sans titre",
     "unnamedArtifact": "Artefact sans titre",
-    "shipGoal": "Terminez la page et le contenu, puis partagez le lien en ligne ou téléchargez un zip"
+    "shipGoal": "Terminez la page et le contenu, puis partagez le lien en ligne ou téléchargez un zip",
+    "localDraft": "Brouillon sur cet appareil",
+    "unsaved": "Modifications non enregistrées",
+    "loginToSave": "Connectez-vous pour enregistrer dans le cloud",
+    "more": "Plus",
+    "rename": "Renommer"
   },
   "run": {
     "console": "Exécution console",
@@ -579,7 +584,8 @@
     "agreeBefore": "J'ai lu et j'accepte",
     "agreeAnd": "et la ",
     "userAgreement": "Conditions d'utilisation",
-    "privacyPolicy": "Politique de confidentialité"
+    "privacyPolicy": "Politique de confidentialité",
+    "trialDeletion": "Politique d'essai et de suppression des données"
   },
   "authCallback": {
     "ssoFailed": "Échec de la connexion SSO",
@@ -878,7 +884,8 @@
     "iotWait": "Attendre %1 s",
     "iotWaitTip": "Attente de l'horloge de simulation",
     "iotStop": "Arrêt d'urgence",
-    "iotStopTip": "Arrêt local — stopper les actionneurs maintenant"
+    "iotStopTip": "Arrêt local — stopper les actionneurs maintenant",
+    "emptyHint": "Faites glisser un bloc ici pour commencer."
   },
   "iotCh": {
     "rain": "Pluie",
@@ -894,7 +901,12 @@
     "level_pct": "Niveau d'eau",
     "temp": "Temp. de l'eau",
     "aerator": "Aérateur",
-    "spray": "Pulvérisation"
+    "spray": "Pulvérisation",
+    "humidity": "Humidité",
+    "led": "LED",
+    "relay": "Relais",
+    "speed": "Vitesse",
+    "heading": "Cap"
   },
   "iotCmd": {
     "open": "Ouvrir la fenêtre",
@@ -1067,7 +1079,19 @@
     "badNode": "Composant non pris en charge {{type}}",
     "badSiteField": "Champ de site illégal {{field}}",
     "missingNode": "Nœud {{nodeId}} introuvable",
-    "badOp": "Opération non prise en charge {{op}}"
+    "badOp": "Opération non prise en charge {{op}}",
+    "myEvent": "Mon inscription",
+    "myShop": "Ma mini boutique",
+    "taglineEvent": "Recueillez des noms pour une activité",
+    "taglineShop": "Une courte liste de produits à ouvrir",
+    "heroEvent": "Inscrivez-vous à l’événement",
+    "heroEventSub": "Changez le titre, puis ajoutez des sessions dans Données.",
+    "heroShop": "Bienvenue dans la boutique",
+    "heroShopSub": "Modifiez cette introduction, puis ajoutez le premier produit dans Données.",
+    "events": "Sessions",
+    "products": "Produits",
+    "emptyEvents": "Pas encore de sessions",
+    "emptyProducts": "Pas encore de produits"
   },
   "pairMission": {
     "title": "Obtenir une première exécution réussie",
@@ -1107,5 +1131,349 @@
   },
   "chrome": {
     "brandTitle": "BlockyEdu — Apprendre, construire, livrer"
+  },
+  "home": {
+    "hero": {
+      "title": "Dites-le. Construisez-le. Regardez-le tourner.",
+      "sub": "Des blocs ou du code, un appareil sur la table, et un téléphone qui montre le résultat.",
+      "placeholder": "Quand il pleut, fermer la fenêtre et l'afficher sur mon téléphone",
+      "promptLabel": "Décrivez ce que vous voulez faire",
+      "submit": "Commencer",
+      "examplesLabel": "Essayer une idée",
+      "example1": "Fermer la fenêtre quand il pleut",
+      "example2": "Une page qui affiche la température de la pièce",
+      "example3": "Allumer la lumière quand il fait sombre",
+      "example4": "Un mini-programme pour l'état de l'appareil"
+    },
+    "chain": {
+      "title": "D'une règle à la fenêtre et au téléphone",
+      "lead": "La pluie est détectée, la fenêtre se ferme et le téléphone suit. Les blocs et le code décrivent la même règle.",
+      "run": "Lancer",
+      "replay": "Rejouer",
+      "open": "Ouvrir l'exemple",
+      "loading": "Chargement de la démo",
+      "paneLogic": "Logique",
+      "paneDevice": "Appareil",
+      "paneMqtt": "Messages",
+      "panePhone": "Téléphone",
+      "capLogic": "Blocs et JavaScript",
+      "capDevice": "Fenêtre intelligente",
+      "capMqtt": "Télémétrie et commandes",
+      "capPhone": "État sur le téléphone",
+      "blocks": "Blocs",
+      "code": "Code",
+      "tickerEmpty": "Pas encore de messages",
+      "stepsLabel": "Ce qui se passe",
+      "blkEvent": "quand la scène démarre",
+      "blkIf": "si la pluie est détectée",
+      "blkClose": "fermer la fenêtre",
+      "phoneState": "Fenêtre",
+      "phoneOpen": "Ouverte",
+      "phoneClosed": "Fermée",
+      "phoneRaining": "Pluie",
+      "phoneDry": "Sec",
+      "phoneLocked": "Verrouillée pendant la pluie",
+      "steps": {
+        "rain": "La pluie commence",
+        "telemetry": "L'appareil signale",
+        "command": "Commande de fermeture",
+        "window": "La fenêtre se ferme",
+        "phone": "Le téléphone se met à jour"
+      }
+    },
+    "modes": {
+      "title": "Blocs ou code, le même projet",
+      "lead": "Commencez par les blocs. Ouvrez les fichiers quand vous voulez le JavaScript.",
+      "blockTitle": "Blocs",
+      "blockLead": "Assemblez une règle : s'il pleut, fermez la fenêtre, puis attendez.",
+      "proTitle": "Code",
+      "proLead": "La même règle en JavaScript, à côté des fichiers matériels.",
+      "files": "Fichiers",
+      "terminal": "Console",
+      "catDevices": "Appareils",
+      "blkWait": "attendre 1 seconde",
+      "aiLabel": "IA dans le projet",
+      "aiAsk": "Pourquoi la fenêtre est-elle restée ouverte ?",
+      "aiExplain": "Expliquer",
+      "aiFix": "Corriger",
+      "aiGenerate": "Générer"
+    },
+    "caps": {
+      "title": "Ce que vous pouvez construire aujourd'hui",
+      "lead": "Cartes, messages, sites et IA. Les éléments prévus sont marqués.",
+      "available": "Disponible",
+      "beta": "Bêta",
+      "planned": "Prévu",
+      "noteSimulation": "Simulation dans le navigateur",
+      "noteBrowser": "MQTT dans le navigateur",
+      "layers": {
+        "chips": "Cartes et capteurs",
+        "comm": "Lien et mise à jour",
+        "apps": "Applications",
+        "vision": "Caméra",
+        "ai": "IA"
+      },
+      "items": {
+        "esp32s3": "ESP32-S3",
+        "esp32c3": "ESP32-C3",
+        "stm32": "STM32",
+        "sensors": "Capteurs",
+        "mqtt": "MQTT",
+        "kit": "Kit de classe",
+        "ota": "Mise à jour à distance",
+        "websites": "Sites web",
+        "miniprograms": "Mini-programmes",
+        "host": "Sites hébergés",
+        "camera": "Caméra",
+        "aiGenerate": "Générer",
+        "aiExplain": "Expliquer",
+        "aiDebug": "Déboguer"
+      }
+    },
+    "tracks": {
+      "title": "Exemples",
+      "lead": "Ouvrez un exemple et modifiez-le.",
+      "all": "Tous les exemples",
+      "iot": "Appareils",
+      "apps": "Web et mini-programmes",
+      "basics": "Premiers pas"
+    },
+    "path": {
+      "title": "Un parcours dans les exemples",
+      "lead": "Cinq projets courts, du premier exercice à un mini-programme.",
+      "stepLabel": "Étape {{n}}",
+      "open": "Ouvrir",
+      "course": "Cours",
+      "s1": {
+        "title": "Premier exercice",
+        "body": "Modifiez un court programme et voyez ce qu'il affiche."
+      },
+      "s2": {
+        "title": "Demander à l'IA",
+        "body": "Restez sur cet exercice et demandez à l'IA d'expliquer le code."
+      },
+      "s3": {
+        "title": "Balise d'air",
+        "body": "Lire la température et l'humidité, et commuter un relais."
+      },
+      "s4": {
+        "title": "Fenêtre intelligente",
+        "body": "La pluie ferme la fenêtre et le téléphone affiche l'état."
+      },
+      "s5": {
+        "title": "Mini-programme d'actualités",
+        "body": "Une petite application avec une liste et une page de détail."
+      }
+    }
+  },
+  "site": {
+    "navSamples": "Exemples",
+    "navProjects": "Projets",
+    "navCourses": "Cours",
+    "newProject": "Nouveau projet",
+    "signIn": "Connexion",
+    "browseSamples": "Voir tous les exemples",
+    "footerAbout": "À propos",
+    "footerTerms": "Conditions",
+    "footerPrivacy": "Confidentialité",
+    "footerNav": "Site"
+  },
+  "samples": {
+    "title": "Exemples",
+    "lead": "Choisissez un exemple et ouvrez-le dans l’éditeur.",
+    "categoryAll": "Tous",
+    "categoryWeb": "Sites",
+    "categoryMiniprogram": "Mini-programmes",
+    "categorySmarthome": "Maison connectée",
+    "categoryIot": "IoT",
+    "categoryBasics": "Programmation",
+    "empty": "Aucun exemple dans cette catégorie.",
+    "open": "Ouvrir",
+    "minutes": "Environ {{count}} min",
+    "levelBeginner": "Débutant",
+    "levelAdvanced": "Avancé",
+    "replaceDraft": "Ce navigateur a déjà un brouillon. Le remplacer par cet exemple ?",
+    "landing": {
+      "name": "Page d’accueil",
+      "blurb": "Un site d’un écran à publier et à partager."
+    },
+    "portfolio": {
+      "name": "Portfolio",
+      "blurb": "Montrez vos travaux sur un site avec une page de détail."
+    },
+    "blog": {
+      "name": "Blog",
+      "blurb": "Écrivez des articles et ouvrez-les depuis une liste."
+    },
+    "news": {
+      "name": "Mini-programme d’actualités",
+      "blurb": "Une liste d’articles qui exporte aussi un projet WeChat."
+    },
+    "window": {
+      "name": "Fenêtre connectée",
+      "blurb": "Fermez la fenêtre s’il pleut et aérez s’il fait chaud."
+    },
+    "air": {
+      "name": "Air Beacon",
+      "blurb": "Lisez la température et l’humidité sur une carte ESP32."
+    },
+    "rover": {
+      "name": "Desk Rover",
+      "blurb": "Faites rouler un petit robot et faites clignoter la LED."
+    },
+    "room": {
+      "name": "Nœud de pièce",
+      "blurb": "Détectez la pièce et commutez un relais."
+    },
+    "living": {
+      "name": "Lumières du salon",
+      "blurb": "Allumez lumières et rideaux dans une scène."
+    },
+    "pet": {
+      "name": "Animal de bureau",
+      "blurb": "Un jouet qui bouge, s’allume et parle."
+    },
+    "pair": {
+      "name": "Exercice en binôme",
+      "blurb": "Déposez quelques blocs et regardez le résultat."
+    },
+    "irrigation": {
+      "name": "Irrigation connectée",
+      "blurb": "Arrosez quand le sol est sec et passez s’il pleut."
+    },
+    "pond": {
+      "name": "Aération du bassin",
+      "blurb": "Allumez l’aérateur quand l’oxygène baisse."
+    },
+    "climate": {
+      "name": "Scène climat",
+      "blurb": "Gardez la pièce confortable avec un thermostat."
+    },
+    "security": {
+      "name": "Démo sécurité",
+      "blurb": "Armez un capteur de porte et observez l’alarme."
+    },
+    "event": {
+      "name": "Inscription à un événement",
+      "blurb": "Recueillez des inscriptions dans un mini-programme."
+    },
+    "shop": {
+      "name": "Mini boutique",
+      "blurb": "Listez quelques produits et ouvrez la fiche produit."
+    },
+    "sensor": {
+      "name": "Jouet à capteur",
+      "blurb": "Lisez un capteur du jouet et réagissez."
+    },
+    "hello": {
+      "name": "Hello World",
+      "blurb": "Affichez la première ligne et changez la phrase."
+    },
+    "sort": {
+      "name": "Tri",
+      "blurb": "Triez une liste de nombres dans le code."
+    }
+  },
+  "about": {
+    "title": "À propos de BlockyEdu",
+    "lead": "Apprendre en construisant des sites, des mini-programmes et des appareils.",
+    "missionTitle": "À quoi sert ce site",
+    "missionBody": "Vous décrivez ce que vous voulez, vous le construisez avec des blocs ou du code, et vous le voyez tourner — dans le navigateur, et sur une carte si vous en avez une.",
+    "ecoTitle": "Dans la famille LuminaryWorks",
+    "ecoLead": "BlockyEdu se tient à côté des autres produits. Chacun reste dans son rôle.",
+    "contact": "Contact",
+    "coursePlatform": "Ouvrir la plateforme de cours",
+    "eco": {
+      "syncrobrain": {
+        "name": "SyncroBrain",
+        "line": "Firmware et kits d'appareils."
+      },
+      "vistacast": {
+        "name": "VistaCast",
+        "line": "Vidéo pour les classes et les flux."
+      },
+      "dataluminary": {
+        "name": "DataLuminary",
+        "line": "Vues de données et lecture."
+      }
+    },
+    "orgs": {
+      "title": "Pour les écoles et les entreprises",
+      "lead": "La plateforme de cours peut tourner sur vos serveurs.",
+      "classroomTitle": "Classes et progression",
+      "classroomBody": "Cours, devoirs, et qui a terminé.",
+      "privateTitle": "Votre propre déploiement",
+      "privateBody": "Les comptes et les données de cours restent sur une infrastructure que vous contrôlez.",
+      "exportTitle": "Emportez le travail",
+      "exportBody": "Les projets restent des fichiers que vous pouvez ouvrir hors de ce site."
+    }
+  },
+  "projects": {
+    "title": "Projets",
+    "filterAll": "Tout",
+    "draftTitle": "Brouillon sur cet appareil",
+    "emptyTitle": "Pas encore de projets",
+    "startFromSample": "Partir d'un exemple",
+    "updatedAt": "Mis à jour {{time}}"
+  },
+  "stage": {
+    "circuit": "Circuit",
+    "scene": "Scène",
+    "reset": "Réinitialiser",
+    "timeline": "Chronologie",
+    "assertions": "contrôles",
+    "noEvents": "Pas encore d'événements",
+    "on": "Marche",
+    "off": "Arrêt",
+    "device": "Appareil",
+    "simNotHardware": "Ceci est une simulation, pas une carte sur la table.",
+    "board": {
+      "esp32s3": "ESP32-S3",
+      "esp32c3": "ESP32-C3",
+      "nucleo": "Nucleo-F401RE"
+    },
+    "run": {
+      "sim": "Simuler",
+      "live": "Appareil réel",
+      "firmware": "Firmware"
+    },
+    "sceneTitle": {
+      "window": "Fenêtre intelligente",
+      "irrigation": "Irrigation",
+      "pond": "Bassin",
+      "beacon": "Balise d'air",
+      "room": "Nœud de pièce",
+      "rover": "Rover de bureau",
+      "home": "Maison connectée",
+      "toy": "Jouet"
+    },
+    "unit": {
+      "c": "°C",
+      "pct": "%",
+      "lpm": "L/min",
+      "mgl": "mg/L",
+      "deg": "°"
+    },
+    "module": {
+      "relay12v": "Relais 12 V",
+      "limit": "Fin de course",
+      "rain": "Capteur de pluie",
+      "soil": "Humidité du sol",
+      "float": "Interrupteur à flotteur",
+      "bme280": "BME280",
+      "motor": "Driver moteur",
+      "oled": "Écran OLED",
+      "relay": "Relais",
+      "led": "LED",
+      "button": "Bouton"
+    },
+    "readout": {
+      "speed": "Vitesse",
+      "heading": "Cap",
+      "led": "LED",
+      "relay": "Relais",
+      "distance": "Distance",
+      "comfort": "Confort"
+    }
   }
 }

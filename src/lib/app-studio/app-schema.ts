@@ -5,7 +5,7 @@ import { t } from "../i18n";
 export const APP_SCHEMA_VERSION = 1;
 export const BLOG_TEMPLATE_IDS = new Set(["博客", "blog"]);
 export const WEB_STUDIO_TEMPLATES = new Set(["博客", "blog", "落地页", "作品集"]);
-export const MP_STUDIO_TEMPLATES = new Set(["资讯小程序"]);
+export const MP_STUDIO_TEMPLATES = new Set(["资讯小程序", "活动报名", "商城小程序"]);
 export const NODE_TYPES = ["nav", "hero", "postList", "postDetail", "footer"] as const;
 export type AppNodeType = (typeof NODE_TYPES)[number];
 
@@ -57,7 +57,9 @@ export function isAppStudioTemplate(templateId: string | null | undefined): bool
 export function usesHostedPosts(templateId: string | null | undefined): boolean {
   if (!templateId) return false;
   return (
-    BLOG_TEMPLATE_IDS.has(templateId) || templateId === "作品集" || templateId === "资讯小程序"
+    BLOG_TEMPLATE_IDS.has(templateId) ||
+    templateId === "作品集" ||
+    MP_STUDIO_TEMPLATES.has(templateId)
   );
 }
 
@@ -202,28 +204,74 @@ export function defaultPortfolioSchema(title = t("schema.myPortfolio")): AppSche
   return schema;
 }
 
-export function defaultNewsMiniSchema(title = t("schema.myNews")): AppSchema {
-  const brand = title.trim() || t("schema.myNews");
+function defaultListMiniSchema(
+  templateId: string,
+  title: string | undefined,
+  copy: {
+    brand: string;
+    tagline: string;
+    heading: string;
+    subheading: string;
+    listHeading: string;
+    emptyText: string;
+  },
+): AppSchema {
+  const brand = title?.trim() || copy.brand;
   const schema = defaultBlogSchema(brand);
-  schema.templateId = "资讯小程序";
-  schema.site.tagline = t("schema.taglineNews");
+  schema.templateId = templateId;
+  schema.site.tagline = copy.tagline;
   const hero = schema.pages[0]?.nodes.find((n) => n.id === "hero");
   if (hero) {
-    hero.props.heading = t("schema.heroNews");
-    hero.props.subheading = t("schema.heroNewsSub");
+    hero.props.heading = copy.heading;
+    hero.props.subheading = copy.subheading;
   }
   const list = schema.pages[0]?.nodes.find((n) => n.id === "list");
   if (list) {
-    list.props.heading = t("schema.news");
-    list.props.emptyText = t("schema.emptyNews");
+    list.props.heading = copy.listHeading;
+    list.props.emptyText = copy.emptyText;
   }
   return schema;
+}
+
+export function defaultNewsMiniSchema(title = t("schema.myNews")): AppSchema {
+  return defaultListMiniSchema("资讯小程序", title, {
+    brand: t("schema.myNews"),
+    tagline: t("schema.taglineNews"),
+    heading: t("schema.heroNews"),
+    subheading: t("schema.heroNewsSub"),
+    listHeading: t("schema.news"),
+    emptyText: t("schema.emptyNews"),
+  });
+}
+
+export function defaultEventMiniSchema(title = t("schema.myEvent")): AppSchema {
+  return defaultListMiniSchema("活动报名", title, {
+    brand: t("schema.myEvent"),
+    tagline: t("schema.taglineEvent"),
+    heading: t("schema.heroEvent"),
+    subheading: t("schema.heroEventSub"),
+    listHeading: t("schema.events"),
+    emptyText: t("schema.emptyEvents"),
+  });
+}
+
+export function defaultShopMiniSchema(title = t("schema.myShop")): AppSchema {
+  return defaultListMiniSchema("商城小程序", title, {
+    brand: t("schema.myShop"),
+    tagline: t("schema.taglineShop"),
+    heading: t("schema.heroShop"),
+    subheading: t("schema.heroShopSub"),
+    listHeading: t("schema.products"),
+    emptyText: t("schema.emptyProducts"),
+  });
 }
 
 export function defaultSchemaForTemplate(templateId: string, title?: string): AppSchema {
   if (templateId === "落地页") return defaultLandingSchema(title);
   if (templateId === "作品集") return defaultPortfolioSchema(title);
   if (templateId === "资讯小程序") return defaultNewsMiniSchema(title);
+  if (templateId === "活动报名") return defaultEventMiniSchema(title);
+  if (templateId === "商城小程序") return defaultShopMiniSchema(title);
   return defaultBlogSchema(title);
 }
 

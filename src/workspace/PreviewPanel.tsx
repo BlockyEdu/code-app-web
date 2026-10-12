@@ -2,6 +2,7 @@ import { ArrowRightOutlined, ReloadOutlined } from "@ant-design/icons";
 import { Segmented, Select } from "antd";
 import { useCallback, useEffect } from "react";
 import { hasDetailPage, usesHostedPosts } from "../lib/app-studio/app-schema";
+import { staticBoard } from "../lib/hardware-catalog-static";
 import { t } from "../lib/i18n";
 import { useLocaleStore } from "../lib/locale-store";
 import { previewLabel } from "../lib/preview-label";
@@ -17,6 +18,7 @@ import { KIND_DEFAULT_PREVIEW } from "../types/artifact";
 import studio from "./BlogStudio.module.scss";
 import styles from "./PreviewPanel.module.scss";
 import { SmarthomePreview } from "./SmarthomePreview";
+import { DeviceStage } from "./stage/DeviceStage";
 import { ToyPreview } from "./ToyPreview";
 
 interface PreviewPanelProps {
@@ -194,135 +196,91 @@ function MiniprogramPreview({ world }: { world: WorldState | null }) {
   );
 }
 
-function iotChannelLabel(key: string): string {
-  const path = `iotCh.${key}`;
-  const label = t(path);
-  return label === path ? key : label;
+const PACK_TITLE: Record<string, string> = {
+  "smart-window": "stage.sceneTitle.window",
+  "agri-irrigation": "stage.sceneTitle.irrigation",
+  "agri-pond": "stage.sceneTitle.pond",
+  "air-beacon": "stage.sceneTitle.beacon",
+  "room-node": "stage.sceneTitle.room",
+  "desk-rover": "stage.sceneTitle.rover",
+};
+
+function packTitle(slug: string | null): string {
+  const key = slug ? PACK_TITLE[slug] : undefined;
+  return key ? t(key) : t("stage.device");
 }
 
-function IotLabPreview({ world }: { world: WorldState | null }) {
+function IotLabPreview() {
   useLocaleStore((s) => s.locale);
   const packSlug = useWorkspaceStore((s) => s.iotPackSlug);
   const runMode = useWorkspaceStore((s) => s.iotRunMode);
   const setIotRunMode = useWorkspaceStore((s) => s.setIotRunMode);
   const boardSku = useWorkspaceStore((s) => s.boardSku);
   const setBoardSku = useWorkspaceStore((s) => s.setBoardSku);
-  const iot = world?.iot;
-  const channels = iot?.channels ?? {};
-  const timeline = iot?.timeline?.length
-    ? iot.timeline.slice(-8).map((e) => e.text)
-    : [t("preview.iotIdle1"), t("preview.iotIdle2")];
+  const sim = useWorkspaceStore((s) => s.firmwareSim);
   const modeLabel =
     runMode === "live"
-      ? t("preview.iotLive")
+      ? t("stage.run.live")
       : runMode === "firmware"
-        ? t("preview.iotFirmware")
-        : t("preview.iotSim");
-
-  return (
-    <div className={styles.homePreview}>
-      <div className={styles.homeNotice}>
-        {modeLabel} · {packSlug || "iot"} · {boardSku || t("preview.iotNoBoard")}
-      </div>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-        <Select
-          size="small"
-          value={runMode}
-          style={{ minWidth: 120 }}
-          onChange={(v) => setIotRunMode(v as "sim" | "live" | "firmware")}
-          options={[
-            { value: "sim", label: t("preview.iotSim") },
-            { value: "live", label: t("preview.iotLive") },
-            { value: "firmware", label: t("preview.iotFirmware") },
-          ]}
-        />
-        <Select
-          size="small"
-          value={boardSku || "board.espressif.esp32-s3-devkitc-1"}
-          style={{ minWidth: 220 }}
-          onChange={(v) => setBoardSku(v)}
-          options={[
-            { value: "board.espressif.esp32-s3-devkitc-1", label: "ESP32-S3 DevKitC-1" },
-            { value: "board.espressif.esp32-c3-devkitm-1", label: "ESP32-C3 DevKit" },
-          ]}
-        />
-      </div>
-      <div className={styles.deviceGrid}>
-        {Object.entries(channels).map(([key, value]) => (
-          <div key={key} className={styles.deviceCard}>
-            <span className={styles.deviceName}>{iotChannelLabel(key)}</span>
-            <span className={styles.deviceMeta}>{t("preview.iotChannel")}</span>
-            <span className={styles.deviceStatus}>{String(value)}</span>
-          </div>
-        ))}
-      </div>
-      {iot?.assertions?.length ? (
-        <div className={styles.homeNotice}>
-          {t("preview.iotAssert", {
-            ok: iot.assertions.filter((a) => a.ok).length,
-            total: iot.assertions.length,
-          })}
-        </div>
-      ) : null}
-      <div className={styles.homeLog}>
-        {timeline.map((line) => (
-          <div key={line} className={styles.homeLogLine}>
-            {line}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function FirmwarePreview() {
-  useLocaleStore((s) => s.locale);
-  const sim = useWorkspaceStore((s) => s.firmwareSim);
-  const lines = (sim?.serialLog || t("run.firmwareIdle")).split("\n").filter(Boolean).slice(-16);
+        ? t("stage.run.firmware")
+        : t("stage.run.sim");
+  const packLabel = packTitle(packSlug);
+  const boardLabel = t(staticBoard(boardSku).nameKey);
 
   const download = (path: string, content: string) => {
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = path.split("/").pop() || path;
-    a.click();
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = path.split("/").pop() || path;
+    anchor.click();
     URL.revokeObjectURL(url);
   };
 
   return (
-    <div className={styles.homePreview}>
-      <div className={styles.homeNotice}>
-        {t("preview.firmwareAdapter", { adapter: sim?.adapter || "idle" })}
-        {sim?.status ? ` · ${sim.status}` : ""} — {t("preview.firmwareNotMass")}
-      </div>
-      {sim?.exportHint && <div className={styles.homeNotice}>{sim.exportHint}</div>}
-      {sim?.assertions && sim.assertions.length > 0 && (
-        <div className={styles.homeNotice}>
-          {sim.assertions.map((a) => (
-            <div key={a.id}>
-              {a.ok ? "✓" : "○"} {a.name}: {a.detail}
-            </div>
+    <div className={styles.deviceHost}>
+      <DeviceStage kind="iot">
+        <div className={styles.stageControls}>
+          <div className={styles.homeNotice}>
+            {modeLabel} · {packLabel} · {boardLabel}
+          </div>
+          <div className={styles.stageControlRow}>
+            <Select
+              size="small"
+              style={{ width: "100%" }}
+              value={runMode}
+              onChange={(value) => setIotRunMode(value as "sim" | "live" | "firmware")}
+              options={[
+                { value: "sim", label: t("stage.run.sim") },
+                { value: "live", label: t("stage.run.live") },
+                { value: "firmware", label: t("stage.run.firmware") },
+              ]}
+            />
+            <Select
+              size="small"
+              style={{ width: "100%" }}
+              value={boardSku || "board.espressif.esp32-s3-devkitc-1"}
+              onChange={(value) => setBoardSku(value)}
+              options={[
+                { value: "board.espressif.esp32-s3-devkitc-1", label: t("stage.board.esp32s3") },
+                { value: "board.espressif.esp32-c3-devkitm-1", label: t("stage.board.esp32c3") },
+                { value: "board.st.nucleo-f401re", label: t("stage.board.nucleo") },
+              ]}
+            />
+          </div>
+          {(runMode === "firmware" ? (sim?.exportFiles ?? []) : []).slice(0, 4).map((file) => (
+            <button
+              key={file.path}
+              type="button"
+              className={styles.homeNotice}
+              title={sim?.exportHint || t("stage.simNotHardware")}
+              onClick={() => download(file.path, file.content)}
+            >
+              {t("preview.downloadFile", { path: file.path })}
+            </button>
           ))}
         </div>
-      )}
-      {(sim?.exportFiles ?? []).slice(0, 4).map((f) => (
-        <button
-          key={f.path}
-          type="button"
-          className={styles.homeNotice}
-          onClick={() => download(f.path, f.content)}
-        >
-          {t("preview.downloadFile", { path: f.path })}
-        </button>
-      ))}
-      <div className={styles.homeLog}>
-        {lines.map((line) => (
-          <div key={line} className={styles.homeLogLine}>
-            {line}
-          </div>
-        ))}
-      </div>
+      </DeviceStage>
     </div>
   );
 }
@@ -332,7 +290,6 @@ export function PreviewPanel({ kind, onRefresh }: PreviewPanelProps & { onRefres
   const label = previewLabel(previewType);
   const world = useWorkspaceStore((s) => s.previewWorld);
   const templateId = useWorkspaceStore((s) => s.templateId);
-  const iotRunMode = useWorkspaceStore((s) => s.iotRunMode);
   const blogStudio = isAppStudioKind(kind, templateId);
   const blogPosts = useWorkspaceStore((s) => s.blogPosts);
   const appSchema = useWorkspaceStore((s) => s.appSchema);
@@ -430,10 +387,7 @@ export function PreviewPanel({ kind, onRefresh }: PreviewPanelProps & { onRefres
         )}
         {kind === "miniprogram" && !blogStudio && <MiniprogramPreview world={world} />}
         {kind === "smarthome" && <SmarthomePreview world={world} />}
-        {kind === "iot" && iotRunMode === "firmware" && !world?.iot && <FirmwarePreview />}
-        {kind === "iot" && (iotRunMode !== "firmware" || Boolean(world?.iot)) && (
-          <IotLabPreview world={world} />
-        )}
+        {kind === "iot" && <IotLabPreview />}
         {kind === "toy" && <ToyPreview world={world} />}
       </div>
     </div>

@@ -5,13 +5,13 @@ import { useLocaleStore } from "../lib/locale-store";
 
 const MARK_SRC = "/logo-mark.png";
 
-export function LogoMark({ size = 32 }: { size?: number }) {
+export function LogoMark({ size = 32, alt = "BlockyEdu" }: { size?: number; alt?: string }) {
   return (
     <img
       src={MARK_SRC}
       width={size}
       height={size}
-      alt="BlockyEdu"
+      alt={alt}
       style={{ display: "block", borderRadius: Math.round(size * 0.22) }}
     />
   );

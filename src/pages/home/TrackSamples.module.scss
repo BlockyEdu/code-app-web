@@ -1,0 +1,140 @@
+@use '../../styles/variables' as *;
+
+.link {
+  height: auto;
+  padding: 0;
+  font-weight: $font-weight-semibold;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  margin-bottom: $space-4;
+}
+
+.tabs {
+  display: flex;
+  gap: $space-2;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.tab {
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 $space-4;
+  border: 1px solid $site-border;
+  border-radius: $radius-full;
+  background: $site-card;
+  color: $site-text-secondary;
+  font-family: inherit;
+  font-size: $site-font-sm;
+  font-weight: $font-weight-medium;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color $transition-fast, color $transition-fast, background $transition-fast;
+
+  &:hover {
+    border-color: $site-primary;
+    color: $site-primary;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $site-primary;
+    outline-offset: 2px;
+  }
+}
+
+.tabOn {
+  border-color: $site-primary;
+  background: $site-primary;
+  color: #ffffff;
+
+  &:hover {
+    color: #ffffff;
+    background: $site-primary-hover;
+  }
+}
+
+.arrows {
+  display: none;
+  flex-shrink: 0;
+  gap: $space-2;
+}
+
+.row {
+  display: flex;
+  gap: $space-4;
+  margin: 0 -#{$space-1};
+  padding: $space-1 $space-1 $space-4;
+  overflow-x: auto;
+  list-style: none;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 $space-1;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.item {
+  flex: 0 0 min(280px, 78%);
+  display: flex;
+  scroll-snap-align: start;
+}
+
+.all {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $space-3;
+  min-height: 160px;
+  padding: $space-4;
+  border: 1px dashed #cbd5e1;
+  border-radius: $site-radius-card;
+  background: transparent;
+  color: $site-primary;
+  font-family: inherit;
+  font-size: $site-font-sm;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: background $transition-fast, border-color $transition-fast;
+
+  &:hover,
+  &:focus-visible {
+    border-color: $site-primary;
+    background: $color-primary-muted;
+  }
+}
+
+.allIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: $color-primary-light;
+}
+
+@media (min-width: 960px) {
+  .arrows {
+    display: flex;
+  }
+
+  .item {
+    flex-basis: calc((100% - 3 * #{$space-4}) / 4);
+    min-width: 240px;
+  }
+}

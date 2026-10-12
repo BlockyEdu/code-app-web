@@ -100,7 +100,12 @@
     "firstExercise": "내 첫 번째 운동",
     "unnamedExercise": "제목 없는 연습",
     "unnamedArtifact": "제목 없는 유물",
-    "shipGoal": "페이지와 콘텐츠를 마친 후 라이브 링크를 공유하거나 zip을 다운로드하세요"
+    "shipGoal": "페이지와 콘텐츠를 마친 후 라이브 링크를 공유하거나 zip을 다운로드하세요",
+    "localDraft": "이 기기의 초안",
+    "unsaved": "저장하지 않은 변경",
+    "loginToSave": "클라우드에 저장하려면 로그인하세요",
+    "more": "더보기",
+    "rename": "이름 바꾸기"
   },
   "run": {
     "console": "콘솔 버전",
@@ -579,7 +584,8 @@
     "agreeBefore": "저는 읽었으며 동의합니다",
     "agreeAnd": "및 ",
     "userAgreement": "사용자 계약",
-    "privacyPolicy": "개인정보 처리방침"
+    "privacyPolicy": "개인정보 처리방침",
+    "trialDeletion": "체험 및 데이터 삭제 정책"
   },
   "authCallback": {
     "ssoFailed": "SSO 로그인 실패",
@@ -878,7 +884,8 @@
     "iotWait": "%1 초 대기",
     "iotWaitTip": "시뮬레이션 시계 대기",
     "iotStop": "비상 정지",
-    "iotStopTip": "로컬 킬 스위치 — 지금 액추에이터 정지"
+    "iotStopTip": "로컬 킬 스위치 — 지금 액추에이터 정지",
+    "emptyHint": "블록을 여기로 끌어 시작하세요."
   },
   "iotCh": {
     "rain": "비",
@@ -894,7 +901,12 @@
     "level_pct": "수위",
     "temp": "수온",
     "aerator": "에어레이터",
-    "spray": "분무"
+    "spray": "분무",
+    "humidity": "습도",
+    "led": "LED",
+    "relay": "릴레이",
+    "speed": "속도",
+    "heading": "방향"
   },
   "iotCmd": {
     "open": "창문 열기",
@@ -1067,7 +1079,19 @@
     "badNode": "지지되지 않는 부품 {{type}}",
     "badSiteField": "불법 사이트 필드 {{field}}",
     "missingNode": "노드 {{nodeId}} 찾을 수 없음",
-    "badOp": "지원 없는 작전 {{op}}"
+    "badOp": "지원 없는 작전 {{op}}",
+    "myEvent": "행사 신청",
+    "myShop": "미니 상점",
+    "taglineEvent": "한 활동의 신청을 모읍니다",
+    "taglineShop": "열어 볼 수 있는 짧은 상품 목록",
+    "heroEvent": "행사에 신청하기",
+    "heroEventSub": "제목을 바꾼 다음 데이터에 회차를 추가하세요.",
+    "heroShop": "상점에 오신 것을 환영합니다",
+    "heroShopSub": "이 소개를 고친 다음 데이터에 첫 상품을 추가하세요.",
+    "events": "회차",
+    "products": "상품",
+    "emptyEvents": "아직 회차가 없습니다",
+    "emptyProducts": "아직 상품이 없습니다"
   },
   "pairMission": {
     "title": "첫 성공적인 플레이를 하세요",
@@ -1107,5 +1131,349 @@
   },
   "chrome": {
     "brandTitle": "BlockyEdu — 배우고, 만들고, 배포하세요"
+  },
+  "home": {
+    "hero": {
+      "title": "말하고, 만들고, 돌아가는 걸 보세요",
+      "sub": "블록이나 코드, 책상 위 장치, 그리고 결과를 보여주는 휴대폰.",
+      "placeholder": "비가 오면 창문을 닫고 휴대폰에 보여 주기",
+      "promptLabel": "만들고 싶은 것을 적어 보세요",
+      "submit": "시작",
+      "examplesLabel": "아이디어 시험",
+      "example1": "비가 오면 창문을 닫기",
+      "example2": "실내 온도를 보여주는 페이지",
+      "example3": "어두워지면 불을 켜기",
+      "example4": "장치 상태를 보여주는 미니 프로그램"
+    },
+    "chain": {
+      "title": "규칙에서 창문과 휴대폰까지",
+      "lead": "비를 감지하면 창문이 닫히고 휴대폰이 따라갑니다. 블록과 코드는 같은 규칙입니다.",
+      "run": "실행",
+      "replay": "다시 보기",
+      "open": "샘플 열기",
+      "loading": "데모 불러오는 중",
+      "paneLogic": "로직",
+      "paneDevice": "장치",
+      "paneMqtt": "메시지",
+      "panePhone": "휴대폰",
+      "capLogic": "블록과 JavaScript",
+      "capDevice": "스마트 창문",
+      "capMqtt": "원격 측정과 명령",
+      "capPhone": "휴대폰의 상태",
+      "blocks": "블록",
+      "code": "코드",
+      "tickerEmpty": "아직 메시지가 없습니다",
+      "stepsLabel": "무슨 일이 일어나는지",
+      "blkEvent": "장면이 시작될 때",
+      "blkIf": "비가 감지되면",
+      "blkClose": "창문 닫기",
+      "phoneState": "창문",
+      "phoneOpen": "열림",
+      "phoneClosed": "닫힘",
+      "phoneRaining": "비",
+      "phoneDry": "맑음",
+      "phoneLocked": "비가 오는 동안 잠금",
+      "steps": {
+        "rain": "비가 시작됨",
+        "telemetry": "장치가 보고함",
+        "command": "닫기 명령",
+        "window": "창문이 닫힘",
+        "phone": "휴대폰이 갱신됨"
+      }
+    },
+    "modes": {
+      "title": "블록이든 코드든, 같은 작품",
+      "lead": "블록으로 시작하고, JavaScript가 필요하면 파일을 엽니다.",
+      "blockTitle": "블록",
+      "blockLead": "규칙을 이어 붙입니다. 비가 오면 창문을 닫고 기다립니다.",
+      "proTitle": "코드",
+      "proLead": "같은 규칙을 JavaScript로 쓰고, 옆에 하드웨어 파일이 있습니다.",
+      "files": "파일",
+      "terminal": "콘솔",
+      "catDevices": "장치",
+      "blkWait": "1초 기다리기",
+      "aiLabel": "작품 안의 AI",
+      "aiAsk": "창문은 왜 그대로 열려 있나요?",
+      "aiExplain": "설명",
+      "aiFix": "고치기",
+      "aiGenerate": "생성"
+    },
+    "caps": {
+      "title": "지금 만들 수 있는 것",
+      "lead": "보드, 메시지, 웹사이트, AI. 예정된 항목은 표시됩니다.",
+      "available": "사용 가능",
+      "beta": "베타",
+      "planned": "예정",
+      "noteSimulation": "브라우저 시뮬레이션",
+      "noteBrowser": "브라우저 MQTT",
+      "layers": {
+        "chips": "보드와 센서",
+        "comm": "연결과 업데이트",
+        "apps": "앱",
+        "vision": "카메라",
+        "ai": "AI"
+      },
+      "items": {
+        "esp32s3": "ESP32-S3",
+        "esp32c3": "ESP32-C3",
+        "stm32": "STM32",
+        "sensors": "센서",
+        "mqtt": "MQTT",
+        "kit": "교실 키트",
+        "ota": "무선 업데이트",
+        "websites": "웹사이트",
+        "miniprograms": "미니 프로그램",
+        "host": "호스팅",
+        "camera": "카메라",
+        "aiGenerate": "생성",
+        "aiExplain": "설명",
+        "aiDebug": "디버그"
+      }
+    },
+    "tracks": {
+      "title": "샘플",
+      "lead": "샘플을 열고 바꿔 보세요.",
+      "all": "모든 샘플",
+      "iot": "장치",
+      "apps": "웹과 미니 프로그램",
+      "basics": "첫걸음"
+    },
+    "path": {
+      "title": "샘플을 따라가는 길",
+      "lead": "첫 연습에서 미니 프로그램까지, 짧은 작품 다섯 개.",
+      "stepLabel": "{{n}}단계",
+      "open": "열기",
+      "course": "강좌",
+      "s1": {
+        "title": "첫 연습",
+        "body": "짧은 프로그램을 고치고 출력 결과를 봅니다."
+      },
+      "s2": {
+        "title": "AI에게 묻기",
+        "body": "같은 연습에서 코드 설명을 AI에게 부탁합니다."
+      },
+      "s3": {
+        "title": "에어 비컨",
+        "body": "온도와 습도를 읽고 릴레이를 바꿉니다."
+      },
+      "s4": {
+        "title": "스마트 창문",
+        "body": "비가 오면 창문이 닫히고 휴대폰에 상태가 나옵니다."
+      },
+      "s5": {
+        "title": "뉴스 미니 프로그램",
+        "body": "목록과 상세 페이지가 있는 작은 앱."
+      }
+    }
+  },
+  "site": {
+    "navSamples": "샘플",
+    "navProjects": "작품",
+    "navCourses": "강좌",
+    "newProject": "새 작품",
+    "signIn": "로그인",
+    "browseSamples": "샘플 모두 보기",
+    "footerAbout": "소개",
+    "footerTerms": "약관",
+    "footerPrivacy": "개인정보",
+    "footerNav": "사이트"
+  },
+  "samples": {
+    "title": "샘플",
+    "lead": "샘플을 골라 편집기에서 엽니다.",
+    "categoryAll": "전체",
+    "categoryWeb": "웹사이트",
+    "categoryMiniprogram": "미니프로그램",
+    "categorySmarthome": "스마트홈",
+    "categoryIot": "IoT",
+    "categoryBasics": "프로그래밍 입문",
+    "empty": "이 분류에는 아직 샘플이 없습니다.",
+    "open": "열기",
+    "minutes": "약 {{count}}분",
+    "levelBeginner": "입문",
+    "levelAdvanced": "심화",
+    "replaceDraft": "이 브라우저에 초안이 있습니다. 이 샘플로 바꿀까요?",
+    "landing": {
+      "name": "랜딩 페이지",
+      "blurb": "게시하고 공유할 수 있는 한 페이지 사이트를 만듭니다."
+    },
+    "portfolio": {
+      "name": "포트폴리오",
+      "blurb": "작품을 올리고 상세 페이지를 엽니다."
+    },
+    "blog": {
+      "name": "블로그",
+      "blurb": "글을 쓰고 목록에서 엽니다."
+    },
+    "news": {
+      "name": "뉴스 미니프로그램",
+      "blurb": "소식 목록을 만들고 위챗 프로젝트로도 내보낼 수 있습니다."
+    },
+    "window": {
+      "name": "스마트 창문",
+      "blurb": "비가 오면 닫고, 더우면 환기합니다."
+    },
+    "air": {
+      "name": "에어 비컨",
+      "blurb": "ESP32에서 온도와 습도를 읽습니다."
+    },
+    "rover": {
+      "name": "데스크 로버",
+      "blurb": "작은 로봇을 움직이고 LED를 깜빡입니다."
+    },
+    "room": {
+      "name": "룸 노드",
+      "blurb": "방을 감지하고 릴레이를 전환합니다."
+    },
+    "living": {
+      "name": "거실 조명",
+      "blurb": "한 장면에서 조명과 커튼을 바꿉니다."
+    },
+    "pet": {
+      "name": "데스크 펫",
+      "blurb": "움직이고, 빛나고, 말하는 장난감입니다."
+    },
+    "pair": {
+      "name": "짝 연습",
+      "blurb": "블록 몇 개를 두고 결과를 봅니다."
+    },
+    "irrigation": {
+      "name": "스마트 관개",
+      "blurb": "흙이 마르면 물을 주고, 비가 오면 건너뜁니다."
+    },
+    "pond": {
+      "name": "양어장 산소",
+      "blurb": "용존산소가 낮으면 산소기를 켭니다."
+    },
+    "climate": {
+      "name": "온도 장면",
+      "blurb": "온도 장면으로 방을 쾌적하게 유지합니다."
+    },
+    "security": {
+      "name": "보안 데모",
+      "blurb": "문 센서를 경계하고 경보 장면을 봅니다."
+    },
+    "event": {
+      "name": "행사 신청",
+      "blurb": "미니프로그램으로 동아리 행사 신청을 받습니다."
+    },
+    "shop": {
+      "name": "미니 상점",
+      "blurb": "상품을 나열하고 상품 페이지를 엽니다."
+    },
+    "sensor": {
+      "name": "센서 장난감",
+      "blurb": "장난감 센서를 읽고 반응합니다."
+    },
+    "hello": {
+      "name": "Hello World",
+      "blurb": "첫 줄을 출력하고 그 문장을 바꿉니다."
+    },
+    "sort": {
+      "name": "정렬",
+      "blurb": "코드로 숫자 목록을 정렬합니다."
+    }
+  },
+  "about": {
+    "title": "BlockyEdu 소개",
+    "lead": "웹사이트, 미니 프로그램, 장치를 만들며 배웁니다.",
+    "missionTitle": "이 사이트의 역할",
+    "missionBody": "만들고 싶은 것을 말한 뒤 블록이나 코드로 만들고, 돌아가는 모습을 봅니다. 브라우저에서, 보드가 있으면 보드 위에서도.",
+    "ecoTitle": "LuminaryWorks 가족",
+    "ecoLead": "BlockyEdu는 다른 제품과 나란히 있습니다. 각 제품은 자기 일만 합니다.",
+    "contact": "문의",
+    "coursePlatform": "강좌 플랫폼 열기",
+    "eco": {
+      "syncrobrain": {
+        "name": "SyncroBrain",
+        "line": "펌웨어와 장치 키트."
+      },
+      "vistacast": {
+        "name": "VistaCast",
+        "line": "교실과 스트리밍 영상."
+      },
+      "dataluminary": {
+        "name": "DataLuminary",
+        "line": "데이터 보기와 인사이트."
+      }
+    },
+    "orgs": {
+      "title": "학교와 회사",
+      "lead": "강좌 플랫폼은 자체 서버에서 돌릴 수 있습니다.",
+      "classroomTitle": "수업과 진도",
+      "classroomBody": "강좌, 과제, 누가 끝냈는지.",
+      "privateTitle": "자체 배포",
+      "privateBody": "계정과 강좌 데이터는 직접 관리하는 환경에 둡니다.",
+      "exportTitle": "작업은 가져갈 수 있습니다",
+      "exportBody": "작품은 파일로 남아서 이 사이트 밖에서도 열 수 있습니다."
+    }
+  },
+  "projects": {
+    "title": "작품",
+    "filterAll": "전체",
+    "draftTitle": "이 기기의 초안",
+    "emptyTitle": "아직 작품이 없습니다",
+    "startFromSample": "샘플에서 시작",
+    "updatedAt": "{{time}}에 업데이트"
+  },
+  "stage": {
+    "circuit": "회로",
+    "scene": "장면",
+    "reset": "초기화",
+    "timeline": "타임라인",
+    "assertions": "검사",
+    "noEvents": "아직 이벤트가 없습니다",
+    "on": "켜짐",
+    "off": "꺼짐",
+    "device": "장치",
+    "simNotHardware": "이것은 시뮬레이션이며, 책상 위 보드가 아닙니다.",
+    "board": {
+      "esp32s3": "ESP32-S3",
+      "esp32c3": "ESP32-C3",
+      "nucleo": "Nucleo-F401RE"
+    },
+    "run": {
+      "sim": "시뮬레이션",
+      "live": "실제 장치",
+      "firmware": "펌웨어"
+    },
+    "sceneTitle": {
+      "window": "스마트 창문",
+      "irrigation": "관개",
+      "pond": "연못",
+      "beacon": "에어 비컨",
+      "room": "방 노드",
+      "rover": "책상 로버",
+      "home": "스마트 홈",
+      "toy": "장난감"
+    },
+    "unit": {
+      "c": "°C",
+      "pct": "%",
+      "lpm": "L/분",
+      "mgl": "mg/L",
+      "deg": "°"
+    },
+    "module": {
+      "relay12v": "12V 릴레이",
+      "limit": "리미트 스위치",
+      "rain": "비 센서",
+      "soil": "토양 수분",
+      "float": "플로트 스위치",
+      "bme280": "BME280",
+      "motor": "모터 드라이버",
+      "oled": "OLED 디스플레이",
+      "relay": "릴레이",
+      "led": "LED",
+      "button": "버튼"
+    },
+    "readout": {
+      "speed": "속도",
+      "heading": "방향",
+      "led": "LED",
+      "relay": "릴레이",
+      "distance": "거리",
+      "comfort": "쾌적도"
+    }
   }
 }

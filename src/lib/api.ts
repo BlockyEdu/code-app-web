@@ -838,6 +838,14 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  acceptCurrentLegalPolicy: async () => {
+    const legal = await request<{ accepted?: boolean; policyVersion?: string }>("/commerce/legal");
+    if (legal?.accepted || !legal?.policyVersion) return legal;
+    return request("/commerce/legal/accept", {
+      method: "POST",
+      body: JSON.stringify({ policyVersion: legal.policyVersion }),
+    });
+  },
   commerceCreateOrder: (body: Record<string, unknown>) =>
     request<{ id: string } & Record<string, unknown>>("/commerce/orders", {
       method: "POST",

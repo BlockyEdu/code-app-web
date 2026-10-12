@@ -59,9 +59,34 @@
 
 .previewContent {
   flex: 1;
+  min-height: 0;
   overflow: auto;
   @include scrollbar-thin();
   background: #111827;
+}
+
+.deviceHost {
+  height: 100%;
+  min-height: 0;
+}
+
+.stageControls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 12px 8px;
+}
+
+.stageControlRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  :global(.ant-select) {
+    flex: 1 1 140px;
+    min-width: 0;
+    max-width: 100%;
+  }
 }
 
 // Web
@@ -439,6 +464,7 @@
 
 .deviceCard {
   @include flex-col($space-2);
+  min-width: 0;
   background: $color-bg-elevated;
   border: 1px solid $color-border;
   border-radius: $radius-md;
@@ -461,6 +487,10 @@
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   color: $color-text-primary;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .deviceMeta {

@@ -1,0 +1,577 @@
+@use '../../styles/variables' as *;
+
+$pane-body-height: 252px;
+
+.section {
+  min-width: 0;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  padding: $space-4;
+  border: 1px solid $site-border;
+  border-radius: $site-radius-card;
+  background: $site-card;
+  box-shadow: $site-shadow;
+}
+
+.flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  min-width: 0;
+  padding: $space-3;
+  border: 1px solid $site-border;
+  border-radius: $site-radius-card;
+  background: $site-bg;
+  transition: border-color $transition-base, box-shadow $transition-base;
+}
+
+.paneActive {
+  border-color: $site-primary;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+.paneHead {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-height: 28px;
+}
+
+.paneNum {
+  display: inline-flex;
+  flex: 0 0 22px;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: $color-primary-light;
+  color: $site-primary;
+  font-size: $site-font-xs;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+}
+
+.paneTitle {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: $site-font-sm;
+  line-height: $site-line-title;
+  font-weight: $font-weight-semibold;
+  color: $site-text;
+}
+
+.paneAction {
+  flex-shrink: 0;
+}
+
+.caption {
+  margin: 0;
+  font-size: $site-font-xs;
+  line-height: 1.4;
+  color: $site-text-muted;
+}
+
+.dark {
+  position: relative;
+  height: $pane-body-height;
+  overflow: hidden;
+  border-radius: $radius-xl;
+  background: $site-ink-bg;
+}
+
+.logicBody {
+  padding: $space-3;
+  background-color: #11151d;
+  background-image: radial-gradient(#1f2633 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.deviceBody {
+  background:
+    radial-gradient(ellipse at 50% 70%, rgba(148, 176, 214, 0.2), transparent 55%),
+    linear-gradient(180deg, #1a2130 0%, #121722 100%);
+}
+
+.readouts {
+  position: absolute;
+  left: $space-3;
+  bottom: $space-3;
+  display: flex;
+  gap: $space-2;
+}
+
+.readout {
+  padding: 3px $space-2;
+  border-radius: $radius-full;
+  background: rgba(12, 14, 19, 0.72);
+  color: #cbd5e1;
+  font-family: $font-mono;
+  font-size: 11px;
+  line-height: 1.4;
+
+  b {
+    margin-left: 2px;
+    color: #ffffff;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+// Blocks view
+.blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.block {
+  padding: 12px $space-3;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: $font-weight-semibold;
+  line-height: 1.3;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.16);
+  transition: box-shadow $transition-base, transform $transition-base;
+}
+
+.blockEvent {
+  padding-top: 18px;
+  border-radius: 22px 22px 10px 10px;
+  background: $block-event;
+}
+
+.blockSensor {
+  background: $block-sensor;
+}
+
+.nest {
+  margin-left: $space-5;
+  padding-left: $space-2;
+  border-left: 4px solid $block-sensor;
+  border-radius: 0 0 0 6px;
+}
+
+.blockDevice {
+  background: $block-device;
+}
+
+.blockLit {
+  transform: translateX(2px);
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 0 18px rgba(20, 184, 166, 0.75);
+}
+
+// MQTT
+.mqttBody {
+  padding: $space-3;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  color: #64748b;
+  font-family: $font-mono;
+  font-size: 12px;
+
+  p {
+    margin: 0 0 $space-1;
+    color: #94a3b8;
+  }
+}
+
+.topic {
+  padding: 6px $space-2;
+  border: 1px dashed #334155;
+  border-radius: $radius-md;
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+
+.ticker {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.msg {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 6px $space-3;
+  border-radius: $radius-lg;
+  background: rgba(148, 163, 184, 0.1);
+  animation: msgIn 0.35s ease both;
+}
+
+.msgTag {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: $radius-sm;
+  background: rgba(14, 165, 233, 0.22);
+  color: #7dd3fc;
+  font-family: $font-mono;
+  font-size: 10px;
+  font-weight: $font-weight-bold;
+  line-height: 1.5;
+}
+
+.msgRpc {
+  background: rgba(242, 104, 92, 0.22);
+  color: #fda4af;
+}
+
+.msgTopic {
+  max-width: 100%;
+  white-space: nowrap;
+  color: #94a3b8;
+  font-family: $font-mono;
+  font-size: 10px;
+}
+
+.msgPayload {
+  color: $color-syntax-string;
+  font-family: $font-mono;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+// Phone
+.phoneBody {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: $pane-body-height;
+  border-radius: $radius-xl;
+  background: linear-gradient(180deg, #e8eeff 0%, #f4f6ff 100%);
+}
+
+.phone {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  width: 192px;
+  height: 236px;
+  padding: 10px 10px 8px;
+  border: 5px solid #0f172a;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+}
+
+.phoneBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
+}
+
+.phoneTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: $site-font-xs;
+  font-weight: $font-weight-bold;
+  color: $site-text;
+}
+
+.capsule {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 3px;
+  height: 14px;
+  padding: 0 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: $radius-full;
+
+  i {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #64748b;
+  }
+}
+
+.phoneCard {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2;
+  border-radius: $radius-xl;
+  background: $site-bg;
+}
+
+.glyph {
+  flex-shrink: 0;
+  width: 36px;
+  height: 32px;
+}
+
+.glyphFrame {
+  fill: #cbd5e1;
+}
+
+.glyphGlass {
+  fill: #9ad7f5;
+}
+
+.glyphSash {
+  fill: #f8fafc;
+  stroke: #94a3b8;
+  stroke-width: 1.5;
+  transform-box: fill-box;
+  transform-origin: top;
+  transition: transform 0.45s ease;
+}
+
+.phoneState {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneLabel {
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: $site-text-muted;
+}
+
+.phoneValue {
+  font-size: $site-font-body;
+  line-height: 1.2;
+}
+
+.isOpen {
+  color: #0f766e;
+}
+
+.isClosed {
+  color: $site-primary;
+}
+
+.isRain {
+  color: $block-sensor;
+}
+
+.phoneStats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $space-2;
+}
+
+.phoneStat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px;
+  border-radius: $radius-lg;
+  background: $site-bg;
+
+  strong {
+    font-size: $site-font-xs;
+    line-height: 1.3;
+    color: $site-text;
+  }
+}
+
+.locked {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.3;
+  color: $site-text-muted;
+  visibility: hidden;
+}
+
+.lockedOn {
+  visibility: visible;
+}
+
+// Connectors
+.connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  color: #cbd5e1;
+  transform: rotate(90deg);
+  transition: color $transition-base;
+}
+
+.connectorLine {
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 4 4;
+}
+
+.connectorHead {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.connectorOn {
+  color: $site-primary;
+
+  .connectorLine {
+    animation: dashFlow 0.5s linear infinite;
+  }
+}
+
+// Steps legend
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2 $space-4;
+  margin: 0;
+  padding: $space-3 $space-2 $space-1;
+  border-top: 1px solid $site-border;
+  list-style: none;
+}
+
+.stepItem {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $site-font-sm;
+  line-height: 1.3;
+  color: $site-text-muted;
+  transition: color $transition-base;
+}
+
+.stepDot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: $site-text-secondary;
+  font-size: 11px;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+  transition: background $transition-base, color $transition-base;
+}
+
+.stepActive {
+  color: $site-text;
+  font-weight: $font-weight-semibold;
+
+  .stepDot {
+    background: $site-primary;
+    color: #ffffff;
+  }
+}
+
+.stepDone {
+  color: $site-text-secondary;
+
+  .stepDot {
+    background: #dcfce7;
+    color: #15803d;
+  }
+}
+
+@keyframes msgIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dashFlow {
+  to {
+    stroke-dashoffset: -8;
+  }
+}
+
+@media (min-width: 640px) {
+  .card {
+    padding: $space-5;
+  }
+
+  .flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: $space-4;
+  }
+
+  .connector {
+    display: none;
+  }
+
+  .steps {
+    gap: $space-2 $space-6;
+  }
+}
+
+@media (min-width: 1280px) {
+  .flow {
+    grid-template-columns:
+      minmax(0, 1.3fr) 40px minmax(0, 1fr) 40px minmax(0, 1.15fr) 40px
+      minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .connector {
+    display: flex;
+    height: auto;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pane,
+  .block,
+  .glyphSash,
+  .stepItem,
+  .stepDot,
+  .connector {
+    transition: none;
+  }
+
+  .msg,
+  .connectorOn .connectorLine {
+    animation: none;
+  }
+}

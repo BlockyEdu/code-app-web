@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { api } from "./api";
+import { loginTermsConsented } from "../components/LoginTermsGate";
 import { FEATURE, type MembershipResponse, type PlanCode } from "./membership-types";
 
 interface MembershipState {
@@ -39,6 +40,13 @@ export const useMembershipStore = create<MembershipState>((set, get) => ({
   async ensureTrialOnEntry() {
     if (ensureTrialInflight) return ensureTrialInflight;
     ensureTrialInflight = (async () => {
+      if (loginTermsConsented()) {
+        try {
+          await api.acceptCurrentLegalPolicy();
+        } catch {
+          /* retry on the next entry until the policy record exists */
+        }
+      }
       try {
         await api.ensureTrial();
       } catch {

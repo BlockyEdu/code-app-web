@@ -7,6 +7,8 @@ import {
   idpHandlePopupCallback,
   isDirectIdpEnabled,
   isOidcPopupWindow,
+  isProductLoginPopup,
+  notifyProductLoginOpener,
 } from "../lib/idp";
 import { useLocaleStore } from "../lib/locale-store";
 import { clearAuthHash, readTokenFromHash } from "../lib/sso";
@@ -24,6 +26,13 @@ export function AuthCallbackPage() {
     const run = async () => {
       if (isDirectIdpEnabled()) {
         try {
+          if (isProductLoginPopup()) {
+            const { accessToken } = await idpHandleCallback();
+            localStorage.setItem("blockyedu_token", accessToken);
+            notifyProductLoginOpener();
+            window.close();
+            return;
+          }
           if (isOidcPopupWindow()) {
             await idpHandlePopupCallback();
             return;

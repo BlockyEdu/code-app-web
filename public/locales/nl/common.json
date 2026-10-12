@@ -100,7 +100,12 @@
     "firstExercise": "Mijn eerste oefening",
     "unnamedExercise": "Ongetitelde oefening",
     "unnamedArtifact": "Ongetiteld artefact",
-    "shipGoal": "Voltooi de pagina en inhoud, deel vervolgens de live link of download een zip"
+    "shipGoal": "Voltooi de pagina en inhoud, deel vervolgens de live link of download een zip",
+    "localDraft": "Concept op dit apparaat",
+    "unsaved": "Niet-opgeslagen wijzigingen",
+    "loginToSave": "Log in om in de cloud op te slaan",
+    "more": "Meer",
+    "rename": "Hernoemen"
   },
   "run": {
     "console": "Console-uitvoering",
@@ -579,7 +584,8 @@
     "agreeBefore": "Ik heb gelezen en ga akkoord met de",
     "agreeAnd": "en het ",
     "userAgreement": "Gebruikersovereenkomst",
-    "privacyPolicy": "Privacybeleid"
+    "privacyPolicy": "Privacybeleid",
+    "trialDeletion": "Proefperiode- en gegevensverwijderingsbeleid"
   },
   "authCallback": {
     "ssoFailed": "SSO-aanmelding mislukt",
@@ -878,7 +884,8 @@
     "iotWait": "Wacht %1 s",
     "iotWaitTip": "Simulatieklok wachten",
     "iotStop": "Noodstop",
-    "iotStopTip": "Lokale noodschakelaar — stop actuatoren nu"
+    "iotStopTip": "Lokale noodschakelaar — stop actuatoren nu",
+    "emptyHint": "Sleep een blok hierheen om te beginnen."
   },
   "iotCh": {
     "rain": "Regen",
@@ -894,7 +901,12 @@
     "level_pct": "Waterniveau",
     "temp": "Watertemperatuur",
     "aerator": "Beluchter",
-    "spray": "Sproeien"
+    "spray": "Sproeien",
+    "humidity": "Vochtigheid",
+    "led": "LED",
+    "relay": "Relais",
+    "speed": "Snelheid",
+    "heading": "Koers"
   },
   "iotCmd": {
     "open": "Open raam",
@@ -1067,7 +1079,19 @@
     "badNode": "Niet-ondersteunde component {{type}}",
     "badSiteField": "Illegaal siteveld {{field}}",
     "missingNode": "Node {{nodeId}} niet gevonden",
-    "badOp": "Niet-ondersteunde bewerking {{op}}"
+    "badOp": "Niet-ondersteunde bewerking {{op}}",
+    "myEvent": "Mijn evenementaanmelding",
+    "myShop": "Mijn minishop",
+    "taglineEvent": "Verzamel namen voor één activiteit",
+    "taglineShop": "Een korte productlijst die je kunt openen",
+    "heroEvent": "Meld je aan voor het evenement",
+    "heroEventSub": "Verander de titel en voeg daarna sessies toe bij Gegevens.",
+    "heroShop": "Welkom in de shop",
+    "heroShopSub": "Bewerk deze intro en voeg daarna je eerste product toe bij Gegevens.",
+    "events": "Sessies",
+    "products": "Producten",
+    "emptyEvents": "Nog geen sessies",
+    "emptyProducts": "Nog geen producten"
   },
   "pairMission": {
     "title": "Krijg een eerste succesvolle run",
@@ -1107,5 +1131,349 @@
   },
   "chrome": {
     "brandTitle": "BlockyEdu — Leren, Bouwen, Shippen"
+  },
+  "home": {
+    "hero": {
+      "title": "Zeg het. Bouw het. Zie het lopen.",
+      "sub": "Blokken of code, een apparaat op tafel en een telefoon die het resultaat toont.",
+      "placeholder": "Als het regent, het raam sluiten en op mijn telefoon tonen",
+      "promptLabel": "Beschrijf wat je wilt maken",
+      "submit": "Start",
+      "examplesLabel": "Probeer een idee",
+      "example1": "Sluit het raam als het regent",
+      "example2": "Een pagina met de kamertemperatuur",
+      "example3": "Doe het licht aan als het donker wordt",
+      "example4": "Een miniprogramma met de apparaatstatus"
+    },
+    "chain": {
+      "title": "Van een regel naar het raam en de telefoon",
+      "lead": "Regen wordt gemeten, het raam gaat dicht en de telefoon volgt. Blokken en code beschrijven dezelfde regel.",
+      "run": "Starten",
+      "replay": "Opnieuw",
+      "open": "Voorbeeld openen",
+      "loading": "Demo laden",
+      "paneLogic": "Logica",
+      "paneDevice": "Apparaat",
+      "paneMqtt": "Berichten",
+      "panePhone": "Telefoon",
+      "capLogic": "Blokken en JavaScript",
+      "capDevice": "Slim raam",
+      "capMqtt": "Metingen en opdrachten",
+      "capPhone": "Status op de telefoon",
+      "blocks": "Blokken",
+      "code": "Code",
+      "tickerEmpty": "Nog geen berichten",
+      "stepsLabel": "Wat er gebeurt",
+      "blkEvent": "als de scène start",
+      "blkIf": "als regen wordt gemeten",
+      "blkClose": "raam sluiten",
+      "phoneState": "Raam",
+      "phoneOpen": "Open",
+      "phoneClosed": "Dicht",
+      "phoneRaining": "Regen",
+      "phoneDry": "Droog",
+      "phoneLocked": "Vergrendeld tijdens regen",
+      "steps": {
+        "rain": "Het begint te regenen",
+        "telemetry": "Apparaat meldt zich",
+        "command": "Sluitopdracht",
+        "window": "Raam gaat dicht",
+        "phone": "Telefoon werkt bij"
+      }
+    },
+    "modes": {
+      "title": "Blokken of code, hetzelfde project",
+      "lead": "Begin met blokken. Open de bestanden als je de JavaScript wilt zien.",
+      "blockTitle": "Blokken",
+      "blockLead": "Zet een regel in elkaar: bij regen het raam sluiten en dan wachten.",
+      "proTitle": "Code",
+      "proLead": "Dezelfde regel als JavaScript, naast de hardwarebestanden.",
+      "files": "Bestanden",
+      "terminal": "Console",
+      "catDevices": "Apparaten",
+      "blkWait": "wacht 1 seconde",
+      "aiLabel": "AI in het project",
+      "aiAsk": "Waarom bleef het raam open?",
+      "aiExplain": "Uitleggen",
+      "aiFix": "Herstellen",
+      "aiGenerate": "Genereren"
+    },
+    "caps": {
+      "title": "Wat je vandaag kunt bouwen",
+      "lead": "Borden, berichten, websites en AI. Geplande onderdelen zijn gemarkeerd.",
+      "available": "Beschikbaar",
+      "beta": "Bèta",
+      "planned": "Gepland",
+      "noteSimulation": "Simulatie in de browser",
+      "noteBrowser": "MQTT in de browser",
+      "layers": {
+        "chips": "Borden en sensoren",
+        "comm": "Verbinding en update",
+        "apps": "Apps",
+        "vision": "Camera",
+        "ai": "AI"
+      },
+      "items": {
+        "esp32s3": "ESP32-S3",
+        "esp32c3": "ESP32-C3",
+        "stm32": "STM32",
+        "sensors": "Sensoren",
+        "mqtt": "MQTT",
+        "kit": "Klaslokaalkit",
+        "ota": "Update op afstand",
+        "websites": "Websites",
+        "miniprograms": "Miniprogramma's",
+        "host": "Gehoste sites",
+        "camera": "Camera",
+        "aiGenerate": "Genereren",
+        "aiExplain": "Uitleggen",
+        "aiDebug": "Debuggen"
+      }
+    },
+    "tracks": {
+      "title": "Voorbeelden",
+      "lead": "Open een voorbeeld en pas het aan.",
+      "all": "Alle voorbeelden",
+      "iot": "Apparaten",
+      "apps": "Web en miniprogramma's",
+      "basics": "Eerste stappen"
+    },
+    "path": {
+      "title": "Een pad door de voorbeelden",
+      "lead": "Vijf korte projecten, van een eerste oefening tot een miniprogramma.",
+      "stepLabel": "Stap {{n}}",
+      "open": "Openen",
+      "course": "Cursus",
+      "s1": {
+        "title": "Eerste oefening",
+        "body": "Pas een kort programma aan en zie wat het afdrukt."
+      },
+      "s2": {
+        "title": "Vraag het de AI",
+        "body": "Blijf bij die oefening en laat de AI de code uitleggen."
+      },
+      "s3": {
+        "title": "Luchtbaken",
+        "body": "Lees temperatuur en vochtigheid en schakel een relais."
+      },
+      "s4": {
+        "title": "Slim raam",
+        "body": "Regen sluit het raam en de telefoon toont de status."
+      },
+      "s5": {
+        "title": "Nieuw-miniprogramma",
+        "body": "Een kleine app met een lijst en een detailpagina."
+      }
+    }
+  },
+  "site": {
+    "navSamples": "Voorbeelden",
+    "navProjects": "Projecten",
+    "navCourses": "Cursussen",
+    "newProject": "Nieuw project",
+    "signIn": "Inloggen",
+    "browseSamples": "Alle voorbeelden bekijken",
+    "footerAbout": "Over",
+    "footerTerms": "Voorwaarden",
+    "footerPrivacy": "Privacy",
+    "footerNav": "Site"
+  },
+  "samples": {
+    "title": "Voorbeelden",
+    "lead": "Kies een voorbeeld en open het in de editor.",
+    "categoryAll": "Alles",
+    "categoryWeb": "Websites",
+    "categoryMiniprogram": "Miniprogramma's",
+    "categorySmarthome": "Slim huis",
+    "categoryIot": "IoT",
+    "categoryBasics": "Programmeren",
+    "empty": "Nog geen voorbeelden in deze categorie.",
+    "open": "Openen",
+    "minutes": "Ongeveer {{count}} min",
+    "levelBeginner": "Beginner",
+    "levelAdvanced": "Gevorderd",
+    "replaceDraft": "Deze browser heeft al een concept. Vervangen door dit voorbeeld?",
+    "landing": {
+      "name": "Landingspagina",
+      "blurb": "Een site van één scherm die je kunt publiceren en delen."
+    },
+    "portfolio": {
+      "name": "Portfolio",
+      "blurb": "Toon je werk op een site met een detailpagina."
+    },
+    "blog": {
+      "name": "Blog",
+      "blurb": "Schrijf berichten en open ze vanuit een lijst."
+    },
+    "news": {
+      "name": "Nieuws-miniprogramma",
+      "blurb": "Een lijst met berichten die ook een WeChat-project exporteert."
+    },
+    "window": {
+      "name": "Slim raam",
+      "blurb": "Sluit het raam bij regen en ventileer als het warm is."
+    },
+    "air": {
+      "name": "Air Beacon",
+      "blurb": "Lees temperatuur en vochtigheid op een ESP32-bord."
+    },
+    "rover": {
+      "name": "Desk Rover",
+      "blurb": "Laat een kleine robot rijden en laat de LED knipperen."
+    },
+    "room": {
+      "name": "Kamernode",
+      "blurb": "Meet de kamer en schakel een relais."
+    },
+    "living": {
+      "name": "Woonkamerlampen",
+      "blurb": "Zet lampen en gordijnen aan in één scène."
+    },
+    "pet": {
+      "name": "Bureauhuisdier",
+      "blurb": "Een speelgoed dat beweegt, oplicht en praat."
+    },
+    "pair": {
+      "name": "Paaroefening",
+      "blurb": "Sleep een paar blokken en bekijk het resultaat."
+    },
+    "irrigation": {
+      "name": "Slim beregenen",
+      "blurb": "Geef water als de grond droog is en sla over bij regen."
+    },
+    "pond": {
+      "name": "Vijverbeluchting",
+      "blurb": "Zet de beluchter aan als het zuurstof daalt."
+    },
+    "climate": {
+      "name": "Klimaatscène",
+      "blurb": "Houd de kamer comfortabel met een thermostaatscène."
+    },
+    "security": {
+      "name": "Beveiligingsdemo",
+      "blurb": "Activeer een deursensor en bekijk het alarm."
+    },
+    "event": {
+      "name": "Evenementaanmelding",
+      "blurb": "Verzamel aanmeldingen voor een clubactiviteit in een miniprogramma."
+    },
+    "shop": {
+      "name": "Minishop",
+      "blurb": "Zet een paar producten op een lijst en open de productpagina."
+    },
+    "sensor": {
+      "name": "Sensorspeelgoed",
+      "blurb": "Lees een sensor op het speelgoed en reageer."
+    },
+    "hello": {
+      "name": "Hello World",
+      "blurb": "Print je eerste regel en verander de zin."
+    },
+    "sort": {
+      "name": "Sorteren",
+      "blurb": "Sorteer een lijst getallen in code."
+    }
+  },
+  "about": {
+    "title": "Over BlockyEdu",
+    "lead": "Leren door websites, miniprogramma's en apparaten te bouwen.",
+    "missionTitle": "Waar deze site voor is",
+    "missionBody": "Je beschrijft wat je wilt, bouwt het met blokken of code en ziet het lopen — in de browser, en op een bord als je er een hebt.",
+    "ecoTitle": "In de LuminaryWorks-familie",
+    "ecoLead": "BlockyEdu staat naast andere producten. Elk blijft bij zijn eigen taak.",
+    "contact": "Contact",
+    "coursePlatform": "Cursusplatform openen",
+    "eco": {
+      "syncrobrain": {
+        "name": "SyncroBrain",
+        "line": "Firmware en apparaatkits."
+      },
+      "vistacast": {
+        "name": "VistaCast",
+        "line": "Video voor lessen en streams."
+      },
+      "dataluminary": {
+        "name": "DataLuminary",
+        "line": "Databeelden en inzicht."
+      }
+    },
+    "orgs": {
+      "title": "Voor scholen en bedrijven",
+      "lead": "Het cursusplatform kan op je eigen servers draaien.",
+      "classroomTitle": "Lessen en voortgang",
+      "classroomBody": "Cursussen, opdrachten en wie klaar is.",
+      "privateTitle": "Je eigen installatie",
+      "privateBody": "Accounts en cursusgegevens blijven op infrastructuur die jij beheert.",
+      "exportTitle": "Neem het werk mee",
+      "exportBody": "Projecten blijven bestanden die je buiten deze site kunt openen."
+    }
+  },
+  "projects": {
+    "title": "Projecten",
+    "filterAll": "Alles",
+    "draftTitle": "Concept op dit apparaat",
+    "emptyTitle": "Nog geen projecten",
+    "startFromSample": "Begin met een voorbeeld",
+    "updatedAt": "Bijgewerkt {{time}}"
+  },
+  "stage": {
+    "circuit": "Schakeling",
+    "scene": "Scène",
+    "reset": "Reset",
+    "timeline": "Tijdlijn",
+    "assertions": "controles",
+    "noEvents": "Nog geen gebeurtenissen",
+    "on": "Aan",
+    "off": "Uit",
+    "device": "Apparaat",
+    "simNotHardware": "Dit is een simulatie, geen bord op tafel.",
+    "board": {
+      "esp32s3": "ESP32-S3",
+      "esp32c3": "ESP32-C3",
+      "nucleo": "Nucleo-F401RE"
+    },
+    "run": {
+      "sim": "Simuleren",
+      "live": "Echt apparaat",
+      "firmware": "Firmware"
+    },
+    "sceneTitle": {
+      "window": "Slim raam",
+      "irrigation": "Irrigatie",
+      "pond": "Vijver",
+      "beacon": "Luchtbaken",
+      "room": "Kamerknoop",
+      "rover": "Bureaurrover",
+      "home": "Slim huis",
+      "toy": "Speelgoed"
+    },
+    "unit": {
+      "c": "°C",
+      "pct": "%",
+      "lpm": "L/min",
+      "mgl": "mg/L",
+      "deg": "°"
+    },
+    "module": {
+      "relay12v": "12V-relais",
+      "limit": "Eindschakelaar",
+      "rain": "Regensensor",
+      "soil": "Bodemvocht",
+      "float": "Vlotterschakelaar",
+      "bme280": "BME280",
+      "motor": "Motordriver",
+      "oled": "OLED-scherm",
+      "relay": "Relais",
+      "led": "LED",
+      "button": "Knop"
+    },
+    "readout": {
+      "speed": "Snelheid",
+      "heading": "Koers",
+      "led": "LED",
+      "relay": "Relais",
+      "distance": "Afstand",
+      "comfort": "Comfort"
+    }
   }
 }

@@ -1,0 +1,136 @@
+@use '../../styles/variables' as *;
+
+.map {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid $site-border;
+  border-radius: $site-radius-card;
+  background: $site-card;
+  box-shadow: $site-shadow;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: $space-4;
+
+  & + & {
+    border-top: 1px solid $site-border;
+  }
+}
+
+.layer {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  font-size: $site-font-sm;
+  font-weight: $font-weight-semibold;
+  line-height: 1.3;
+  color: $site-text;
+}
+
+.layerIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-xl;
+  background: $color-primary-light;
+  color: $site-primary;
+  font-size: $site-font-body;
+}
+
+.items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+  gap: $space-3;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: $space-3;
+  border: 1px solid $site-border;
+  border-radius: $radius-xl;
+  background: $site-bg;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-1 $space-2;
+  margin-top: 6px;
+}
+
+.name {
+  min-width: 0;
+  font-size: $site-font-sm;
+  font-weight: $font-weight-semibold;
+  line-height: 1.3;
+  color: $site-text;
+}
+
+.note {
+  font-size: $site-font-xs;
+  line-height: 1.4;
+  color: $site-text-muted;
+}
+
+.badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 $space-2;
+  border-radius: $radius-full;
+  font-size: $site-font-xs;
+  font-weight: $font-weight-semibold;
+  line-height: 1;
+  white-space: nowrap;
+
+  i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+}
+
+.available {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.beta {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.planned {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+@media (min-width: 960px) {
+  .row {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    align-items: center;
+    gap: $space-6;
+    padding: $space-4 $space-6;
+  }
+
+  .items {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

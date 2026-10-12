@@ -1,7 +1,13 @@
 /** Deterministic IoT lab world for BlockyEdu (window / irrigation / pond). */
 import { t } from "../i18n";
 
-export type IotPackSlug = "smart-window" | "agri-irrigation" | "agri-pond";
+export type IotPackSlug =
+  | "smart-window"
+  | "agri-irrigation"
+  | "agri-pond"
+  | "air-beacon"
+  | "room-node"
+  | "desk-rover";
 
 export type IotRunMode = "sim" | "live" | "firmware";
 
@@ -33,42 +39,69 @@ export type IotWorldState = {
   assertions: IotAssertion[];
 };
 
-export const IOT_PACK_SLUGS: IotPackSlug[] = ["smart-window", "agri-irrigation", "agri-pond"];
+export const IOT_PACK_SLUGS: IotPackSlug[] = [
+  "smart-window",
+  "agri-irrigation",
+  "agri-pond",
+  "air-beacon",
+  "room-node",
+  "desk-rover",
+];
 
 export const TEMPLATE_TO_PACK: Record<string, IotPackSlug> = {
   智慧窗控: "smart-window",
   智慧灌溉: "agri-irrigation",
   鱼塘增氧: "agri-pond",
+  "HP-01 Air Beacon": "air-beacon",
+  温湿度监测: "air-beacon",
+  "HP-02 Desk Rover": "desk-rover",
+  "HP-03 Room Node": "room-node",
+  设备联动: "room-node",
 };
 
 export const PACK_TO_TEMPLATE: Record<IotPackSlug, string> = {
   "smart-window": "智慧窗控",
   "agri-irrigation": "智慧灌溉",
   "agri-pond": "鱼塘增氧",
+  "air-beacon": "HP-01 Air Beacon",
+  "room-node": "HP-03 Room Node",
+  "desk-rover": "HP-02 Desk Rover",
 };
 
 export const PACK_ASSERTIONS: Record<IotPackSlug, string[]> = {
   "smart-window": ["rain-close", "rain-deny-open", "heat-vent"],
   "agri-irrigation": ["soil-irrigate", "rain-skip", "dry-run-stop"],
   "agri-pond": ["low-do-aerate", "heat-spray", "low-level-deny-spray"],
+  "air-beacon": ["beacon-read"],
+  "room-node": ["lamp-on"],
+  "desk-rover": ["rover-move"],
 };
 
 const PACK_CHANNELS: Record<IotPackSlug, string[]> = {
   "smart-window": ["rain", "temperature", "position", "limit_open", "limit_close"],
   "agri-irrigation": ["soil", "rain", "flow", "pump", "zone"],
   "agri-pond": ["do_mgl", "level_pct", "temp", "aerator", "spray"],
+  "air-beacon": ["temperature", "humidity"],
+  "room-node": ["temperature", "humidity", "relay"],
+  "desk-rover": ["speed", "heading", "led"],
 };
 
 const PACK_COMMANDS: Record<IotPackSlug, string[]> = {
   "smart-window": ["open", "close", "stop", "setPosition"],
   "agri-irrigation": ["zoneOn", "zoneOff", "pumpOn", "pumpOff"],
   "agri-pond": ["aerateOn", "aerateOff", "sprayOn", "sprayOff"],
+  "air-beacon": [],
+  "room-node": [],
+  "desk-rover": [],
 };
 
 const PACK_SCENES: Record<IotPackSlug, string[]> = {
   "smart-window": ["win-rain-close", "win-heat-vent", "win-manual", "pack"],
   "agri-irrigation": ["irr-soil", "irr-rain-skip", "irr-dry-run", "pack"],
   "agri-pond": ["pond-aerate", "pond-spray", "pond-level", "pack"],
+  "air-beacon": ["pack"],
+  "room-node": ["pack"],
+  "desk-rover": ["pack"],
 };
 
 export function isIotLabPack(value: string | null | undefined): value is IotPackSlug {
@@ -106,6 +139,9 @@ export function createIotWorld(
     },
     "agri-irrigation": { soil: 45, rain: 0, flow: 1.2, pump: 0, zone: 0 },
     "agri-pond": { do_mgl: 6.5, level_pct: 80, temp: 24, aerator: 0, spray: 0 },
+    "air-beacon": { temperature: 24.1, humidity: 48 },
+    "room-node": { temperature: 24.1, humidity: 48, relay: 0 },
+    "desk-rover": { speed: 0, heading: 0, led: 0 },
   };
   const channels = { ...defaults[packSlug] };
   for (const [key, value] of Object.entries(telemetry ?? {})) {
@@ -312,6 +348,21 @@ export function evaluateIotAssertions(
         denied.some((e) => e.commandId === "sprayOn" && e.reason === "INTERLOCK"),
       detail: t("iotLab.assertLevel", { level: num(world, "level_pct") }),
     }),
+    "beacon-read": () => ({
+      id: "beacon-read",
+      ok: num(world, "temperature") >= 20 && num(world, "humidity") > 0,
+      detail: t("iotLab.inject", { name: "temperature", value: num(world, "temperature") }),
+    }),
+    "lamp-on": () => ({
+      id: "lamp-on",
+      ok: num(world, "relay") >= 1,
+      detail: t("iotLab.inject", { name: "relay", value: num(world, "relay") }),
+    }),
+    "rover-move": () => ({
+      id: "rover-move",
+      ok: num(world, "speed") > 0,
+      detail: t("iotLab.inject", { name: "speed", value: num(world, "speed") }),
+    }),
   };
   world.assertions = ids.map((id) => checks[id]?.() ?? { id, ok: false, detail: "unknown" });
   return world.assertions;
@@ -382,6 +433,23 @@ if (iot.readChannel('rain') > 0) {
 iot.evaluateScene('win-rain-close');
 `;
   }
+  if (packSlug === "air-beacon") {
+    return `iot.setChannel('temperature', 27);
+iot.setChannel('humidity', 62);
+`;
+  }
+  if (packSlug === "room-node") {
+    return `iot.setChannel('temperature', 23);
+iot.setChannel('humidity', 44);
+iot.setChannel('relay', 1);
+`;
+  }
+  if (packSlug === "desk-rover") {
+    return `iot.setChannel('speed', 45);
+iot.setChannel('heading', 25);
+iot.setChannel('led', 1);
+`;
+  }
   if (packSlug === "agri-irrigation") {
     return `iot.setChannel('soil', 18);
 iot.setChannel('rain', 0);
@@ -410,7 +478,42 @@ iot.command('sprayOn');
 `;
 }
 
+function channelStack(pairs: Array<[string, number]>): string {
+  let inner = "";
+  for (let index = pairs.length - 1; index >= 0; index -= 1) {
+    const [channel, value] = pairs[index];
+    const origin = index === 0 ? ' x="30" y="30"' : "";
+    inner = `<block type="iot_set_channel"${origin}>
+    <field name="CHANNEL">${channel}</field>
+    <value name="VALUE"><block type="math_number"><field name="NUM">${value}</field></block></value>
+    ${inner ? `<next>${inner}</next>` : ""}
+  </block>`;
+  }
+  return `<xml xmlns="https://developers.google.com/blockly/xml">
+  ${inner}
+</xml>`;
+}
+
 export function starterIotXml(packSlug: IotPackSlug): string {
+  if (packSlug === "air-beacon")
+    return channelStack([
+      ["temperature", 27],
+      ["humidity", 62],
+    ]);
+  if (packSlug === "room-node") {
+    return channelStack([
+      ["temperature", 23],
+      ["humidity", 44],
+      ["relay", 1],
+    ]);
+  }
+  if (packSlug === "desk-rover") {
+    return channelStack([
+      ["speed", 45],
+      ["heading", 25],
+      ["led", 1],
+    ]);
+  }
   const channel =
     packSlug === "agri-pond" ? "do_mgl" : packSlug === "agri-irrigation" ? "soil" : "rain";
   const command =

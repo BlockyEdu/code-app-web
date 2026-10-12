@@ -9,13 +9,16 @@ import { useAuthStore } from "./lib/auth-store";
 import { t } from "./lib/i18n";
 import { useLocaleStore } from "./lib/locale-store";
 import { useMembershipStore } from "./lib/membership-store";
-import { isLaunchPath, isWorkspacePath } from "./lib/navigate";
+import { isAboutPath, isLaunchPath, isSamplePath, isWorkspacePath } from "./lib/navigate";
+import { AboutPage } from "./pages/AboutPage";
 import { AuthCallbackPage } from "./pages/AuthCallbackPage";
+import { HomePage } from "./pages/HomePage";
 import { LaunchPage } from "./pages/LaunchPage";
+import { LegalPrivacyPage, LegalTermsPage, LegalTrialDeletionPage } from "./pages/LegalPages";
 import { LoginPage } from "./pages/LoginPage";
-import { LegalPrivacyPage, LegalTermsPage } from "./pages/LegalPages";
 import { MembershipPage } from "./pages/MembershipPage";
-import { ProjectsHub } from "./pages/ProjectsHub";
+import { ProjectsPage } from "./pages/ProjectsPage";
+import { SamplesPage } from "./pages/SamplesPage";
 import { CreateWorkspace } from "./workspace/CreateWorkspace";
 
 export default function App() {
@@ -30,9 +33,14 @@ export default function App() {
   const isLogin = path === "/login";
   const isLegalTerms = path === "/legal/terms";
   const isLegalPrivacy = path === "/legal/privacy";
+  const isLegalTrialDeletion = path === "/legal/trial-deletion";
   const isWorkspace = isWorkspacePath(path);
+  const isSample = isSamplePath(path);
   const isMembership = path === "/membership";
   const isLaunch = isLaunchPath(path);
+  const isSamples = path === "/samples";
+  const isProjects = path === "/projects";
+  const isAbout = isAboutPath(path);
   const isCreateTrial = path === "/create";
 
   useEffect(() => {
@@ -70,6 +78,9 @@ export default function App() {
   if (isLegalPrivacy) {
     return <LegalPrivacyPage product="BlockyEdu 编程工作台" />;
   }
+  if (isLegalTrialDeletion) {
+    return <LegalTrialDeletionPage product="BlockyEdu 编程工作台" />;
+  }
 
   if (isMembership) {
     return <MembershipPage />;
@@ -79,9 +90,21 @@ export default function App() {
     return <LaunchPage />;
   }
 
-  if (isWorkspace) {
+  if (isWorkspace || isSample) {
     return <CreateWorkspace />;
   }
 
-  return <ProjectsHub trial={isCreateTrial} />;
+  if (isSamples) {
+    return <SamplesPage />;
+  }
+
+  if (isProjects) {
+    return <ProjectsPage />;
+  }
+
+  if (isAbout) {
+    return <AboutPage />;
+  }
+
+  return <HomePage trial={isCreateTrial} />;
 }

@@ -1,0 +1,32 @@
+@use '../styles/variables' as *;
+
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: $site-bg;
+  color: $site-text;
+  font-family: $font-sans;
+}
+
+.main {
+  flex: 1;
+  width: min($site-content, calc(100% - 48px));
+  margin: 0 auto;
+  padding-top: $space-12;
+  padding-bottom: $site-section-mobile;
+}
+
+.gate {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: $site-bg;
+}
+
+@media (min-width: 960px) {
+  .main {
+    padding-top: $space-12;
+    padding-bottom: $site-section-desktop;
+  }
+}

@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from "react-resizable-panels";
 import { AppProviders } from "../components/AppProviders";
-import { AuthBanner } from "../components/AuthBanner";
 import { BlocklyEditor } from "../components/BlocklyEditor";
 import { BlocklyUnsupportedNotice } from "../components/BlocklyUnsupportedNotice";
 import { ConsolePanel } from "../components/ConsolePanel";
@@ -13,16 +12,26 @@ import { api } from "../lib/api";
 import { type BlogPostView, usesHostedPosts } from "../lib/app-studio/app-schema";
 import { renderBlogHtml } from "../lib/app-studio/blog-html";
 import { filesToMap } from "../lib/artifact-files";
+import { useAuthStore } from "../lib/auth-store";
 import { runPreview } from "../lib/execute";
+import { consumeGuestBootSkip, guestBootKey, readGuestDraft } from "../lib/guest-draft";
 import { errorCodeOf } from "../lib/http";
 import { t } from "../lib/i18n";
 import { useLocaleStore } from "../lib/locale-store";
-import { parseWorkspaceArtifactId } from "../lib/navigate";
-import { type RuntimeKind, runTargetProgram } from "../lib/targets";
+import { normalizePath, parseSampleSlug, parseWorkspaceArtifactId } from "../lib/navigate";
+import { findOfficialSample } from "../lib/official-samples";
+import { DEFAULT_KIND_CODE, type RuntimeKind, runTargetProgram } from "../lib/targets";
+import { isIotLabPack, starterIotCode } from "../lib/targets/iot-lab";
 import { track } from "../lib/telemetry";
 import { buildHtmlFromWorld, composeStaticSiteClient } from "../lib/web-preview";
 import { isAppStudioKind, useWorkspaceStore } from "../stores/workspace";
-import { isConsoleKind, isHardwareKind, isHomeSimKind, isTargetBlockKind } from "../types/artifact";
+import {
+  type ArtifactKind,
+  isConsoleKind,
+  isHardwareKind,
+  isHomeSimKind,
+  isTargetBlockKind,
+} from "../types/artifact";
 import { AssetsPanel } from "./AssetsPanel";
 import { BlogDataPanel } from "./BlogDataPanel";
 import { BlogLogicPanel } from "./BlogLogicPanel";
@@ -30,6 +39,14 @@ import styles from "./CreateWorkspace.module.scss";
 import { DesignStudio } from "./DesignStudio";
 import { PreviewPanel } from "./PreviewPanel";
 import { WorkspaceHeader } from "./WorkspaceHeader";
+
+function programForRun(source: string, pack: string | null, kind: ArtifactKind): string {
+  const trimmed = source.trim();
+  if (trimmed && trimmed !== t("blockly.startComment").trim()) return source;
+  if (pack && isIotLabPack(pack)) return starterIotCode(pack);
+  if (kind === "smarthome" || kind === "toy" || kind === "iot") return DEFAULT_KIND_CODE[kind];
+  return source;
+}
 
 function EditorArea() {
   const editorMode = useWorkspaceStore((s) => s.editorMode);
@@ -65,6 +82,7 @@ export function CreateWorkspace() {
   const aiOpen = useWorkspaceStore((s) => s.aiOpen);
   const setAiOpen = useWorkspaceStore((s) => s.setAiOpen);
   const toggleAiOpen = useWorkspaceStore((s) => s.toggleAiOpen);
+  const hasPendingAiPrompt = useWorkspaceStore((s) => s.pendingAiPrompt !== null);
   const artifactKind = useWorkspaceStore((s) => s.artifactKind);
   const languageId = useWorkspaceStore((s) => s.languageId);
   const code = useWorkspaceStore((s) => s.code);
@@ -89,15 +107,53 @@ export function CreateWorkspace() {
   const blogStudio = isAppStudioKind(artifactKind, templateId);
 
   const createNewArtifact = useWorkspaceStore((s) => s.createNewArtifact);
+  const hydrateGuestDraft = useWorkspaceStore((s) => s.hydrateGuestDraft);
+  const sampleBoot = useRef<string | null>(null);
 
   const brandTitle = t("chrome.brandTitle");
   useEffect(() => {
     document.title = artifactName ? `${artifactName} · ${brandTitle}` : brandTitle;
   }, [artifactName, brandTitle]);
 
+  useEffect(() => {
+    if (hasPendingAiPrompt) setAiOpen(true);
+  }, [hasPendingAiPrompt, setAiOpen]);
+
   const [isRunning, setIsRunning] = useState(false);
   const showPreview = rightPreviewOpen && !isConsoleKind(artifactKind);
   useArtifactAutosave();
+
+  // Official sample or untitled local draft. A copy seeded just before navigation is left as-is.
+  useEffect(() => {
+    const slug = parseSampleSlug();
+    const bareWorkspace = normalizePath() === "/workspace" && !parseWorkspaceArtifactId();
+    const key = slug ? guestBootKey(slug) : bareWorkspace ? guestBootKey(null) : null;
+    if (!key || sampleBoot.current === key) return;
+    if (consumeGuestBootSkip(key)) {
+      sampleBoot.current = key;
+      return;
+    }
+    sampleBoot.current = key;
+    const draft = readGuestDraft();
+    if (slug) {
+      if (draft?.sampleSlug === slug) {
+        hydrateGuestDraft(draft);
+        return;
+      }
+      const sample = findOfficialSample(slug);
+      if (!sample) return;
+      void createNewArtifact(sample.kind, t(sample.nameKey), "javascript", {
+        templateId: sample.templateId,
+        intent: sample.intent,
+        localOnly: true,
+        sampleSlug: sample.slug,
+      });
+      return;
+    }
+    if (draft && !draft.sampleSlug && !useWorkspaceStore.getState().artifactId) {
+      hydrateGuestDraft(draft);
+    }
+  }, [createNewArtifact, hydrateGuestDraft]);
 
   // Load artifact from `/workspace/:id` on mount / path change.
   useEffect(() => {
@@ -275,9 +331,28 @@ export function CreateWorkspace() {
       clearConsole();
       try {
         if (!artifactId) {
-          appendConsole(`[error] ${t("run.saveBeforeFirmware")}`);
+          const packSlug = useWorkspaceStore.getState().iotPackSlug;
+          const result = runTargetProgram({
+            code: programForRun(code, packSlug, artifactKind),
+            kind: artifactKind as RuntimeKind,
+            packSlug,
+          });
+          setPreviewWorld(result.finalState);
+          clearConsole();
+          for (const line of result.lines) {
+            const prefix = line.level === "error" ? "[error]" : "[sim]";
+            appendConsole(`${prefix} ${line.text}`);
+          }
+          if (result.status === "success" && result.finalState.iot) {
+            const passed = result.finalState.iot.assertions.filter((item) => item.ok).length;
+            appendConsole(
+              `[assert] ${t("run.iotAssertPass", { passed, total: result.finalState.iot.assertions.length })}`,
+            );
+          }
           return;
         }
+        const signedIn = await useAuthStore.getState().ensureSignedIn();
+        if (!signedIn) return;
         await saveCurrentArtifact();
         const sku = boardSku || "board.espressif.esp32-s3-devkitc-1";
         appendConsole(`[info] ${t("run.firmwareBuild")}`);
@@ -337,10 +412,11 @@ export function CreateWorkspace() {
       setIsRunning(true);
       setRightPreviewOpen(true);
       try {
+        const packSlug = useWorkspaceStore.getState().iotPackSlug;
         const result = runTargetProgram({
-          code,
+          code: programForRun(code, packSlug, artifactKind),
           kind: artifactKind as RuntimeKind,
-          packSlug: useWorkspaceStore.getState().iotPackSlug,
+          packSlug,
         });
         setPreviewWorld(result.finalState);
         clearConsole();
@@ -494,7 +570,6 @@ export function CreateWorkspace() {
     <AppProviders>
       <div className={styles.workspace}>
         <WorkspaceHeader isRunning={isRunning} onRun={() => void handleRun()} />
-        <AuthBanner />
 
         <div className={styles.body}>
           <PanelGroup orientation="horizontal" className={styles.hPanelGroup}>

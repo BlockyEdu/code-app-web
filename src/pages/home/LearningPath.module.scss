@@ -1,0 +1,125 @@
+@use '../../styles/variables' as *;
+
+.path {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: $space-4;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  min-width: 0;
+  padding: $space-5;
+  border: 1px solid $site-border;
+  border-radius: $site-radius-card;
+  background: $site-card;
+  box-shadow: $site-shadow;
+}
+
+.num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-bottom: $space-2;
+  border-radius: 50%;
+  background: $site-primary;
+  color: #ffffff;
+  font-size: $site-font-sm;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+}
+
+.title {
+  margin: 0;
+  font-size: $site-font-body;
+  line-height: $site-line-title;
+  font-weight: $font-weight-bold;
+  color: $site-text;
+}
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.body {
+  flex: 1;
+  margin: 0;
+  font-size: $site-font-sm;
+  line-height: $site-line-body;
+  color: $site-text-secondary;
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  margin-top: $space-2;
+}
+
+.open {
+  height: 32px;
+  padding: 0 $space-4;
+  border: 1px solid $site-border;
+  border-radius: $radius-full;
+  background: $site-card;
+  color: $site-primary;
+  font-family: inherit;
+  font-size: $site-font-sm;
+  font-weight: $font-weight-semibold;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color $transition-fast, background $transition-fast;
+
+  &:hover,
+  &:focus-visible {
+    border-color: $site-primary;
+    background: $color-primary-muted;
+  }
+}
+
+.course {
+  color: $site-text-muted;
+  font-size: $site-font-xs;
+  font-weight: $font-weight-medium;
+
+  &:hover {
+    color: $site-primary;
+  }
+}
+
+@media (min-width: 640px) {
+  .path {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .path {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: $space-5;
+  }
+
+  .step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 36px;
+    left: calc(100% - 1px);
+    width: $space-5;
+    height: 2px;
+    background: repeating-linear-gradient(90deg, #cbd5e1 0 4px, transparent 4px 8px);
+  }
+}

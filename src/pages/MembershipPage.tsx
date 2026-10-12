@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
 import { QRCode } from "antd";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../lib/api";
 import {
   type CheckoutAction,

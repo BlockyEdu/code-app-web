@@ -4,7 +4,15 @@ import { useState } from "react";
 import { t } from "../lib/i18n";
 
 /** Shared with edu-app-web so one consent state covers both BlockyEdu surfaces. */
-const TOS_KEY = "blockyedu.tos.login.v3";
+const TOS_KEY = "blockyedu.tos.login.v4";
+
+export function loginTermsConsented(): boolean {
+  try {
+    return localStorage.getItem(TOS_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 const CARD_INK = "#14212b";
 const STAGE_INK = "#f7fbff";
 const STAGE_LINK = "#d6e9ff";
@@ -92,6 +100,10 @@ export function LoginTermsCheckbox({
           style={linkStyle}
         >
           {t("login.privacyPolicy")}
+        </a>{" "}
+        {t("login.agreeAnd")}
+        <a href="/legal/trial-deletion" target="_blank" rel="noopener noreferrer" style={linkStyle}>
+          {t("login.trialDeletion")}
         </a>
       </span>
     </label>

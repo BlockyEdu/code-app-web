@@ -48,6 +48,8 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
     templateId,
     appSchema,
     updateAppSchema,
+    pendingAiPrompt,
+    setPendingAiPrompt,
   } = useWorkspaceStore();
   const user = useAuthStore((s) => s.user);
   const openLoginPrompt = useAuthStore((s) => s.openLoginPrompt);
@@ -55,6 +57,12 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
   const { aiOpts, ready, config, settings, selectProviderModel } = useAiSettings();
   const [input, setInput] = useState("");
   const [pendingAppPatch, setPendingAppPatch] = useState<AppSchemaPatch | null>(null);
+
+  useEffect(() => {
+    if (hubMode || !pendingAiPrompt) return;
+    setInput(pendingAiPrompt);
+    setPendingAiPrompt(null);
+  }, [hubMode, pendingAiPrompt, setPendingAiPrompt]);
   const blogStudio = isAppStudioKind(artifactKind, templateId);
 
   const goal = getCurrentGoal();
@@ -426,9 +434,7 @@ export function AiPanel({ hideHeader = false, hubMode = false, onHubIntercept }:
                 <p className="ai-hint-text">{aiNextHint}</p>
                 {aiNextAction && <p className="ai-next-action">👉 {aiNextAction}</p>}
               </>
-            ) : (
-              <p className="muted">{t("ai.signInHint")}</p>
-            )}
+            ) : null}
           </div>
         )}
 

@@ -15,6 +15,39 @@
   }
 }
 
+.triggerLabeled {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  height: 32px;
+  max-width: 180px;
+  padding: 0 12px 0 4px;
+  border: 1px solid $site-border;
+  border-radius: 8px;
+  background: $site-card;
+  color: $site-text;
+  font-family: inherit;
+  font-size: $site-font-sm;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $site-primary;
+    color: $site-primary;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px #{$site-primary}40;
+  }
+}
+
+.triggerName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .panel {
   min-width: 220px;
   padding: $space-3;
@@ -48,6 +81,24 @@
   font-size: $font-size-xs;
   color: $color-text-muted;
   @include truncate();
+}
+
+.panelLight {
+  background: $site-card;
+  border-color: $site-border;
+  box-shadow: $site-shadow;
+
+  .identity {
+    border-bottom-color: $site-border;
+  }
+
+  .name {
+    color: $site-text;
+  }
+
+  .username {
+    color: $site-text-muted;
+  }
 }
 
 .logoutBtn {

@@ -20,8 +20,21 @@ import {
   isBinaryRefFile,
   mergeTextMapWithBinaryRefs,
 } from "../lib/artifact-files";
+import {
+  clearGuestDraft,
+  type GuestDraft,
+  guestBootKey,
+  markGuestBooted,
+  writeGuestDraft,
+} from "../lib/guest-draft";
 import { t } from "../lib/i18n";
 import { untitledArtifactName } from "../lib/kind-label";
+import {
+  navigate,
+  normalizePath,
+  parseSampleSlug,
+  parseWorkspaceArtifactId,
+} from "../lib/navigate";
 import {
   defaultPairMission,
   nextPhaseAfterAction,
@@ -42,6 +55,40 @@ import {
 import { getDefaultLanguageId, getLanguagePlugin } from "../plugins";
 import type { ArtifactKind, LeftPanelTab } from "../types/artifact";
 import { isConsoleKind, isHardwareKind } from "../types/artifact";
+
+export function snapshotGuestDraft(state: {
+  localSampleSlug: string | null;
+  artifactKind: ArtifactKind;
+  artifactName: string;
+  templateId: string | null;
+  intent?: string;
+  languageId: string;
+  code: string;
+  blockXml: string;
+  artifactFiles: ArtifactFileEntry[];
+  activeFilePath: string;
+  editorMode: EditorMode;
+  surfaceMode: SurfaceMode;
+  appSchema: AppSchema | null;
+  selectedNodeId: string | null;
+}): GuestDraft {
+  return {
+    sampleSlug: state.localSampleSlug,
+    kind: state.artifactKind,
+    name: state.artifactName,
+    templateId: state.templateId,
+    intent: state.intent,
+    languageId: state.languageId,
+    code: state.code,
+    blockXml: state.blockXml,
+    files: state.artifactFiles,
+    activeFilePath: state.activeFilePath,
+    editorMode: state.editorMode,
+    surfaceMode: state.surfaceMode,
+    appSchema: state.appSchema,
+    selectedNodeId: state.selectedNodeId,
+  };
+}
 
 export type EditorMode = "blockly" | "monaco";
 
@@ -121,6 +168,8 @@ interface WorkspaceState {
   artifactName: string;
   /** Server-persisted create Artifact id (Phase 4); null when local-only */
   artifactId: string | null;
+  /** Official sample that seeded this local copy. Null for a blank draft. */
+  localSampleSlug: string | null;
   /** Cached draft file list for merge-on-save */
   artifactFiles: ArtifactFileEntry[];
   activeFilePath: string;
@@ -137,6 +186,8 @@ interface WorkspaceState {
   leftOpen: boolean;
   rightPreviewOpen: boolean;
   aiOpen: boolean;
+  /** Draft typed on the home page. The AI panel moves it into its input; it is never sent. */
+  pendingAiPrompt: string | null;
   bottomOpen: boolean;
   activeLeftTab: LeftPanelTab;
   showNewProjectDialog: boolean;
@@ -197,6 +248,7 @@ interface WorkspaceState {
   setLeftOpen: (open: boolean) => void;
   setRightPreviewOpen: (open: boolean) => void;
   setAiOpen: (open: boolean) => void;
+  setPendingAiPrompt: (prompt: string | null) => void;
   setBottomOpen: (open: boolean) => void;
   toggleLeftOpen: () => void;
   toggleRightPreviewOpen: () => void;
@@ -216,8 +268,16 @@ interface WorkspaceState {
     kind: ArtifactKind,
     name: string,
     language?: string,
-    opts?: { templateId?: string; intent?: string; boardSku?: string },
+    opts?: {
+      templateId?: string;
+      intent?: string;
+      boardSku?: string;
+      /** Skip the server until the user saves. */
+      localOnly?: boolean;
+      sampleSlug?: string;
+    },
   ) => Promise<string | null>;
+  hydrateGuestDraft: (draft: GuestDraft) => void;
   openArtifact: (id: string) => Promise<void>;
   /** Open legacy code-workspace Project as exercise (may promote to Artifact on save). */
   openLegacyProject: (projectId: string) => Promise<void>;
@@ -277,6 +337,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   artifactKind: "exercise",
   artifactName: t("workspace.firstExercise"),
   artifactId: null,
+  localSampleSlug: null,
   artifactFiles: [],
   activeFilePath: "main.js",
   intent: undefined,
@@ -292,6 +353,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   leftOpen: true,
   rightPreviewOpen: false,
   aiOpen: false,
+  pendingAiPrompt: null,
   bottomOpen: true,
   activeLeftTab: "files",
   showNewProjectDialog: false,
@@ -515,6 +577,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   setLeftOpen: (leftOpen) => set({ leftOpen }),
   setRightPreviewOpen: (rightPreviewOpen) => set({ rightPreviewOpen }),
   setAiOpen: (aiOpen) => set({ aiOpen }),
+  setPendingAiPrompt: (pendingAiPrompt) => set({ pendingAiPrompt }),
   setBottomOpen: (bottomOpen) => set({ bottomOpen }),
   toggleLeftOpen: () => set((s) => ({ leftOpen: !s.leftOpen })),
   toggleRightPreviewOpen: () => set((s) => ({ rightPreviewOpen: !s.rightPreviewOpen })),
@@ -735,6 +798,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       artifactName: nextName,
       projectName: nextName,
       artifactId: null,
+      localSampleSlug: opts?.sampleSlug ?? null,
       learnLink: null,
       lesson: null,
       lessonStepIndex: 0,
@@ -784,6 +848,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     });
 
     if (consoleKind) track("pair.mission.started", { id: pairMission.id, kind });
+
+    if (opts?.localOnly) {
+      const snap = get();
+      writeGuestDraft(snapshotGuestDraft(snap));
+      markGuestBooted(guestBootKey(snap.localSampleSlug));
+      return null;
+    }
 
     try {
       let workspaceProjectId: string | undefined;
@@ -843,6 +914,45 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     } catch {
       return null;
     }
+  },
+
+  hydrateGuestDraft: (draft) => {
+    const consoleKind = isConsoleKind(draft.kind);
+    const blog = isBlogStudioKind(draft.kind, draft.templateId);
+    set({
+      artifactKind: draft.kind,
+      artifactName: draft.name,
+      projectName: draft.name,
+      artifactId: null,
+      localSampleSlug: draft.sampleSlug,
+      learnLink: null,
+      lesson: null,
+      lessonStepIndex: 0,
+      currentProject: null,
+      artifactFiles: draft.files,
+      activeFilePath: draft.activeFilePath,
+      templateId: draft.templateId,
+      intent: draft.intent,
+      code: draft.code,
+      blockXml: draft.blockXml,
+      editorMode: draft.editorMode,
+      surfaceMode: draft.surfaceMode,
+      appSchema: draft.appSchema,
+      selectedNodeId: draft.selectedNodeId,
+      languageId: draft.languageId,
+      saveDirty: true,
+      saveStatus: "idle",
+      leftOpen: true,
+      rightPreviewOpen: !consoleKind,
+      bottomOpen: consoleKind,
+      showNewProjectDialog: false,
+      activeLeftTab: blog || consoleKind ? "learn" : "files",
+      languageBuffers: {
+        ...get().languageBuffers,
+        [draft.languageId]: { code: draft.code, blockXml: draft.blockXml },
+      },
+    });
+    markGuestBooted(guestBootKey(draft.sampleSlug));
   },
 
   openArtifact: async (id) => {
@@ -908,6 +1018,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
       set({
         artifactId: meta.id,
+        localSampleSlug: null,
         artifactKind: meta.kind,
         artifactName: meta.title,
         projectName: meta.title,
@@ -981,6 +1092,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     set({
       artifactId: null,
+      localSampleSlug: null,
       learnLink: null,
       artifactKind: "exercise",
       artifactName: project.name,
@@ -1127,13 +1239,23 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
               },
         ),
       });
+      clearGuestDraft();
       set({
         artifactFiles: res.files,
         currentProject: project,
         projectName: state.artifactName || state.projectName,
+        localSampleSlug: null,
         saveDirty: false,
         saveStatus: "saved",
       });
+      const savedId = get().artifactId;
+      const path = normalizePath();
+      if (
+        savedId &&
+        (parseSampleSlug(path) || (path === "/workspace" && !parseWorkspaceArtifactId(path)))
+      ) {
+        navigate(`/workspace/${savedId}`);
+      }
       return true;
     } catch {
       set({ saveStatus: "error" });

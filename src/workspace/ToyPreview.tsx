@@ -8,14 +8,7 @@ import type { WorldState } from "../lib/targets";
 import { applyServerStateToToy, asToyServerState } from "../lib/toy-world-map";
 import { useWorkspaceStore } from "../stores/workspace";
 import styles from "./PreviewPanel.module.scss";
-
-const LED_COLORS: Record<string, string> = {
-  red: "#ef4444",
-  green: "#22c55e",
-  blue: "#2563eb",
-  yellow: "#f59e0b",
-  off: "#334155",
-};
+import { DeviceStage } from "./stage/DeviceStage";
 
 export function ToyPreview({ world }: { world: WorldState | null }) {
   useLocaleStore((s) => s.locale);
@@ -31,9 +24,6 @@ export function ToyPreview({ world }: { world: WorldState | null }) {
   const ensureRef = useRef<Promise<string | null> | null>(null);
 
   const toy = world?.toy;
-  const led = toy?.led || "off";
-  const ledColor = LED_COLORS[led] || LED_COLORS.off;
-  const log = toy?.timeline?.length ? toy.timeline.slice(-6) : [t("preview.toyIdle")];
 
   const mergeState = useCallback(
     (raw: unknown, meta?: { tick?: number; status?: string }) => {
@@ -175,79 +165,64 @@ export function ToyPreview({ world }: { world: WorldState | null }) {
   };
 
   return (
-    <div className={styles.toyPreview}>
-      <div className={styles.homeNotice}>
-        {t("preview.toyVirtual")}
-        {status ? ` · ${t("preview.toyStatus", { status })}` : ""}
-        {tick > 0 ? ` · ${t("preview.toyTick", { tick })}` : ""}
-        {!apiOnline ? ` · ${t("preview.toyApiOffline")}` : ""}
-      </div>
-      <div className={styles.injectBar}>
-        <div className={styles.injectGroup}>
-          <span className={styles.injectLabel}>{t("preview.toyControls")}</span>
-          <div className={styles.sceneRow}>
-            <button type="button" className={styles.sceneBtn} disabled={busy} onClick={runStep}>
-              {t("preview.toyStep")}
-            </button>
-            <button
-              type="button"
-              className={styles.sceneBtn}
-              disabled={busy}
-              onClick={() => inject({ type: "input", name: "button.a" })}
-            >
-              {t("preview.toyLed")}
-            </button>
-            <button
-              type="button"
-              className={styles.sceneBtn}
-              disabled={busy}
-              onClick={() => inject({ type: "input", name: "imu.shake" })}
-            >
-              {t("preview.toyShake")}
-            </button>
-            <button
-              type="button"
-              className={styles.sceneBtn}
-              disabled={busy}
-              onClick={() => inject({ type: "reset" })}
-            >
-              {t("preview.toyReset")}
-            </button>
+    <div className={styles.deviceHost}>
+      <DeviceStage kind="toy">
+        <div className={styles.stageControls}>
+          <div className={styles.homeNotice}>
+            {t("preview.toyVirtual")}
+            {status ? ` · ${t("preview.toyStatus", { status })}` : ""}
+            {tick > 0 ? ` · ${t("preview.toyTick", { tick })}` : ""}
+            {!apiOnline ? ` · ${t("preview.toyApiOffline")}` : ""}
+          </div>
+          <div className={styles.injectBar}>
+            <div className={styles.injectGroup}>
+              <span className={styles.injectLabel}>{t("preview.toyControls")}</span>
+              <div className={styles.sceneRow}>
+                <button type="button" className={styles.sceneBtn} disabled={busy} onClick={runStep}>
+                  {t("preview.toyStep")}
+                </button>
+                <button
+                  type="button"
+                  className={styles.sceneBtn}
+                  disabled={busy}
+                  onClick={() => inject({ type: "input", name: "button.a" })}
+                >
+                  {t("preview.toyLed")}
+                </button>
+                <button
+                  type="button"
+                  className={styles.sceneBtn}
+                  disabled={busy}
+                  onClick={() => inject({ type: "input", name: "imu.shake" })}
+                >
+                  {t("preview.toyShake")}
+                </button>
+                <button
+                  type="button"
+                  className={styles.sceneBtn}
+                  disabled={busy}
+                  onClick={() => inject({ type: "reset" })}
+                >
+                  {t("preview.toyReset")}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className={styles.toyControls}>
+            <span className={styles.toyBtn}>
+              {t("preview.toyPose", {
+                x: Math.round(toy?.x ?? 50),
+                y: Math.round(toy?.y ?? 70),
+                heading: toy?.heading ?? 0,
+              })}
+            </span>
+            {toy?.sound ? (
+              <span className={`${styles.toyBtn} ${styles.toyBtnActive}`}>♪ {toy.sound}</span>
+            ) : null}
+            {toy?.speech ? <span className={styles.toyBtn}>{toy.speech}</span> : null}
           </div>
         </div>
-      </div>
-      <div className={styles.toyDevice}>
-        <div className={styles.toyBoard}>
-          <div className={styles.toyChip}>CPU</div>
-          <div
-            className={styles.toyLed}
-            style={{ background: ledColor, boxShadow: `0 0 12px ${ledColor}` }}
-          />
-          <div className={styles.toyMotorLabel}>
-            {toy ? `${toy.moving} @${toy.speed}` : "MOTOR"}
-          </div>
-        </div>
-        {toy?.speech && <div className={styles.webHeroSub}>「{toy.speech}」</div>}
-        <div className={styles.toyControls}>
-          <span className={styles.toyBtn}>
-            {t("preview.toyPose", {
-              x: Math.round(toy?.x ?? 50),
-              y: Math.round(toy?.y ?? 70),
-              heading: toy?.heading ?? 0,
-            })}
-          </span>
-          {toy?.sound && (
-            <span className={`${styles.toyBtn} ${styles.toyBtnActive}`}>♪ {toy.sound}</span>
-          )}
-        </div>
-      </div>
-      <div className={styles.toyLog}>
-        {log.map((line) => (
-          <div key={line} className={styles.toyLogLine}>
-            {line}
-          </div>
-        ))}
-      </div>
+      </DeviceStage>
     </div>
   );
 }

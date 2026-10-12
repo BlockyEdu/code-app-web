@@ -1,0 +1,62 @@
+@use '../../styles/variables' as *;
+
+.code {
+  margin: 0;
+  overflow-x: auto;
+  font-family: $font-mono;
+  font-size: 11px;
+  line-height: 1.8;
+  color: $color-syntax-variable;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.line {
+  display: flex;
+  gap: $space-3;
+  white-space: pre;
+  border-radius: 4px;
+  transition: background $transition-base;
+}
+
+.active {
+  background: rgba(20, 184, 166, 0.16);
+}
+
+.no {
+  flex: 0 0 14px;
+  text-align: right;
+  color: #475569;
+  user-select: none;
+}
+
+.kw {
+  color: $color-syntax-keyword;
+}
+
+.fn {
+  color: $color-syntax-function;
+}
+
+.str {
+  color: $color-syntax-string;
+}
+
+.num {
+  color: $color-syntax-number;
+}
+
+.punct {
+  color: $color-syntax-operator;
+}
+
+.plain {
+  color: $color-syntax-variable;
+}
+
+.comment {
+  color: #64748b;
+}

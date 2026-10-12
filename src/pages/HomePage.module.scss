@@ -1,0 +1,37 @@
+@use '../styles/variables' as *;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: $site-section-mobile;
+  min-width: 0;
+}
+
+.top {
+  display: flex;
+  flex-direction: column;
+  gap: $space-8;
+  min-width: 0;
+}
+
+.demoFallback {
+  min-height: 560px;
+  border: 1px solid $site-border;
+  border-radius: $site-radius-card;
+  background: $site-card;
+  box-shadow: $site-shadow;
+}
+
+@media (min-width: 960px) {
+  .page {
+    gap: $site-section-desktop;
+  }
+
+  .top {
+    gap: $space-10;
+  }
+
+  .demoFallback {
+    min-height: 520px;
+  }
+}

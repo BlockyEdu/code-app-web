@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useAuthStore } from "../lib/auth-store";
-import { useWorkspaceStore } from "../stores/workspace";
+import { writeGuestDraft } from "../lib/guest-draft";
+import { snapshotGuestDraft, useWorkspaceStore } from "../stores/workspace";
 
 const AUTOSAVE_MS = 1500;
 
@@ -25,9 +26,15 @@ export function useArtifactAutosave() {
       }
     };
 
-    if (!saveDirty || saveStatus === "saving" || !user) {
+    if (!saveDirty || saveStatus === "saving") {
       clear();
       return clear;
+    }
+
+    const snap = useWorkspaceStore.getState();
+    if (!user || !snap.artifactId) {
+      if (!snap.artifactId) writeGuestDraft(snapshotGuestDraft(snap));
+      if (!user) return clear;
     }
 
     timerRef.current = setTimeout(() => {

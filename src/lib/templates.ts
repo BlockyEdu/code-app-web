@@ -32,21 +32,25 @@ void app_main(void) {
 }
 `;
 
-function hardwareJson(
-  boardSku: string,
-  modules: string[],
-  toolchain: string,
-  hero: string,
-): ArtifactFileEntry {
-  return {
-    path: "hardware.json",
-    contentType: "application/json",
-    content: `${JSON.stringify({ boardSku, moduleSkus: modules, toolchain, heroProject: hero }, null, 2)}\n`,
-  };
-}
-
 function firmware(content: string): ArtifactFileEntry {
   return { path: "firmware/main.cpp", contentType: "text", content };
+}
+
+function heroLabFiles(
+  packSlug: IotPackSlug,
+  boardSku: string,
+  modules: string[],
+  firmwareSource: string,
+): ArtifactFileEntry[] {
+  return iotLabFiles(packSlug, boardSku, modules).map((file) => {
+    if (file.path === "firmware/main.cpp") return firmware(firmwareSource);
+    if (file.path === "hardware.json" && boardSku.includes("nucleo")) {
+      const parsed = JSON.parse(file.content ?? "{}") as { toolchain?: string };
+      parsed.toolchain = "stm32cube";
+      return { ...file, content: `${JSON.stringify(parsed, null, 2)}\n` };
+    }
+    return file;
+  });
 }
 
 function iotLabFiles(
@@ -153,33 +157,30 @@ console.log(sortNumbers([3, 1, 2]));
 `,
     },
   ],
-  "HP-01 Air Beacon": [
-    hardwareJson(
+  get "HP-01 Air Beacon"() {
+    return heroLabFiles(
+      "air-beacon",
       "board.espressif.esp32-s3-devkitc-1",
       ["mod.bme280", "mod.ssd1306"],
-      "arduino-esp32",
-      "HP-01",
-    ),
-    firmware(HP01_FIRMWARE),
-  ],
-  "HP-02 Desk Rover": [
-    hardwareJson(
+      HP01_FIRMWARE,
+    );
+  },
+  get "HP-02 Desk Rover"() {
+    return heroLabFiles(
+      "desk-rover",
       "board.st.nucleo-f401re",
-      ["mod.motor-tb6612", "mod.ssd1306"],
-      "stm32cube",
-      "HP-02",
-    ),
-    firmware(HP02_FIRMWARE),
-  ],
-  "HP-03 Room Node": [
-    hardwareJson(
+      ["mod.motor-tb6612", "mod.ssd1306", "mod.led"],
+      HP02_FIRMWARE,
+    );
+  },
+  get "HP-03 Room Node"() {
+    return heroLabFiles(
+      "room-node",
       "board.espressif.esp32-s3-devkitc-1",
-      ["mod.bme280", "mod.relay"],
-      "esp-idf",
-      "HP-03",
-    ),
-    firmware(HP03_FIRMWARE),
-  ],
+      ["mod.bme280", "mod.relay", "mod.button"],
+      HP03_FIRMWARE,
+    );
+  },
   get 智慧窗控() {
     return iotLabFiles("smart-window", "board.espressif.esp32-s3-devkitc-1", [
       "mod.relay-12v-iso",
@@ -212,6 +213,12 @@ console.log(sortNumbers([3, 1, 2]));
   },
   get 资讯小程序() {
     return studioTemplateFiles("资讯小程序");
+  },
+  get 活动报名() {
+    return studioTemplateFiles("活动报名");
+  },
+  get 商城小程序() {
+    return studioTemplateFiles("商城小程序");
   },
   管理后台: [],
 };

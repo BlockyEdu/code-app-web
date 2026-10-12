@@ -6,10 +6,13 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LoginTermsCheckbox, useLoginTermsAccepted } from "../components/LoginTermsGate";
 import { useAuthStore } from "../lib/auth-store";
+import { requireLoginOnEntry } from "../lib/deploy-profile";
 import { t, tFor } from "../lib/i18n";
 import {
   isDirectIdpEnabled,
   isLocalPasswordLoginAllowed,
+  isProductLoginPopup,
+  notifyProductLoginOpener,
   peekPostLoginPath,
   readLuminaryIdpConfig,
   rememberPostLoginPath,
@@ -116,7 +119,7 @@ function BlockyBackdrop({ locale }: { locale: AppLocale }) {
           <p className={styles.panelTitle}>{tFor(locale, "login.bgLessonTitle")}</p>
           <pre className={styles.code}>
             <span>for (const step of lesson) {"{"}</span>
-            <span className={styles.codeHot}>  explain(step)</span>
+            <span className={styles.codeHot}> explain(step)</span>
             <span>{"}"}</span>
           </pre>
         </article>
@@ -157,7 +160,12 @@ export function LoginPage() {
   const ssoEnabled = isDirectIdpEnabled();
   const allowLocal = isLocalPasswordLoginAllowed();
   const config = useMemo(() => readLuminaryIdpConfig(), []);
-  const returnUrl = useMemo(() => peekPostLoginPath() || "/", []);
+  const returnUrl = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get("redirect") || params.get("returnUrl") || "";
+    if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
+    return peekPostLoginPath() || "/";
+  }, []);
   const { accepted, setAccepted } = useLoginTermsAccepted();
   const [localBlocked, setLocalBlocked] = useState(false);
   const labelLocale = productLabelLocale(cardLocale);
@@ -175,6 +183,11 @@ export function LoginPage() {
     async (session: LuminaryAuthSession, next?: string) => {
       localStorage.setItem("blockyedu_token", session.accessToken);
       await fetchMe();
+      if (isProductLoginPopup()) {
+        notifyProductLoginOpener();
+        window.close();
+        return;
+      }
       const dest = (next || returnUrl || "/").replace(/^\/?/, "/");
       window.location.replace(dest.startsWith("http") ? "/" : dest);
     },
@@ -285,6 +298,11 @@ export function LoginPage() {
         ) : null}
 
         <p className={styles.lead}>{tFor(cardLocale, "login.heroSubtitle")}</p>
+        {!requireLoginOnEntry() ? (
+          <p className={styles.browse}>
+            <a href="/">{tFor(cardLocale, "login.browseFirst")}</a>
+          </p>
+        ) : null}
       </div>
     </LoginCanvas>
   );

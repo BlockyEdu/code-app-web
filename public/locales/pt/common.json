@@ -100,7 +100,12 @@
     "firstExercise": "O meu primeiro exercício",
     "unnamedExercise": "Exercício sem título",
     "unnamedArtifact": "Artefacto sem título",
-    "shipGoal": "Termine a página e o conteúdo, depois partilhe o link ativo ou faça o download de um zip"
+    "shipGoal": "Termine a página e o conteúdo, depois partilhe o link ativo ou faça o download de um zip",
+    "localDraft": "Rascunho neste aparelho",
+    "unsaved": "Alterações por guardar",
+    "loginToSave": "Entre para guardar na nuvem",
+    "more": "Mais",
+    "rename": "Mudar o nome"
   },
   "run": {
     "console": "Execução na consola",
@@ -579,7 +584,8 @@
     "agreeBefore": "Li e concordo com o",
     "agreeAnd": "e a ",
     "userAgreement": "Acordo de Utilizador",
-    "privacyPolicy": "Política de Privacidade"
+    "privacyPolicy": "Política de Privacidade",
+    "trialDeletion": "Política de teste e eliminação de dados"
   },
   "authCallback": {
     "ssoFailed": "Início de sessão SSO falhou",
@@ -878,7 +884,8 @@
     "iotWait": "Esperar %1 s",
     "iotWaitTip": "Espera do relógio de simulação",
     "iotStop": "Paragem de emergência",
-    "iotStopTip": "Interruptor local de desligamento — atuadores de paragem agora"
+    "iotStopTip": "Interruptor local de desligamento — atuadores de paragem agora",
+    "emptyHint": "Arraste um bloco para aqui para começar."
   },
   "iotCh": {
     "rain": "Chuva",
@@ -894,7 +901,12 @@
     "level_pct": "Nível da água",
     "temp": "Temperatura da água",
     "aerator": "Aerador",
-    "spray": "Spray"
+    "spray": "Spray",
+    "humidity": "Humidade",
+    "led": "LED",
+    "relay": "Relé",
+    "speed": "Velocidade",
+    "heading": "Rumo"
   },
   "iotCmd": {
     "open": "Janela aberta",
@@ -1067,7 +1079,19 @@
     "badNode": "Componente não suportado {{type}}",
     "badSiteField": "Campo de site ilegal {{field}}",
     "missingNode": "Nó {{nodeId}} não encontrado",
-    "badOp": "Operação não suportada {{op}}"
+    "badOp": "Operação não suportada {{op}}",
+    "myEvent": "Minha inscrição",
+    "myShop": "Minha mini loja",
+    "taglineEvent": "Recolha nomes para uma atividade",
+    "taglineShop": "Uma lista curta de produtos para abrir",
+    "heroEvent": "Inscreva-se no evento",
+    "heroEventSub": "Mude o título e depois adicione sessões em Dados.",
+    "heroShop": "Bem-vindo à loja",
+    "heroShopSub": "Edite esta introdução e adicione o primeiro produto em Dados.",
+    "events": "Sessões",
+    "products": "Produtos",
+    "emptyEvents": "Ainda não há sessões",
+    "emptyProducts": "Ainda não há produtos"
   },
   "pairMission": {
     "title": "Conseguir uma primeira corrida bem-sucedida",
@@ -1107,5 +1131,349 @@
   },
   "chrome": {
     "brandTitle": "BlockyEdu — Aprender, Construir, Enviar"
+  },
+  "home": {
+    "hero": {
+      "title": "Diga. Construa. Veja funcionar.",
+      "sub": "Blocos ou código, um aparelho na mesa e um telemóvel que mostra o resultado.",
+      "placeholder": "Quando chover, fechar a janela e mostrar no telemóvel",
+      "promptLabel": "Descreva o que quer fazer",
+      "submit": "Começar",
+      "examplesLabel": "Experimentar uma ideia",
+      "example1": "Fechar a janela quando chover",
+      "example2": "Uma página com a temperatura da sala",
+      "example3": "Acender a luz quando escurecer",
+      "example4": "Um mini programa com o estado do aparelho"
+    },
+    "chain": {
+      "title": "De uma regra à janela e ao telemóvel",
+      "lead": "A chuva é detetada, a janela fecha e o telemóvel acompanha. Blocos e código descrevem a mesma regra.",
+      "run": "Executar",
+      "replay": "Repetir",
+      "open": "Abrir exemplo",
+      "loading": "A carregar a demonstração",
+      "paneLogic": "Lógica",
+      "paneDevice": "Aparelho",
+      "paneMqtt": "Mensagens",
+      "panePhone": "Telemóvel",
+      "capLogic": "Blocos e JavaScript",
+      "capDevice": "Janela inteligente",
+      "capMqtt": "Telemetria e comandos",
+      "capPhone": "Estado no telemóvel",
+      "blocks": "Blocos",
+      "code": "Código",
+      "tickerEmpty": "Ainda sem mensagens",
+      "stepsLabel": "O que acontece",
+      "blkEvent": "quando a cena começa",
+      "blkIf": "se for detetada chuva",
+      "blkClose": "fechar a janela",
+      "phoneState": "Janela",
+      "phoneOpen": "Aberta",
+      "phoneClosed": "Fechada",
+      "phoneRaining": "A chover",
+      "phoneDry": "Seco",
+      "phoneLocked": "Bloqueada enquanto chove",
+      "steps": {
+        "rain": "Começa a chover",
+        "telemetry": "O aparelho reporta",
+        "command": "Comando de fechar",
+        "window": "A janela fecha",
+        "phone": "O telemóvel atualiza"
+      }
+    },
+    "modes": {
+      "title": "Blocos ou código, o mesmo projeto",
+      "lead": "Comece pelos blocos. Abra os ficheiros quando quiser o JavaScript.",
+      "blockTitle": "Blocos",
+      "blockLead": "Junte uma regra: quando chover, feche a janela e espere.",
+      "proTitle": "Código",
+      "proLead": "A mesma regra em JavaScript, ao lado dos ficheiros de hardware.",
+      "files": "Ficheiros",
+      "terminal": "Consola",
+      "catDevices": "Aparelhos",
+      "blkWait": "esperar 1 segundo",
+      "aiLabel": "IA no projeto",
+      "aiAsk": "Porque é que a janela ficou aberta?",
+      "aiExplain": "Explicar",
+      "aiFix": "Corrigir",
+      "aiGenerate": "Gerar"
+    },
+    "caps": {
+      "title": "O que já pode construir",
+      "lead": "Placas, mensagens, sites e IA. O que está planeado fica marcado.",
+      "available": "Disponível",
+      "beta": "Beta",
+      "planned": "Planeado",
+      "noteSimulation": "Simulação no navegador",
+      "noteBrowser": "MQTT no navegador",
+      "layers": {
+        "chips": "Placas e sensores",
+        "comm": "Ligação e atualização",
+        "apps": "Aplicações",
+        "vision": "Câmara",
+        "ai": "IA"
+      },
+      "items": {
+        "esp32s3": "ESP32-S3",
+        "esp32c3": "ESP32-C3",
+        "stm32": "STM32",
+        "sensors": "Sensores",
+        "mqtt": "MQTT",
+        "kit": "Kit de sala",
+        "ota": "Atualização sem fios",
+        "websites": "Sites",
+        "miniprograms": "Mini programas",
+        "host": "Sites alojados",
+        "camera": "Câmara",
+        "aiGenerate": "Gerar",
+        "aiExplain": "Explicar",
+        "aiDebug": "Depurar"
+      }
+    },
+    "tracks": {
+      "title": "Exemplos",
+      "lead": "Abra um exemplo e altere-o.",
+      "all": "Todos os exemplos",
+      "iot": "Aparelhos",
+      "apps": "Web e mini programas",
+      "basics": "Primeiros passos"
+    },
+    "path": {
+      "title": "Um percurso pelos exemplos",
+      "lead": "Cinco projetos curtos, do primeiro exercício a um mini programa.",
+      "stepLabel": "Passo {{n}}",
+      "open": "Abrir",
+      "course": "Curso",
+      "s1": {
+        "title": "Primeiro exercício",
+        "body": "Altere um programa curto e veja o que imprime."
+      },
+      "s2": {
+        "title": "Perguntar à IA",
+        "body": "Fique nesse exercício e peça à IA para explicar o código."
+      },
+      "s3": {
+        "title": "Farol de ar",
+        "body": "Ler temperatura e humidade e comutar um relé."
+      },
+      "s4": {
+        "title": "Janela inteligente",
+        "body": "A chuva fecha a janela e o telemóvel mostra o estado."
+      },
+      "s5": {
+        "title": "Mini programa de notícias",
+        "body": "Uma aplicação pequena com lista e página de detalhe."
+      }
+    }
+  },
+  "site": {
+    "navSamples": "Exemplos",
+    "navProjects": "Projetos",
+    "navCourses": "Cursos",
+    "newProject": "Novo projeto",
+    "signIn": "Entrar",
+    "browseSamples": "Ver todos os exemplos",
+    "footerAbout": "Sobre",
+    "footerTerms": "Termos",
+    "footerPrivacy": "Privacidade",
+    "footerNav": "Site"
+  },
+  "samples": {
+    "title": "Amostras",
+    "lead": "Escolha uma amostra e abra-a no editor.",
+    "categoryAll": "Todas",
+    "categoryWeb": "Sites",
+    "categoryMiniprogram": "Miniprogramas",
+    "categorySmarthome": "Casa inteligente",
+    "categoryIot": "IoT",
+    "categoryBasics": "Programação",
+    "empty": "Ainda não há amostras nesta categoria.",
+    "open": "Abrir",
+    "minutes": "Cerca de {{count}} min",
+    "levelBeginner": "Iniciante",
+    "levelAdvanced": "Avançado",
+    "replaceDraft": "Este navegador já tem um rascunho. Substituir por esta amostra?",
+    "landing": {
+      "name": "Página de destino",
+      "blurb": "Um site de uma tela que você pode publicar e compartilhar."
+    },
+    "portfolio": {
+      "name": "Portfólio",
+      "blurb": "Mostre projetos em um site com página de detalhe."
+    },
+    "blog": {
+      "name": "Blog",
+      "blurb": "Escreva posts e abra-os a partir de uma lista."
+    },
+    "news": {
+      "name": "Miniprograma de notícias",
+      "blurb": "Uma lista de notícias que também exporta um projeto WeChat."
+    },
+    "window": {
+      "name": "Janela inteligente",
+      "blurb": "Feche a janela na chuva e ventile quando estiver quente."
+    },
+    "air": {
+      "name": "Air Beacon",
+      "blurb": "Leia temperatura e umidade em uma placa ESP32."
+    },
+    "rover": {
+      "name": "Desk Rover",
+      "blurb": "Dirija um robô pequeno e pisque o LED."
+    },
+    "room": {
+      "name": "Nó do quarto",
+      "blurb": "Sinta o quarto e acione um relé."
+    },
+    "living": {
+      "name": "Luzes da sala",
+      "blurb": "Acenda luzes e cortinas em uma cena."
+    },
+    "pet": {
+      "name": "Pet de mesa",
+      "blurb": "Um brinquedo que se move, acende e fala."
+    },
+    "pair": {
+      "name": "Exercício em dupla",
+      "blurb": "Arraste alguns blocos e veja o resultado."
+    },
+    "irrigation": {
+      "name": "Irrigação inteligente",
+      "blurb": "Regue o jardim quando o solo secar e pule quando chover."
+    },
+    "pond": {
+      "name": "Aeração do lago",
+      "blurb": "Ligue o aerador quando o oxigênio cair."
+    },
+    "climate": {
+      "name": "Cena de clima",
+      "blurb": "Mantenha o quarto confortável com um termostato."
+    },
+    "security": {
+      "name": "Demo de segurança",
+      "blurb": "Arme um sensor de porta e observe o alarme."
+    },
+    "event": {
+      "name": "Inscrição em evento",
+      "blurb": "Recolha inscrições de uma atividade em um miniprograma."
+    },
+    "shop": {
+      "name": "Mini loja",
+      "blurb": "Liste alguns produtos e abra a página do produto."
+    },
+    "sensor": {
+      "name": "Brinquedo com sensor",
+      "blurb": "Leia um sensor do brinquedo e reaja."
+    },
+    "hello": {
+      "name": "Hello World",
+      "blurb": "Imprima a primeira linha e mude a frase."
+    },
+    "sort": {
+      "name": "Ordenação",
+      "blurb": "Ordene uma lista de números no código."
+    }
+  },
+  "about": {
+    "title": "Sobre o BlockyEdu",
+    "lead": "Aprender a construir sites, mini programas e aparelhos.",
+    "missionTitle": "Para que serve este site",
+    "missionBody": "Descreve o que quer, constrói com blocos ou código e vê a funcionar — no navegador e, quando tiver uma, na placa.",
+    "ecoTitle": "Na família LuminaryWorks",
+    "ecoLead": "O BlockyEdu fica ao lado de outros produtos. Cada um trata do seu.",
+    "contact": "Contacto",
+    "coursePlatform": "Abrir a plataforma de cursos",
+    "eco": {
+      "syncrobrain": {
+        "name": "SyncroBrain",
+        "line": "Firmware e kits de aparelhos."
+      },
+      "vistacast": {
+        "name": "VistaCast",
+        "line": "Vídeo para aulas e transmissões."
+      },
+      "dataluminary": {
+        "name": "DataLuminary",
+        "line": "Vistas de dados e leitura."
+      }
+    },
+    "orgs": {
+      "title": "Para escolas e empresas",
+      "lead": "A plataforma de cursos pode correr nos seus servidores.",
+      "classroomTitle": "Aulas e progresso",
+      "classroomBody": "Cursos, trabalhos e quem já terminou.",
+      "privateTitle": "A sua instalação",
+      "privateBody": "Contas e dados dos cursos ficam na infraestrutura que controla.",
+      "exportTitle": "Leve o trabalho consigo",
+      "exportBody": "Os projetos ficam em ficheiros que pode abrir fora deste site."
+    }
+  },
+  "projects": {
+    "title": "Projetos",
+    "filterAll": "Tudo",
+    "draftTitle": "Rascunho neste aparelho",
+    "emptyTitle": "Ainda sem projetos",
+    "startFromSample": "Começar por um exemplo",
+    "updatedAt": "Atualizado {{time}}"
+  },
+  "stage": {
+    "circuit": "Circuito",
+    "scene": "Cena",
+    "reset": "Repor",
+    "timeline": "Linha do tempo",
+    "assertions": "verificações",
+    "noEvents": "Ainda sem eventos",
+    "on": "Ligado",
+    "off": "Desligado",
+    "device": "Aparelho",
+    "simNotHardware": "Isto é uma simulação, não uma placa na mesa.",
+    "board": {
+      "esp32s3": "ESP32-S3",
+      "esp32c3": "ESP32-C3",
+      "nucleo": "Nucleo-F401RE"
+    },
+    "run": {
+      "sim": "Simular",
+      "live": "Aparelho real",
+      "firmware": "Firmware"
+    },
+    "sceneTitle": {
+      "window": "Janela inteligente",
+      "irrigation": "Rega",
+      "pond": "Lago",
+      "beacon": "Farol de ar",
+      "room": "Nó da sala",
+      "rover": "Rover de secretária",
+      "home": "Casa inteligente",
+      "toy": "Brinquedo"
+    },
+    "unit": {
+      "c": "°C",
+      "pct": "%",
+      "lpm": "L/min",
+      "mgl": "mg/L",
+      "deg": "°"
+    },
+    "module": {
+      "relay12v": "Relé de 12 V",
+      "limit": "Fim de curso",
+      "rain": "Sensor de chuva",
+      "soil": "Humidade do solo",
+      "float": "Boia",
+      "bme280": "BME280",
+      "motor": "Controlador de motor",
+      "oled": "Ecrã OLED",
+      "relay": "Relé",
+      "led": "LED",
+      "button": "Botão"
+    },
+    "readout": {
+      "speed": "Velocidade",
+      "heading": "Rumo",
+      "led": "LED",
+      "relay": "Relé",
+      "distance": "Distância",
+      "comfort": "Conforto"
+    }
   }
 }

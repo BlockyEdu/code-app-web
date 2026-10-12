@@ -1,0 +1,109 @@
+@use '../styles/variables' as *;
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  border: 1px solid $site-border;
+  border-radius: $site-radius-card;
+  background: $site-card;
+  box-shadow: $site-shadow;
+  color: $site-text;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  font-family: inherit;
+  transition: transform $transition-base, box-shadow $transition-base;
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: $site-shadow-hover;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $site-primary;
+    outline-offset: 2px;
+  }
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  padding: $space-4;
+  padding-bottom: $space-10;
+}
+
+.title {
+  margin: 0;
+  font-size: $site-font-body;
+  line-height: $site-line-title;
+  font-weight: $font-weight-semibold;
+}
+
+.blurb {
+  margin: 0;
+  max-width: $site-measure;
+  font-size: $site-font-sm;
+  line-height: $site-line-body;
+  color: $site-text-secondary;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin-top: $space-1;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 $space-2;
+  border-radius: $radius-full;
+  background: $site-bg;
+  color: $site-text-secondary;
+  font-size: $site-font-xs;
+  font-weight: $font-weight-medium;
+  line-height: 1;
+}
+
+.open {
+  position: absolute;
+  right: $space-3;
+  bottom: $space-3;
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 $space-3;
+  border-radius: $radius-full;
+  background: $site-primary;
+  color: #ffffff;
+  font-size: $site-font-xs;
+  font-weight: $font-weight-semibold;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity $transition-fast, transform $transition-fast;
+}
+
+.card:hover .open,
+.card:focus-visible .open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .open {
+    transition: none;
+  }
+
+  .card:hover,
+  .card:focus-visible {
+    transform: none;
+  }
+}

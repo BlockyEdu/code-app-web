@@ -7,6 +7,7 @@ interface ImportMetaEnv {
   readonly VITE_EDU_LOGIN_URL?: string;
   readonly VITE_EDU_API_URL?: string;
   readonly VITE_EDU_APP_URL?: string;
+  readonly VITE_SALES_CONTACT_URL?: string;
   readonly VITE_CODE_APP_URL?: string;
   readonly VITE_PRODUCT_PROFILE?: string;
 }

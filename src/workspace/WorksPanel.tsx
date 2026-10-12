@@ -72,7 +72,7 @@ export function WorksPanel() {
       {!user ? (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description={t("works.signInSync")}
+          description={t("works.empty")}
           className={styles.empty}
         />
       ) : loading && items.length === 0 ? (

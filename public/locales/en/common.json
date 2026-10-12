@@ -100,7 +100,12 @@
     "firstExercise": "My first exercise",
     "unnamedExercise": "Untitled exercise",
     "unnamedArtifact": "Untitled artifact",
-    "shipGoal": "Finish the page and content, then share the live link or download a zip"
+    "shipGoal": "Finish the page and content, then share the live link or download a zip",
+    "localDraft": "Draft on this device",
+    "unsaved": "Unsaved changes",
+    "loginToSave": "Sign in to save to the cloud",
+    "more": "More",
+    "rename": "Rename"
   },
   "run": {
     "console": "Console run",
@@ -579,7 +584,8 @@
     "agreeBefore": "I have read and agree to the",
     "agreeAnd": "and the ",
     "userAgreement": "User Agreement",
-    "privacyPolicy": "Privacy Policy"
+    "privacyPolicy": "Privacy Policy",
+    "trialDeletion": "Trial and data deletion policy"
   },
   "authCallback": {
     "ssoFailed": "SSO sign-in failed",
@@ -878,7 +884,8 @@
     "iotWait": "Wait %1 s",
     "iotWaitTip": "Simulation clock wait",
     "iotStop": "Emergency stop",
-    "iotStopTip": "Local kill switch — stop actuators now"
+    "iotStopTip": "Local kill switch — stop actuators now",
+    "emptyHint": "Drag a block here to start."
   },
   "iotCh": {
     "rain": "Rain",
@@ -894,7 +901,12 @@
     "level_pct": "Water level",
     "temp": "Water temp",
     "aerator": "Aerator",
-    "spray": "Spray"
+    "spray": "Spray",
+    "humidity": "Humidity",
+    "led": "LED",
+    "relay": "Relay",
+    "speed": "Speed",
+    "heading": "Heading"
   },
   "iotCmd": {
     "open": "Open window",
@@ -1067,7 +1079,19 @@
     "badNode": "Unsupported component {{type}}",
     "badSiteField": "Illegal site field {{field}}",
     "missingNode": "Node {{nodeId}} not found",
-    "badOp": "Unsupported operation {{op}}"
+    "badOp": "Unsupported operation {{op}}",
+    "myEvent": "My event signup",
+    "myShop": "My mini shop",
+    "taglineEvent": "Collect names for one activity",
+    "taglineShop": "A short product list you can open",
+    "heroEvent": "Sign up for the event",
+    "heroEventSub": "Change the title, then add sessions in Data.",
+    "heroShop": "Welcome to the shop",
+    "heroShopSub": "Edit this intro, then add your first product in Data.",
+    "events": "Sessions",
+    "products": "Products",
+    "emptyEvents": "No sessions yet",
+    "emptyProducts": "No products yet"
   },
   "pairMission": {
     "title": "Get a first successful run",
@@ -1107,5 +1131,349 @@
   },
   "chrome": {
     "brandTitle": "BlockyEdu — Learn, Build, Ship"
+  },
+  "home": {
+    "hero": {
+      "title": "Say it. Build it. Watch it run.",
+      "sub": "Blocks or code, a device on the desk, and a phone that shows the result.",
+      "placeholder": "When it rains, close the window and show it on my phone",
+      "promptLabel": "Describe what you want to make",
+      "submit": "Start",
+      "examplesLabel": "Try an idea",
+      "example1": "Close the window when it rains",
+      "example2": "A page that shows room temperature",
+      "example3": "Turn the light on when it gets dark",
+      "example4": "A mini program for device status"
+    },
+    "chain": {
+      "title": "From a rule to the window and the phone",
+      "lead": "Rain is sensed, the window closes, and the phone follows. Blocks and code describe the same rule.",
+      "run": "Run",
+      "replay": "Replay",
+      "open": "Open sample",
+      "loading": "Loading the demo",
+      "paneLogic": "Logic",
+      "paneDevice": "Device",
+      "paneMqtt": "Messages",
+      "panePhone": "Phone",
+      "capLogic": "Blocks and JavaScript",
+      "capDevice": "Smart window",
+      "capMqtt": "Telemetry and commands",
+      "capPhone": "Status on the phone",
+      "blocks": "Blocks",
+      "code": "Code",
+      "tickerEmpty": "No messages yet",
+      "stepsLabel": "What happens",
+      "blkEvent": "when the scene runs",
+      "blkIf": "if rain is detected",
+      "blkClose": "close the window",
+      "phoneState": "Window",
+      "phoneOpen": "Open",
+      "phoneClosed": "Closed",
+      "phoneRaining": "Raining",
+      "phoneDry": "Dry",
+      "phoneLocked": "Locked while it rains",
+      "steps": {
+        "rain": "Rain starts",
+        "telemetry": "Device reports in",
+        "command": "Close command",
+        "window": "Window shuts",
+        "phone": "Phone updates"
+      }
+    },
+    "modes": {
+      "title": "Blocks or code, same project",
+      "lead": "Start with blocks. Open the files when you want the JavaScript.",
+      "blockTitle": "Blocks",
+      "blockLead": "Snap a rule together: when it rains, close the window, then wait.",
+      "proTitle": "Code",
+      "proLead": "The same rule as JavaScript, next to the hardware files.",
+      "files": "Files",
+      "terminal": "Console",
+      "catDevices": "Devices",
+      "blkWait": "wait 1 second",
+      "aiLabel": "AI in the project",
+      "aiAsk": "Why did the window stay open?",
+      "aiExplain": "Explain",
+      "aiFix": "Fix",
+      "aiGenerate": "Generate"
+    },
+    "caps": {
+      "title": "What you can build today",
+      "lead": "Boards, messages, websites, and AI. Planned items are marked.",
+      "available": "Available",
+      "beta": "Beta",
+      "planned": "Planned",
+      "noteSimulation": "Simulation in the browser",
+      "noteBrowser": "Browser MQTT",
+      "layers": {
+        "chips": "Boards and sensors",
+        "comm": "Link and update",
+        "apps": "Apps",
+        "vision": "Camera",
+        "ai": "AI"
+      },
+      "items": {
+        "esp32s3": "ESP32-S3",
+        "esp32c3": "ESP32-C3",
+        "stm32": "STM32",
+        "sensors": "Sensors",
+        "mqtt": "MQTT",
+        "kit": "Classroom kit",
+        "ota": "Over-the-air update",
+        "websites": "Websites",
+        "miniprograms": "Mini programs",
+        "host": "Hosted sites",
+        "camera": "Camera",
+        "aiGenerate": "Generate",
+        "aiExplain": "Explain",
+        "aiDebug": "Debug"
+      }
+    },
+    "tracks": {
+      "title": "Samples",
+      "lead": "Open a sample and change it.",
+      "all": "All samples",
+      "iot": "Devices",
+      "apps": "Web and mini programs",
+      "basics": "First steps"
+    },
+    "path": {
+      "title": "A path through the samples",
+      "lead": "Five short projects, from a first exercise to a mini program.",
+      "stepLabel": "Step {{n}}",
+      "open": "Open",
+      "course": "Course",
+      "s1": {
+        "title": "First exercise",
+        "body": "Change a short program and see what it prints."
+      },
+      "s2": {
+        "title": "Ask the AI",
+        "body": "Stay on that exercise and ask the AI to explain the code."
+      },
+      "s3": {
+        "title": "Air beacon",
+        "body": "Read temperature and humidity, and switch a relay."
+      },
+      "s4": {
+        "title": "Smart window",
+        "body": "Rain closes the window, and the phone shows the state."
+      },
+      "s5": {
+        "title": "News mini program",
+        "body": "A small app with a list and a detail page."
+      }
+    }
+  },
+  "site": {
+    "navSamples": "Samples",
+    "navProjects": "Projects",
+    "navCourses": "Courses",
+    "newProject": "New project",
+    "signIn": "Sign in",
+    "browseSamples": "Browse all samples",
+    "footerAbout": "About",
+    "footerTerms": "Terms",
+    "footerPrivacy": "Privacy",
+    "footerNav": "Site"
+  },
+  "samples": {
+    "title": "Samples",
+    "lead": "Pick a sample and open it in the editor.",
+    "categoryAll": "All",
+    "categoryWeb": "Websites",
+    "categoryMiniprogram": "Mini programs",
+    "categorySmarthome": "Smart home",
+    "categoryIot": "IoT",
+    "categoryBasics": "Coding basics",
+    "empty": "Nothing in this category yet.",
+    "open": "Open",
+    "minutes": "About {{count}} min",
+    "levelBeginner": "Beginner",
+    "levelAdvanced": "Advanced",
+    "replaceDraft": "This browser already has a draft. Replace it with this sample?",
+    "landing": {
+      "name": "Landing page",
+      "blurb": "A one-screen site you can publish and share."
+    },
+    "portfolio": {
+      "name": "Portfolio",
+      "blurb": "Show your projects on a site with a detail page."
+    },
+    "blog": {
+      "name": "Blog",
+      "blurb": "Write posts and open them from a list."
+    },
+    "news": {
+      "name": "News mini program",
+      "blurb": "A story list that also exports a WeChat project."
+    },
+    "window": {
+      "name": "Smart window",
+      "blurb": "Close the window when it rains, and vent when it is hot."
+    },
+    "air": {
+      "name": "Air Beacon",
+      "blurb": "Read temperature and humidity on an ESP32 board."
+    },
+    "rover": {
+      "name": "Desk Rover",
+      "blurb": "Drive a small robot and blink its LED."
+    },
+    "room": {
+      "name": "Room Node",
+      "blurb": "Sense a room and switch a relay."
+    },
+    "living": {
+      "name": "Living room lights",
+      "blurb": "Turn lights and curtains on in one scene."
+    },
+    "pet": {
+      "name": "Desk pet",
+      "blurb": "A toy that moves, lights up, and talks."
+    },
+    "pair": {
+      "name": "Pair exercise",
+      "blurb": "Drag a few blocks and see the result."
+    },
+    "irrigation": {
+      "name": "Smart irrigation",
+      "blurb": "Water the garden when the soil is dry, and skip it when it rains."
+    },
+    "pond": {
+      "name": "Pond aeration",
+      "blurb": "Turn on the aerator when oxygen drops."
+    },
+    "climate": {
+      "name": "Climate scene",
+      "blurb": "Hold a comfortable temperature with a thermostat scene."
+    },
+    "security": {
+      "name": "Security demo",
+      "blurb": "Arm a door sensor and watch the alarm scene."
+    },
+    "event": {
+      "name": "Event signup",
+      "blurb": "Collect signups for a club activity in a mini program."
+    },
+    "shop": {
+      "name": "Mini shop",
+      "blurb": "List a few products and open a product page."
+    },
+    "sensor": {
+      "name": "Sensor toy",
+      "blurb": "Read a sensor on a toy and react."
+    },
+    "hello": {
+      "name": "Hello World",
+      "blurb": "Print your first line and change the message."
+    },
+    "sort": {
+      "name": "Sorting",
+      "blurb": "Sort a list of numbers in code."
+    }
+  },
+  "about": {
+    "title": "About BlockyEdu",
+    "lead": "Learn by building websites, mini programs, and devices.",
+    "missionTitle": "What this site is for",
+    "missionBody": "You describe what you want, then build it with blocks or code and watch it run — in the browser, and on a board when you have one.",
+    "ecoTitle": "In the LuminaryWorks family",
+    "ecoLead": "BlockyEdu sits next to other products. Each one stays in its own lane.",
+    "contact": "Contact",
+    "coursePlatform": "Open the course platform",
+    "eco": {
+      "syncrobrain": {
+        "name": "SyncroBrain",
+        "line": "Firmware and device kits."
+      },
+      "vistacast": {
+        "name": "VistaCast",
+        "line": "Video for classrooms and streams."
+      },
+      "dataluminary": {
+        "name": "DataLuminary",
+        "line": "Data views and insight."
+      }
+    },
+    "orgs": {
+      "title": "For schools and companies",
+      "lead": "The course platform can run on your own servers.",
+      "classroomTitle": "Classes and progress",
+      "classroomBody": "Courses, assignments, and who has finished what.",
+      "privateTitle": "Your own deployment",
+      "privateBody": "Keep accounts and course data on infrastructure you control.",
+      "exportTitle": "Take the work with you",
+      "exportBody": "Projects stay as files you can open outside this site."
+    }
+  },
+  "projects": {
+    "title": "Projects",
+    "filterAll": "All",
+    "draftTitle": "Draft on this device",
+    "emptyTitle": "No projects yet",
+    "startFromSample": "Start from a sample",
+    "updatedAt": "Updated {{time}}"
+  },
+  "stage": {
+    "circuit": "Circuit",
+    "scene": "Scene",
+    "reset": "Reset",
+    "timeline": "Timeline",
+    "assertions": "checks",
+    "noEvents": "No events yet",
+    "on": "On",
+    "off": "Off",
+    "device": "Device",
+    "simNotHardware": "This is a simulation, not a board on the desk.",
+    "board": {
+      "esp32s3": "ESP32-S3",
+      "esp32c3": "ESP32-C3",
+      "nucleo": "Nucleo-F401RE"
+    },
+    "run": {
+      "sim": "Simulate",
+      "live": "Live device",
+      "firmware": "Firmware"
+    },
+    "sceneTitle": {
+      "window": "Smart window",
+      "irrigation": "Irrigation",
+      "pond": "Pond",
+      "beacon": "Air beacon",
+      "room": "Room node",
+      "rover": "Desk rover",
+      "home": "Smart home",
+      "toy": "Toy"
+    },
+    "unit": {
+      "c": "°C",
+      "pct": "%",
+      "lpm": "L/min",
+      "mgl": "mg/L",
+      "deg": "°"
+    },
+    "module": {
+      "relay12v": "12V relay",
+      "limit": "Limit switch",
+      "rain": "Rain sensor",
+      "soil": "Soil moisture",
+      "float": "Float switch",
+      "bme280": "BME280",
+      "motor": "Motor driver",
+      "oled": "OLED display",
+      "relay": "Relay",
+      "led": "LED",
+      "button": "Button"
+    },
+    "readout": {
+      "speed": "Speed",
+      "heading": "Heading",
+      "led": "LED",
+      "relay": "Relay",
+      "distance": "Distance",
+      "comfort": "Comfort"
+    }
   }
 }

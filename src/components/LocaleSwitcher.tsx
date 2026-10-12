@@ -4,9 +4,22 @@ import { t } from "../lib/i18n";
 import { APP_LOCALES, LOCALE_LABELS, useLocaleStore } from "../lib/locale-store";
 import styles from "./LocaleSwitcher.module.scss";
 
-export function LocaleSwitcher() {
+function buttonClass(labeled: boolean, light: boolean): string {
+  if (labeled) return light ? styles.chipLight : styles.chip;
+  return light ? styles.iconBtnLight : styles.iconBtn;
+}
+
+/** `labeled` shows the current language next to the icon. `light` is for site pages. */
+export function LocaleSwitcher({
+  labeled = false,
+  light = false,
+}: {
+  labeled?: boolean;
+  light?: boolean;
+}) {
   const locale = useLocaleStore((s) => s.locale);
   const setLocale = useLocaleStore((s) => s.setLocale);
+  const current = LOCALE_LABELS[locale];
 
   const items: MenuProps["items"] = APP_LOCALES.map((key) => ({
     key,
@@ -20,11 +33,12 @@ export function LocaleSwitcher() {
     <Dropdown menu={{ items }} placement="bottomRight" trigger={["click"]}>
       <button
         type="button"
-        className={styles.iconBtn}
-        aria-label={t("locale.switcherAria")}
+        className={buttonClass(labeled, light)}
+        aria-label={`${t("locale.switcherAria")}, ${current}`}
         title={t("locale.switcherTitle")}
       >
         <GlobalOutlined />
+        {labeled ? <span>{current}</span> : null}
       </button>
     </Dropdown>
   );

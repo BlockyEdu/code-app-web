@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { httpRequest } from "./http";
-import { idpSignOut, isDirectIdpEnabled, rememberPostLoginPath } from "./idp";
+import { idpSignOut, isDirectIdpEnabled, PRODUCT_LOGIN_POPUP, rememberPostLoginPath } from "./idp";
+import { navigate } from "./navigate";
 import { logoutAndRedirect } from "./sso";
 
 export interface AuthUser {
@@ -22,13 +23,64 @@ interface AuthState {
   fetchMe: () => Promise<void>;
   logout: () => void;
   openLoginPrompt: () => void;
+  /** Opens the product login page. Resolves true when a session is ready. */
+  ensureSignedIn: () => Promise<boolean>;
   closeLoginPrompt: () => void;
 }
 
 /** Module-level so Strict Mode remounts share one /me probe. */
 let fetchMeInflight: Promise<void> | null = null;
 
-export const useAuthStore = create<AuthState>((set) => ({
+function safeReturnPath(): string {
+  const path = `${window.location.pathname}${window.location.search}`;
+  if (path.startsWith("/login") || path.startsWith("/auth")) return "/";
+  return path || "/";
+}
+
+function loginHref(returnPath: string): string {
+  return `/login?redirect=${encodeURIComponent(returnPath)}`;
+}
+
+/** Same-tab product login page. Shared with the education site; not the IdP hosted UI. */
+function goToLoginPage(): void {
+  const next = safeReturnPath();
+  rememberPostLoginPath(next);
+  if (window.location.pathname === "/login") return;
+  navigate(loginHref(next));
+}
+
+function openLoginPopup(fetchMe: () => Promise<void>, hasUser: () => boolean): Promise<boolean> {
+  const next = safeReturnPath();
+  rememberPostLoginPath(next);
+  const popup = window.open(loginHref(next), PRODUCT_LOGIN_POPUP, "popup,width=520,height=760");
+  if (!popup) {
+    goToLoginPage();
+    return Promise.resolve(false);
+  }
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      window.removeEventListener("message", onMessage);
+      window.clearInterval(timer);
+      resolve(ok);
+    };
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data as { type?: string } | null;
+      if (data?.type !== "blockyedu:signed-in") return;
+      void fetchMe().finally(() => finish(hasUser()));
+    };
+    window.addEventListener("message", onMessage);
+    const timer = window.setInterval(() => {
+      if (!popup.closed) return;
+      void fetchMe().finally(() => finish(hasUser()));
+    }, 400);
+  });
+}
+
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   loading: false,
   initialized: false,
@@ -90,15 +142,20 @@ export const useAuthStore = create<AuthState>((set) => ({
     logoutAndRedirect(loginUrl);
   },
 
-  openLoginPrompt: () => {
-    if (isDirectIdpEnabled()) {
-      const currentPath = `${window.location.pathname}${window.location.search}`;
-      rememberPostLoginPath(currentPath);
-      window.history.replaceState({}, "", "/login");
-      window.dispatchEvent(new PopStateEvent("popstate"));
-      return;
+  ensureSignedIn: async () => {
+    if (get().user) return true;
+    if (!isDirectIdpEnabled()) {
+      goToLoginPage();
+      return false;
     }
-    set({ loginPromptOpen: true });
+    return openLoginPopup(
+      () => get().fetchMe(),
+      () => Boolean(get().user),
+    );
+  },
+
+  openLoginPrompt: () => {
+    goToLoginPage();
   },
 
   closeLoginPrompt: () => set({ loginPromptOpen: false }),

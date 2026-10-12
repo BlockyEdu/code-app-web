@@ -1,13 +1,20 @@
 import * as Blockly from "blockly";
 import { javascriptGenerator } from "blockly/javascript";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { buildToolbox, ensureTargetGenerators, registerTargetBlocks } from "../lib/blockly-config";
-import { BLOCKYEDU_BLOCKLY_THEME } from "../lib/blockly-theme";
+import {
+  applyStudioBuiltinStyles,
+  applyStudioFlyoutGap,
+  BLOCKYEDU_BLOCKLY_THEME,
+  installStudioToolbox,
+} from "../lib/blockly-theme";
 import { t } from "../lib/i18n";
 import { useLocaleStore } from "../lib/locale-store";
 import { useWorkspaceStore } from "../stores/workspace";
 import "blockly/blocks";
 import "blockly/javascript";
+import "../styles/blockly.scss";
+import styles from "./BlocklyEditor.module.scss";
 
 function serializeWorkspaceXml(workspace: Blockly.WorkspaceSvg): string {
   return Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
@@ -18,11 +25,16 @@ function shouldIgnoreBlocklyEvent(event: Blockly.Events.Abstract): boolean {
   return event.type === Blockly.Events.FINISHED_LOADING;
 }
 
+function workspaceIsEmpty(workspace: Blockly.WorkspaceSvg): boolean {
+  return workspace.getTopBlocks(false).length === 0;
+}
+
 export function BlocklyEditor() {
   const containerRef = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);
   const applyingRef = useRef(false);
   const lastWrittenXmlRef = useRef("");
+  const [canvasEmpty, setCanvasEmpty] = useState(false);
   const locale = useLocaleStore((s) => s.locale);
   const startComment = t("blockly.startComment");
   const artifactKind = useWorkspaceStore((s) => s.artifactKind);
@@ -41,6 +53,8 @@ export function BlocklyEditor() {
 
     registerTargetBlocks();
     ensureTargetGenerators();
+    installStudioToolbox();
+    applyStudioBuiltinStyles();
 
     const workspace = Blockly.inject(containerRef.current, {
       toolbox: buildToolbox(artifactKind),
@@ -48,8 +62,8 @@ export function BlocklyEditor() {
       theme: BLOCKYEDU_BLOCKLY_THEME,
       grid: {
         spacing: 24,
-        length: 2,
-        colour: "#2a3344",
+        length: 1,
+        colour: "#1f2633",
         snap: true,
       },
       zoom: {
@@ -71,6 +85,7 @@ export function BlocklyEditor() {
     });
 
     workspaceRef.current = workspace;
+    applyStudioFlyoutGap(workspace);
 
     const persistFromWorkspace = () => {
       if (applyingRef.current) return;
@@ -84,6 +99,7 @@ export function BlocklyEditor() {
       if (nextCode !== useWorkspaceStore.getState().code) {
         setCode(nextCode);
       }
+      setCanvasEmpty(workspaceIsEmpty(workspace));
     };
 
     const onChange = (event: Blockly.Events.Abstract) => {
@@ -133,6 +149,7 @@ export function BlocklyEditor() {
       Blockly.Events.enable();
       applyingRef.current = false;
     }
+    setCanvasEmpty(workspaceIsEmpty(workspace));
   }, [blockXml]);
 
   useEffect(() => {
@@ -145,5 +162,14 @@ export function BlocklyEditor() {
     }
   }, [startComment, setCode]);
 
-  return <div ref={containerRef} className="blockly-container" />;
+  return (
+    <div className={`blockly-container blockly-studio ${styles.root}`}>
+      <div ref={containerRef} className={styles.canvas} />
+      {canvasEmpty ? (
+        <p className={styles.hint}>
+          <span>{t("blocks.emptyHint")}</span>
+        </p>
+      ) : null}
+    </div>
+  );
 }
