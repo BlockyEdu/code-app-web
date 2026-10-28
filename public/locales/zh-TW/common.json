@@ -211,7 +211,17 @@
     "toyReset": "重置",
     "toyApiOffline": "服務端仿真不可用 — 僅本地孿生",
     "toyTick": "幀 {{tick}}",
-    "toyStatus": "{{status}}"
+    "toyStatus": "{{status}}",
+    "floorEffect": "等距平面效果預覽",
+    "floorLayout": "平面佈局",
+    "floorExport": "匯出佈局",
+    "floorImport": "匯入佈局",
+    "floorReset": "重設佈局",
+    "floorImportOk": "平面佈局已匯入",
+    "floorImportFailed": "floor.json 無效",
+    "floorResetOk": "已恢復預設平面佈局",
+    "bridgeExperimental": "實驗橋接",
+    "bridgeUnavailable": "SyncroBrain 橋接不可用 — 僅虛擬仿真（SH-FR）"
   },
   "lesson": {
     "loading": "加載練習...",
@@ -532,7 +542,8 @@
     "fan": "風扇",
     "alarm": "安防警報",
     "light": "燈",
-    "ac": "空調"
+    "ac": "空調",
+    "sensor": "感測器"
   },
   "scene": {
     "home": "回家模式",
@@ -680,7 +691,8 @@
     "dataBind": "數據綁定",
     "motors": "電機與舵機",
     "lightsSound": "燈光與聲音",
-    "sequence": "動作序列"
+    "sequence": "動作序列",
+    "mqtt": "MQTT（虛擬）"
   },
   "led": {
     "red": "紅色",
@@ -779,7 +791,17 @@
     "timeout": "執行超時（超過 {{ms}} ms）",
     "stepLimit": "執行步數超過上限 {{max}} 步",
     "error": "運行時錯誤",
-    "noActions": "程序執行完成，但沒有產生任何可預覽的動作。"
+    "noActions": "程序執行完成，但沒有產生任何可預覽的動作。",
+    "mqttPublish": "[mqtt] 发布 {{topic}} = {{payload}}",
+    "mqttSubscribe": "[mqtt] 订阅 {{topic}}",
+    "mqttSubscribeBad": "[mqtt] 订阅需要回调函数",
+    "mqttLight": "[mqtt] 灯光 {{room}} → {{state}}",
+    "mqttBrightness": "[mqtt] 亮度 {{room}} → {{brightness}}%",
+    "mqttDevice": "[mqtt] 设备 {{device}} → {{state}}",
+    "mqttTemp": "[mqtt] 温度 → {{temp}}°C",
+    "mqttScene": "[mqtt] 场景 → {{scene}}",
+    "mqttSensor": "[mqtt] 传感 {{sensor}} → {{value}}",
+    "mqttUnknown": "[mqtt] 未知主题 {{topic}}"
   },
   "studio": {
     "eventChain": "事件鏈路",
@@ -885,7 +907,13 @@
     "iotWaitTip": "仿真時鐘等待",
     "iotStop": "緊急停止",
     "iotStopTip": "本地 kill switch，立即停止執行器",
-    "emptyHint": "把積木拖到這裡開始。"
+    "emptyHint": "把積木拖到這裡開始。",
+    "mqttPublish": "發布 MQTT %1 載荷 %2",
+    "mqttPublishTip": "虛擬發布：主題對應到 home.*（無真實 broker）",
+    "mqttSubscribe": "當收到 MQTT %1",
+    "mqttSubscribeTip": "虛擬訂閱：同一次仿真內 publish 觸發回呼",
+    "mqttPayload": "MQTT 載荷",
+    "mqttPayloadTip": "目前訂閱回呼中的載荷字串"
   },
   "iotCh": {
     "rain": "雨量",
@@ -988,9 +1016,9 @@
     "newsMp": "資訊小程序",
     "event": "活動報名",
     "shop": "商城小程序",
-    "lights": "燈光場景",
-    "climate": "溫控聯動",
-    "security": "安防演示",
+    "lights": "回家亮燈",
+    "climate": "降溫聯動",
+    "security": "離家安防",
     "window": "智慧窗控",
     "irrigation": "智慧灌溉",
     "pond": "魚塘增氧",
@@ -1000,7 +1028,10 @@
     "script": "腳本草稿",
     "blankEx": "空白練習",
     "hello": "Hello World",
-    "sort": "排序算法"
+    "sort": "排序算法",
+    "movie": "觀影模式",
+    "motion": "人體感應燈",
+    "sleep": "晚安模式"
   },
   "lang": {
     "jsDesc": "Web 與 Blockly 默認語言，瀏覽器內直接運行",
@@ -1115,9 +1146,15 @@
     "freePrint": "自由編程",
     "webCodeComment": "// 網站創作示例：用 web.* 指令搭建頁面",
     "mpCodeComment": "// 小程序示例：頁面 + 組件 + 數據綁定",
-    "homeCodeComment": "// 智能家居示例：燈光 + 溫控 + 場景聯動",
+    "homeCodeComment": "// 智慧家居 — 平面預覽 + 虛擬 MQTT\n",
     "toyCodeComment": "// 智能玩具示例：動作序列 + 傳感器",
-    "freeCodeComment": "// 自由編程 — 從這裡開始"
+    "freeCodeComment": "// 自由編程 — 從這裡開始",
+    "homeWelcomeComment": "// 回家模式 — 看平面圖亮起來\n",
+    "homeClimateComment": "// 炎熱降溫 — MQTT 溫控 + 風扇\n",
+    "homeSecurityComment": "// 離家布防 — 警報亮、燈滅\n",
+    "homeMovieComment": "// 觀影模式 — 調暗燈光、關上窗簾\n",
+    "homeMotionComment": "// 人體感應 → 開燈（虛擬 MQTT）\n",
+    "homeSleepComment": "// 晚安模式 — 漸暗後進入睡眠場景\n"
   },
   "studioFiles": {
     "cssLanding": "/* 落地頁：大標題，一屏講清楚。 */",
@@ -1326,8 +1363,8 @@
       "blurb": "感知房間，並控制繼電器。"
     },
     "living": {
-      "name": "客廳燈光",
-      "blurb": "在一個場景裡開關燈和窗簾。"
+      "name": "回家模式",
+      "blurb": "一鍵回家場景，平面圖上燈光與窗簾跟著動起來。"
     },
     "pet": {
       "name": "桌面寵物",
@@ -1346,12 +1383,12 @@
       "blurb": "溶氧偏低時打開增氧機。"
     },
     "climate": {
-      "name": "溫控聯動",
-      "blurb": "用溫控場景把房間保持在舒適溫度。"
+      "name": "炎熱降溫",
+      "blurb": "用虛擬 MQTT 發溫控主題，風扇在等距舞台上轉起來。"
     },
     "security": {
-      "name": "安防演示",
-      "blurb": "佈防門磁，觀察告警場景。"
+      "name": "離家布防",
+      "blurb": "觸發離家場景：燈滅、警報標記亮起。"
     },
     "event": {
       "name": "活動報名",
@@ -1372,6 +1409,18 @@
     "sort": {
       "name": "排序演算法",
       "blurb": "用程式把一組數字排好序。"
+    },
+    "movie": {
+      "name": "觀影時光",
+      "blurb": "客廳調暗、窗簾閉合，平面效果預覽立刻有氛圍。"
+    },
+    "motion": {
+      "name": "人來燈亮",
+      "blurb": "訂閱虛擬 MQTT 人體主題，點亮客廳——協議課也能好玩。"
+    },
+    "sleep": {
+      "name": "晚安模式",
+      "blurb": "逐步關燈再進睡眠場景，舞台上跟著變暗。"
     }
   },
   "about": {
@@ -1474,6 +1523,29 @@
       "relay": "繼電器",
       "distance": "距離",
       "comfort": "舒適度"
+    },
+    "floor": {
+      "defaultLabel": "預設公寓",
+      "customLabel": "自訂平面",
+      "hint": "仿真執行後，設備錨點會在平面圖上亮起"
+    },
+    "zoomIn": "放大",
+    "zoomOut": "縮小"
+  },
+  "mqtt": {
+    "topic": {
+      "livingLight": "客厅灯",
+      "bedroomLight": "卧室灯",
+      "kitchenLight": "厨房灯",
+      "livingBrightness": "客厅亮度",
+      "curtain": "窗帘",
+      "fan": "风扇",
+      "socket": "插座",
+      "alarm": "警报",
+      "temperature": "空调温度",
+      "scene": "场景",
+      "motion": "人体传感",
+      "sensorTemp": "温度传感"
     }
   }
 }

@@ -1,16 +1,24 @@
 import { App as AntdApp } from "antd";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../lib/api";
+import { filesToMap, isBinaryRefFile, mergeTextMapWithBinaryRefs } from "../lib/artifact-files";
 import { errorCodeOf } from "../lib/http";
 import { t } from "../lib/i18n";
 import { useLocaleStore } from "../lib/locale-store";
+import {
+  DEFAULT_SMARTHOME_FLOOR,
+  FLOOR_JSON_PATH,
+  parseFloorLayoutJson,
+  readFloorLayoutFromFiles,
+  serializeFloorLayout,
+} from "../lib/smarthome-floor-layout";
 import {
   applyServerWorldToHome,
   lightDeviceId,
   nonLightDeviceId,
   type SmarthomeServerWorld,
 } from "../lib/smarthome-world-map";
-import type { WorldState } from "../lib/targets";
+import { runTargetProgram, type WorldState } from "../lib/targets";
 import { useWorkspaceStore } from "../stores/workspace";
 import styles from "./PreviewPanel.module.scss";
 import { DeviceStage } from "./stage/DeviceStage";
@@ -54,6 +62,63 @@ export function SmarthomePreview({ world }: { world: WorldState | null }) {
   const ensureRef = useRef<Promise<string | null> | null>(null);
   const [sensorKind, setSensorKind] = useState<(typeof SENSOR_KINDS)[number]>("temperature");
   const [sensorValue, setSensorValue] = useState("24");
+
+  const artifactFiles = useWorkspaceStore((s) => s.artifactFiles);
+  const floorLayout = useMemo(() => readFloorLayoutFromFiles(artifactFiles), [artifactFiles]);
+  const floorInputRef = useRef<HTMLInputElement>(null);
+
+  const upsertFloorJson = useCallback((content: string) => {
+    const s = useWorkspaceStore.getState();
+    const map = filesToMap(s.artifactFiles);
+    const activeMeta = s.artifactFiles.find((f) => f.path === s.activeFilePath);
+    if (s.activeFilePath && (!activeMeta || !isBinaryRefFile(activeMeta))) {
+      map[s.activeFilePath] = s.code;
+    }
+    map[FLOOR_JSON_PATH] = content;
+    const files = mergeTextMapWithBinaryRefs(s.artifactFiles, map);
+    useWorkspaceStore.setState({
+      artifactFiles: files,
+      code: s.activeFilePath === FLOOR_JSON_PATH ? content : s.code,
+      saveDirty: true,
+      saveStatus: "idle",
+    });
+  }, []);
+
+  const exportFloorLayout = useCallback(() => {
+    const blob = new Blob([serializeFloorLayout(floorLayout)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = FLOOR_JSON_PATH;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }, [floorLayout]);
+
+  const importFloorLayout = useCallback(
+    async (file: File | null) => {
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const layout = parseFloorLayoutJson(text);
+        upsertFloorJson(serializeFloorLayout(layout));
+        message.success(t("preview.floorImportOk"));
+      } catch {
+        message.error(t("preview.floorImportFailed"));
+      }
+    },
+    [message, upsertFloorJson],
+  );
+
+  const resetFloorLayout = useCallback(() => {
+    upsertFloorJson(serializeFloorLayout(DEFAULT_SMARTHOME_FLOOR));
+    message.success(t("preview.floorResetOk"));
+  }, [message, upsertFloorJson]);
+
+  const onBridgeClick = useCallback(() => {
+    message.info(t("preview.bridgeUnavailable"));
+  }, [message]);
 
   const home = world?.home;
   const rooms = Object.keys(home?.lights ?? { living: 1, bedroom: 1, kitchen: 1 });
@@ -158,6 +223,14 @@ export function SmarthomePreview({ world }: { world: WorldState | null }) {
     [ensureSession, mergeWorld, message, setSmarthomeSessionId],
   );
 
+  const applyScene = (scene: string) => {
+    const result = runTargetProgram({
+      kind: "smarthome",
+      code: `home.runScene(${JSON.stringify(scene)});`,
+    });
+    setPreviewWorld(result.finalState);
+  };
+
   const injectSensor = () => {
     const value = Number(sensorValue);
     if (!Number.isFinite(value)) {
@@ -174,10 +247,46 @@ export function SmarthomePreview({ world }: { world: WorldState | null }) {
           <div className={styles.homeNotice}>
             {t("preview.homeVirtual")}
             {" · "}
+            {t("preview.floorEffect")}
+            {" · "}
             {knownScene
               ? t("preview.homeScene", { scene: sceneLabel(home?.scene ?? "") })
               : t("preview.homeNotLive")}
             {home ? ` · ${t("preview.homeAc", { temp: home.temperature })}` : ""}
+          </div>
+          <div className={styles.floorBar}>
+            <span className={styles.injectLabel}>
+              {t("preview.floorLayout")}: {floorLayout.id}
+            </span>
+            <div className={styles.floorActions}>
+              <button type="button" className={styles.injectBtn} onClick={exportFloorLayout}>
+                {t("preview.floorExport")}
+              </button>
+              <button
+                type="button"
+                className={styles.injectBtn}
+                onClick={() => floorInputRef.current?.click()}
+              >
+                {t("preview.floorImport")}
+              </button>
+              <button type="button" className={styles.injectBtn} onClick={resetFloorLayout}>
+                {t("preview.floorReset")}
+              </button>
+              <button type="button" className={styles.bridgeBtn} onClick={onBridgeClick}>
+                {t("preview.bridgeExperimental")}
+              </button>
+              <input
+                ref={floorInputRef}
+                type="file"
+                accept="application/json,.json"
+                className={styles.floorFileInput}
+                onChange={(ev) => {
+                  const file = ev.target.files?.[0] ?? null;
+                  ev.target.value = "";
+                  void importFloorLayout(file);
+                }}
+              />
+            </div>
           </div>
           <div className={styles.injectBar}>
             <div className={styles.injectGroup}>
@@ -187,9 +296,12 @@ export function SmarthomePreview({ world }: { world: WorldState | null }) {
                   <button
                     key={scene}
                     type="button"
-                    className={styles.sceneBtn}
-                    disabled={busy}
-                    onClick={() => void inject({ type: "scene", scene })}
+                    className={
+                      home?.scene === scene
+                        ? `${styles.sceneBtn} ${styles.sceneBtnOn}`
+                        : styles.sceneBtn
+                    }
+                    onClick={() => applyScene(scene)}
                   >
                     {t(`scene.${scene}`)}
                   </button>

@@ -13,15 +13,20 @@
 .previewHeader {
   @include flex-row();
   justify-content: space-between;
+  gap: $space-2;
   padding: $space-2 $space-3;
   border-bottom: 1px solid $color-border;
   background: $color-bg-base;
   flex-shrink: 0;
-  height: 36px;
+  min-height: 36px;
   align-items: center;
 }
 
 .previewTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: $font-size-sm;
   font-weight: $font-weight-medium;
   color: $color-text-secondary;
@@ -38,6 +43,7 @@
 
 .previewActions {
   @include flex-row($space-1);
+  flex-shrink: 0;
 }
 
 .previewBtn {
@@ -431,6 +437,38 @@
   padding: $space-2 $space-3;
 }
 
+.floorBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
+}
+
+.floorActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1;
+}
+
+.floorFileInput {
+  display: none;
+}
+
+.bridgeBtn {
+  padding: 4px 10px;
+  border: 1px dashed #{$color-kind-smarthome}80;
+  background: transparent;
+  color: $color-kind-smarthome;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(14, 165, 233, 0.12);
+  }
+}
+
 .roomTabs {
   @include flex-row($space-1);
   flex-wrap: wrap;
@@ -522,6 +560,12 @@
     border-color: $color-kind-smarthome;
     color: $color-kind-smarthome;
   }
+}
+
+.sceneBtnOn {
+  border-color: $color-kind-smarthome;
+  background: $color-bg-active;
+  color: $color-kind-smarthome;
 }
 
 .homeLog {

@@ -19,6 +19,16 @@
     linear-gradient(180deg, #1a2130 0%, #121722 100%);
 }
 
+.viewportPlane {
+  flex: 7.5 1 0;
+  min-height: 280px;
+  background: #e8eaee;
+}
+
+.shellPlane .lower {
+  flex: 2.5 1 0;
+}
+
 .layer {
   position: relative;
   height: 100%;
@@ -62,6 +72,21 @@
   gap: 6px;
 }
 
+.toolbarHost {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  .resetBtn {
+    width: 22px;
+    height: 22px;
+  }
+
+  .segment button {
+    padding: 4px 8px;
+  }
+}
+
 .segment {
   display: flex;
   margin: 0;
@@ -102,9 +127,14 @@
   color: $color-text-secondary;
   cursor: pointer;
 
-  &:hover {
+  &:hover:not(:disabled) {
     color: $color-text-primary;
     border-color: $color-border-strong;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
   }
 }
 
@@ -439,8 +469,267 @@
   }
 }
 
+/* MF-PlaneGraph–style isometric floor + circular markers */
+.planeGraph {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: #e8eaee;
+}
+
+.planeHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 8px 12px 6px;
+  color: #334155;
+
+  strong {
+    font-size: 13px;
+    font-weight: $font-weight-semibold;
+  }
+
+  span {
+    font-size: 11px;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.planeCanvas {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 8px 8px;
+  overflow: auto;
+  border-radius: $radius-lg;
+  background: #111;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+  scrollbar-width: thin;
+  container-type: size;
+}
+
+.planeZoom {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  button {
+    width: 28px;
+    height: 28px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 6px;
+    background: #fff;
+    color: #334155;
+    font-size: 16px;
+    font-weight: $font-weight-semibold;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+
+    &:hover:not(:disabled) {
+      background: #f8fafc;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+}
+
+.planeStage {
+  position: relative;
+  flex: 0 0 auto;
+  /* Contain-fit the 4:3 floor inside the preview pane. Markers use this box as CRS. */
+  --zoom: 1;
+  width: calc(min(100cqw, calc(100cqh * 4 / 3)) * var(--zoom));
+  aspect-ratio: 4 / 3;
+}
+
+.planeScene {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+  transition: filter 0.45s ease;
+}
+
+.planeStage[data-mood="home"] .planeScene {
+  filter: brightness(1.06) saturate(1.08);
+}
+
+.planeStage[data-mood="away"] .planeScene {
+  filter: brightness(0.38) saturate(0.55);
+}
+
+.planeStage[data-mood="sleep"] .planeScene {
+  filter: brightness(0.58) saturate(0.8) sepia(0.18);
+}
+
+.planeStage[data-mood="movie"] .planeScene {
+  filter: brightness(0.42) saturate(0.72);
+}
+
+.planeLightPool {
+  position: absolute;
+  z-index: 1;
+  aspect-ratio: 1.4;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.85) 0%, rgba(251, 191, 36, 0) 68%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  transform: translate(-50%, -45%);
+}
+
+.planeAlarmPool {
+  position: absolute;
+  z-index: 1;
+  width: 22%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(248, 113, 113, 0.62) 0%, rgba(248, 113, 113, 0) 70%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  transform: translate(-50%, -45%);
+}
+
+.planeCurtainShade {
+  position: absolute;
+  z-index: 1;
+  width: 6.5%;
+  height: 11%;
+  border-radius: 2px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.2), rgba(15, 23, 42, 0.78));
+  box-shadow: inset 0 0 0 1px rgba(248, 250, 252, 0.25);
+  pointer-events: none;
+  transform: translate(-50%, -70%);
+}
+
+.planeMarker {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 5.2%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  /* Anchor on the blue dot (MF iconAnchor bottom-center). */
+  transform: translate(-50%, calc(-100% + 2px));
+  cursor: default;
+  transition: transform 0.2s ease;
+
+  &[data-active="1"] {
+    z-index: 3;
+    transform: translate(-50%, calc(-100% + 2px)) scale(1.08);
+  }
+
+  &[data-kind="light"][data-active="1"] .planeMarkerBubble {
+    box-shadow:
+      0 0 0 1px rgba(251, 191, 36, 0.55),
+      0 0 14px rgba(251, 191, 36, calc(var(--glow, 0.4) * 1));
+  }
+
+  &[data-kind="alarm"][data-active="1"] .planeMarkerBubble {
+    box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.55), 0 0 12px rgba(248, 113, 113, 0.5);
+  }
+
+  &[data-kind="socket"][data-active="1"] .planeMarkerBubble {
+    box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.7), 0 0 14px rgba(52, 211, 153, 0.65);
+  }
+
+  &:hover .planeMarkerBubble {
+    transform: scale(1.12);
+  }
+}
+
+.planeMarkerBubble {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.25s ease;
+}
+
+.planeGlyph {
+  width: 58%;
+  height: 58%;
+}
+
+.planeMarkerDot {
+  width: 26%;
+  aspect-ratio: 1;
+  margin-top: 8%;
+  border-radius: 50%;
+  background: #2655ff;
+  border: 1px solid #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25);
+}
+
+.planeMarkerLabel {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-width: 48px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.82);
+  color: #f8fafc;
+  font-size: 9px;
+  font-weight: $font-weight-medium;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  em {
+    font-style: normal;
+    color: #94a3b8;
+    font-size: 8px;
+  }
+
+  .planeMarker:hover & {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .sash {
+  .sash,
+  .planeMarker,
+  .planeMarkerBubble {
     transition: none;
   }
 

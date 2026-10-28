@@ -3,6 +3,11 @@ import { defaultSchemaForTemplate } from "./app-studio/app-schema";
 import type { ArtifactFileEntry } from "./artifact-files";
 import { t } from "./i18n";
 import { type IotPackSlug, isIotLabPack, starterIotCode, starterIotXml } from "./targets/iot-lab";
+import {
+  isSmarthomeLabTemplate,
+  type SmarthomeLabTemplate,
+  smarthomeLabFiles,
+} from "./targets/smarthome-lab";
 
 const HP01_FIRMWARE = `// HP-01 Air Beacon — ESP32-S3 Arduino stub
 void setup() {
@@ -221,6 +226,24 @@ console.log(sortNumbers([3, 1, 2]));
     return studioTemplateFiles("商城小程序");
   },
   管理后台: [],
+  get 灯光场景() {
+    return smarthomeLabFiles("灯光场景");
+  },
+  get 温控联动() {
+    return smarthomeLabFiles("温控联动");
+  },
+  get 安防演示() {
+    return smarthomeLabFiles("安防演示");
+  },
+  get 观影模式() {
+    return smarthomeLabFiles("观影模式");
+  },
+  get 人体感应() {
+    return smarthomeLabFiles("人体感应");
+  },
+  get 晚安模式() {
+    return smarthomeLabFiles("晚安模式");
+  },
 };
 
 export const HERO_TEMPLATE_BOARD: Record<string, string> = {
@@ -251,14 +274,24 @@ export {
 } from "./targets/iot-lab";
 
 export function extraFilesForTemplate(
-  _kind: ArtifactKind,
+  kind: ArtifactKind,
   templateId: string | null | undefined,
 ): ArtifactFileEntry[] {
   if (!templateId) return [];
   if (templateId === "温湿度监测") return TEMPLATE_FILES["HP-01 Air Beacon"];
   if (templateId === "设备联动") return TEMPLATE_FILES["HP-03 Room Node"];
+  if (kind === "smarthome" && isSmarthomeLabTemplate(templateId)) {
+    return smarthomeLabFiles(templateId);
+  }
   return TEMPLATE_FILES[templateId] ?? [];
 }
+
+export {
+  isSmarthomeLabTemplate,
+  starterSmarthomeCode,
+  starterSmarthomeXml,
+} from "./targets/smarthome-lab";
+export type { SmarthomeLabTemplate };
 
 export function boardSkuForTemplate(templateId: string | null | undefined): string | undefined {
   if (!templateId) return undefined;

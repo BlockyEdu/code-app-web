@@ -61,10 +61,13 @@ export type StageModel = {
   room: { temperature: number; humidity: number; relayOn: boolean };
   home: {
     lights: Record<string, { on: boolean; brightness: number }>;
+    devices: Record<string, boolean>;
+    sensors: Record<string, number>;
     fan: boolean;
     curtain: boolean;
     ac: boolean;
     temperature: number;
+    scene: string;
   };
   toy: {
     expression: ToyExpression;
@@ -203,10 +206,13 @@ function mapHome(home: HomeState | null): StageModel["home"] {
     home?.lights && Object.keys(home.lights).length > 0 ? home.lights : idleHomeLights();
   return {
     lights,
+    devices: { ...(home?.devices ?? {}) },
+    sensors: { ...(home?.sensors ?? {}) },
     fan: Boolean(home?.devices.fan),
     curtain: Boolean(home?.devices.curtain),
     ac: Boolean(home?.devices.ac),
     temperature: home?.temperature ?? 26,
+    scene: home?.scene ?? "",
   };
 }
 

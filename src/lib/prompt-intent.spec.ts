@@ -26,6 +26,9 @@ test("sensor prompts map to the air beacon", () => {
 test("home and device prompts", () => {
   expect(sampleSlugForPrompt("Turn on the living room lights")).toBe("living-room");
   expect(sampleSlugForPrompt("拉上窗帘，打开灯")).toBe("living-room");
+  expect(sampleSlugForPrompt("人体感应开灯")).toBe("motion-light");
+  expect(sampleSlugForPrompt("movie night dim lights")).toBe("movie-night");
+  expect(sampleSlugForPrompt("晚安模式")).toBe("good-night");
   expect(sampleSlugForPrompt("a little car that drives")).toBe("desk-rover");
   expect(sampleSlugForPrompt("做一个小车")).toBe("desk-rover");
   expect(sampleSlugForPrompt("a robot friend")).toBe("desk-pet");

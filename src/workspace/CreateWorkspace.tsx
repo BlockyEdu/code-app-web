@@ -14,7 +14,12 @@ import { renderBlogHtml } from "../lib/app-studio/blog-html";
 import { filesToMap } from "../lib/artifact-files";
 import { useAuthStore } from "../lib/auth-store";
 import { runPreview } from "../lib/execute";
-import { consumeGuestBootSkip, guestBootKey, readGuestDraft } from "../lib/guest-draft";
+import {
+  consumeGuestBootSkip,
+  guestBootKey,
+  isBlankGuestEditor,
+  readGuestDraft,
+} from "../lib/guest-draft";
 import { errorCodeOf } from "../lib/http";
 import { t } from "../lib/i18n";
 import { useLocaleStore } from "../lib/locale-store";
@@ -136,7 +141,8 @@ export function CreateWorkspace() {
     sampleBoot.current = key;
     const draft = readGuestDraft();
     if (slug) {
-      if (draft?.sampleSlug === slug) {
+      // Empty Blockly XML means the sample never finished loading; reseed the lesson.
+      if (draft?.sampleSlug === slug && !isBlankGuestEditor(draft)) {
         hydrateGuestDraft(draft);
         return;
       }
@@ -609,7 +615,12 @@ export function CreateWorkspace() {
             {showPreview && (
               <>
                 <PanelResizeHandle className={styles.hResizeHandle} />
-                <Panel defaultSize="26" minSize="18" maxSize="46" className={styles.panelFull}>
+                <Panel
+                  defaultSize={artifactKind === "smarthome" ? "40" : "26"}
+                  minSize="18"
+                  maxSize="52"
+                  className={styles.panelFull}
+                >
                   <PreviewPanel kind={artifactKind} onRefresh={() => void handleRun()} />
                 </Panel>
               </>

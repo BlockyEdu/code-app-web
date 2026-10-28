@@ -11,7 +11,9 @@ import {
 test("official samples keep identity and catalog fields", () => {
   expect(findOfficialSample("blog")?.templateId).toBe("博客");
   expect(findOfficialSample("missing")).toBeNull();
-  expect(featuredOfficialSamples()).toHaveLength(5);
+  expect(featuredOfficialSamples().length).toBeGreaterThanOrEqual(5);
+  expect(findOfficialSample("motion-light")?.featured).toBe(true);
+  expect(findOfficialSample("movie-night")?.templateId).toBe("观影模式");
   expect(new Set(OFFICIAL_SAMPLES.map((sample) => sample.palette.to)).size).toBe(
     OFFICIAL_SAMPLES.length,
   );

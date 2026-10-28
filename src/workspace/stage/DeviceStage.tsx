@@ -1,5 +1,15 @@
 import { ReloadOutlined } from "@ant-design/icons";
-import { type ReactNode, useMemo, useState } from "react";
+import {
+  createContext,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import { readHardwareFile } from "../../lib/hardware-catalog-static";
 import { t } from "../../lib/i18n";
 import { useLocaleStore } from "../../lib/locale-store";
@@ -13,8 +23,13 @@ import styles from "./stage.module.scss";
 
 type StageKind = "iot" | "smarthome" | "toy";
 
+export const StageChromeContext = createContext<Dispatch<SetStateAction<ReactNode>> | null>(null);
+
+function zoomStep(current: number, delta: number): number {
+  return Math.min(1.8, Math.max(1, Number((current + delta).toFixed(1))));
+}
+
 export function DeviceStage({ kind, children }: { kind: StageKind; children?: ReactNode }) {
-  useLocaleStore((s) => s.locale);
   const world = useWorkspaceStore((s) => s.previewWorld);
   const boardSku = useWorkspaceStore((s) => s.boardSku);
   const packSlug = useWorkspaceStore((s) => s.iotPackSlug);
@@ -23,6 +38,14 @@ export function DeviceStage({ kind, children }: { kind: StageKind; children?: Re
   const firmware = useWorkspaceStore((s) => s.firmwareSim);
   const [layer, setLayer] = useState<"circuit" | "scene">("scene");
   const [epoch, setEpoch] = useState(0);
+  const [zoom, setZoom] = useState(1);
+  const setStageChrome = useContext(StageChromeContext);
+  useLocaleStore((s) => s.locale);
+  const circuitLabel = t("stage.circuit");
+  const sceneLabel = t("stage.scene");
+  const zoomInLabel = t("stage.zoomIn");
+  const zoomOutLabel = t("stage.zoomOut");
+  const resetLabel = t("stage.reset");
 
   const hardware = useMemo(() => readHardwareFile(files), [files]);
   const model = useMemo(
@@ -41,45 +64,105 @@ export function DeviceStage({ kind, children }: { kind: StageKind; children?: Re
     hardware.moduleSkus.length > 0 ? hardware.moduleSkus : defaultModuleSkus(model.sceneId);
   const title = t(sceneTitleKey(model.sceneId));
 
-  return (
-    <div className={styles.shell}>
-      <div className={styles.viewport}>
-        <div className={styles.caption}>{title}</div>
-        <div className={styles.toolbar}>
-          <fieldset className={styles.segment}>
-            <button
-              type="button"
-              className={layer === "circuit" ? styles.segmentOn : undefined}
-              onClick={() => setLayer("circuit")}
-            >
-              {t("stage.circuit")}
-            </button>
-            <button
-              type="button"
-              className={layer === "scene" ? styles.segmentOn : undefined}
-              onClick={() => setLayer("scene")}
-            >
-              {t("stage.scene")}
-            </button>
-          </fieldset>
+  const planePreview = kind === "smarthome" && layer === "scene";
+  const hosted = kind === "smarthome" && setStageChrome != null;
+
+  const resetStage = useCallback(() => {
+    setLayer("scene");
+    setEpoch((value) => value + 1);
+    if (kind === "smarthome") {
+      setZoom(1);
+      useWorkspaceStore.getState().setPreviewWorld(null);
+    }
+  }, [kind]);
+
+  const toolbar = useMemo(
+    () => (
+      <div className={hosted ? styles.toolbarHost : styles.toolbar}>
+        <fieldset className={styles.segment}>
           <button
             type="button"
-            className={styles.resetBtn}
-            aria-label={t("stage.reset")}
-            title={t("stage.reset")}
-            onClick={() => {
-              setLayer("scene");
-              setEpoch((value) => value + 1);
-            }}
+            className={layer === "circuit" ? styles.segmentOn : undefined}
+            onClick={() => setLayer("circuit")}
           >
-            <ReloadOutlined />
+            {circuitLabel}
           </button>
-        </div>
+          <button
+            type="button"
+            className={layer === "scene" ? styles.segmentOn : undefined}
+            onClick={() => setLayer("scene")}
+          >
+            {sceneLabel}
+          </button>
+        </fieldset>
+        {hosted && layer === "scene" ? (
+          <>
+            <button
+              type="button"
+              className={styles.resetBtn}
+              aria-label={zoomInLabel}
+              title={zoomInLabel}
+              disabled={zoom >= 1.8}
+              onClick={() => setZoom((value) => zoomStep(value, 0.2))}
+            >
+              +
+            </button>
+            <button
+              type="button"
+              className={styles.resetBtn}
+              aria-label={zoomOutLabel}
+              title={zoomOutLabel}
+              disabled={zoom <= 1}
+              onClick={() => setZoom((value) => zoomStep(value, -0.2))}
+            >
+              −
+            </button>
+          </>
+        ) : null}
+        <button
+          type="button"
+          className={styles.resetBtn}
+          aria-label={resetLabel}
+          title={resetLabel}
+          onClick={resetStage}
+        >
+          <ReloadOutlined />
+        </button>
+      </div>
+    ),
+    [
+      circuitLabel,
+      hosted,
+      layer,
+      resetLabel,
+      resetStage,
+      sceneLabel,
+      zoom,
+      zoomInLabel,
+      zoomOutLabel,
+    ],
+  );
+
+  useLayoutEffect(() => {
+    if (!hosted || !setStageChrome) return;
+    setStageChrome(toolbar);
+  }, [hosted, setStageChrome, toolbar]);
+
+  useLayoutEffect(() => {
+    if (!setStageChrome) return;
+    return () => setStageChrome(null);
+  }, [setStageChrome]);
+
+  return (
+    <div className={`${styles.shell}${planePreview ? ` ${styles.shellPlane}` : ""}`}>
+      <div className={`${styles.viewport} ${planePreview ? styles.viewportPlane : ""}`}>
+        {planePreview ? null : <div className={styles.caption}>{title}</div>}
+        {hosted ? null : toolbar}
         <div key={epoch} className={styles.layer}>
           {layer === "circuit" ? (
             <CircuitLayer boardSku={boardSku || hardware.boardSku} moduleSkus={modules} />
           ) : (
-            <SceneView model={model} label={title} />
+            <SceneView model={model} label={title} zoom={kind === "smarthome" ? zoom : undefined} />
           )}
         </div>
       </div>

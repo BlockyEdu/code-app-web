@@ -211,7 +211,17 @@
     "toyReset": "재설정",
     "toyApiOffline": "서버 시뮬레이션 오프라인 — 로컬 트윈만 사용 가능",
     "toyTick": "tick {{tick}}",
-    "toyStatus": "{{status}}"
+    "toyStatus": "{{status}}",
+    "floorEffect": "등축 평면 미리보기",
+    "floorLayout": "Floor layout",
+    "floorExport": "Export layout",
+    "floorImport": "Import layout",
+    "floorReset": "Reset layout",
+    "floorImportOk": "Floor layout imported",
+    "floorImportFailed": "Invalid floor.json",
+    "floorResetOk": "Floor layout reset to default",
+    "bridgeExperimental": "실험 브리지",
+    "bridgeUnavailable": "SyncroBrain bridge unavailable — virtual simulation only (SH-FR)"
   },
   "lesson": {
     "loading": "수업 로딩 중...",
@@ -532,7 +542,8 @@
     "fan": "선풍기",
     "alarm": "알람",
     "light": "빛",
-    "ac": "에어컨"
+    "ac": "에어컨",
+    "sensor": "센서"
   },
   "scene": {
     "home": "귀가 모드",
@@ -680,7 +691,8 @@
     "dataBind": "데이터 바인딩",
     "motors": "모터 및 서보",
     "lightsSound": "조명 및 소리",
-    "sequence": "동작 시퀀스"
+    "sequence": "동작 시퀀스",
+    "mqtt": "MQTT(가상)"
   },
   "led": {
     "red": "빨강",
@@ -779,7 +791,17 @@
     "timeout": "시간 초과 ({{ms}} ms 이상)",
     "stepLimit": "단계 초과 {{max}}",
     "error": "런타임 에러",
-    "noActions": "프로그램은 미리보기 가능한 동작 없이 종료되었습니다."
+    "noActions": "프로그램은 미리보기 가능한 동작 없이 종료되었습니다.",
+    "mqttPublish": "[mqtt] publish {{topic}} = {{payload}}",
+    "mqttSubscribe": "[mqtt] subscribe {{topic}}",
+    "mqttSubscribeBad": "[mqtt] subscribe needs a handler function",
+    "mqttLight": "[mqtt] light {{room}} → {{state}}",
+    "mqttBrightness": "[mqtt] brightness {{room}} → {{brightness}}%",
+    "mqttDevice": "[mqtt] device {{device}} → {{state}}",
+    "mqttTemp": "[mqtt] temperature → {{temp}}°C",
+    "mqttScene": "[mqtt] scene → {{scene}}",
+    "mqttSensor": "[mqtt] sensor {{sensor}} → {{value}}",
+    "mqttUnknown": "[mqtt] unknown topic {{topic}}"
   },
   "studio": {
     "eventChain": "이벤트 체인",
@@ -885,7 +907,13 @@
     "iotWaitTip": "시뮬레이션 시계 대기",
     "iotStop": "비상 정지",
     "iotStopTip": "로컬 킬 스위치 — 지금 액추에이터 정지",
-    "emptyHint": "블록을 여기로 끌어 시작하세요."
+    "emptyHint": "블록을 여기로 끌어 시작하세요.",
+    "mqttPublish": "publish MQTT %1 payload %2",
+    "mqttPublishTip": "Virtual publish — maps topic to home.* (no real broker)",
+    "mqttSubscribe": "when MQTT %1 received",
+    "mqttSubscribeTip": "Virtual subscribe — handlers run on publish in the same simulation",
+    "mqttPayload": "MQTT payload",
+    "mqttPayloadTip": "Payload string from the current subscribe handler"
   },
   "iotCh": {
     "rain": "비",
@@ -988,9 +1016,9 @@
     "newsMp": "뉴스 미니 프로그램",
     "event": "이벤트 가입",
     "shop": "샵 미니 프로그램",
-    "lights": "조명 장면",
-    "climate": "기후 장면",
-    "security": "보안 데모",
+    "lights": "귀가 조명",
+    "climate": "냉방 연동",
+    "security": "외출 보안",
     "window": "스마트 창문",
     "irrigation": "스마트 관개",
     "pond": "연못 폭기",
@@ -1000,7 +1028,10 @@
     "script": "스크립트 초안",
     "blankEx": "빈 연습",
     "hello": "헬로 월드",
-    "sort": "정렬"
+    "sort": "정렬",
+    "movie": "영화 모드",
+    "motion": "동작 감지등",
+    "sleep": "굿나잇 모드"
   },
   "lang": {
     "jsDesc": "웹 및 블록리 기본 언어; 브라우저에서 실행",
@@ -1115,9 +1146,15 @@
     "freePrint": "무료 코딩",
     "webCodeComment": "// 웹사이트 샘플: web.* 명령어로 페이지 만들기",
     "mpCodeComment": "// 미니 프로그램 샘플: 페이지   컴포넌트   데이터 바인딩",
-    "homeCodeComment": "// 스마트 홈 샘플: 조명   기후   장면",
+    "homeCodeComment": "// Smart home — floor preview + virtual MQTT\n",
     "toyCodeComment": "// 스마트 장난감 샘플: 모션   센서",
-    "freeCodeComment": "// 무료 코딩 — 여기서 시작"
+    "freeCodeComment": "// 무료 코딩 — 여기서 시작",
+    "homeWelcomeComment": "// Welcome home — watch the floor plan light up\n",
+    "homeClimateComment": "// Hot day — MQTT climate + fan on the floor stage\n",
+    "homeSecurityComment": "// Away mode — alarm glow, lights off\n",
+    "homeMovieComment": "// Movie night — dim lights, close curtains\n",
+    "homeMotionComment": "// Motion sensor → light via virtual MQTT\n",
+    "homeSleepComment": "// Good night — fade then sleep scene\n"
   },
   "studioFiles": {
     "cssLanding": "/* 랜딩 페이지: 자신을 소개하는 큰 제목 하나. */",
@@ -1326,8 +1363,8 @@
       "blurb": "방을 감지하고 릴레이를 전환합니다."
     },
     "living": {
-      "name": "거실 조명",
-      "blurb": "한 장면에서 조명과 커튼을 바꿉니다."
+      "name": "귀가 모드",
+      "blurb": "귀가 장면을 실행하면 평면도에서 조명과 커튼이 움직입니다."
     },
     "pet": {
       "name": "데스크 펫",
@@ -1346,12 +1383,12 @@
       "blurb": "용존산소가 낮으면 산소기를 켭니다."
     },
     "climate": {
-      "name": "온도 장면",
-      "blurb": "온도 장면으로 방을 쾌적하게 유지합니다."
+      "name": "무더운 날 냉방",
+      "blurb": "가상 MQTT로 온습도 주제를 보내고 선풍기를 돌리세요."
     },
     "security": {
-      "name": "보안 데모",
-      "blurb": "문 센서를 경계하고 경보 장면을 봅니다."
+      "name": "외출 모드",
+      "blurb": "외출 장면으로 불을 끄고 경보가 빛납니다."
     },
     "event": {
       "name": "행사 신청",
@@ -1372,6 +1409,18 @@
     "sort": {
       "name": "정렬",
       "blurb": "코드로 숫자 목록을 정렬합니다."
+    },
+    "movie": {
+      "name": "영화의 밤",
+      "blurb": "거실을 어둡게 하고 커튼을 닫아 분위기를 만드세요."
+    },
+    "motion": {
+      "name": "동작→조명",
+      "blurb": "가상 MQTT 동작 주제를 구독해 불을 켭니다."
+    },
+    "sleep": {
+      "name": "굿나잇",
+      "blurb": "조명을 단계적으로 끄고 수면 장면으로 갑니다."
     }
   },
   "about": {
@@ -1474,6 +1523,29 @@
       "relay": "릴레이",
       "distance": "거리",
       "comfort": "쾌적도"
+    },
+    "floor": {
+      "defaultLabel": "기본 아파트",
+      "customLabel": "사용자 평면",
+      "hint": "실행하면 평면도 마커가 켜집니다"
+    },
+    "zoomIn": "확대",
+    "zoomOut": "축소"
+  },
+  "mqtt": {
+    "topic": {
+      "livingLight": "living light",
+      "bedroomLight": "bedroom light",
+      "kitchenLight": "kitchen light",
+      "livingBrightness": "living brightness",
+      "curtain": "curtain",
+      "fan": "fan",
+      "socket": "outlet",
+      "alarm": "alarm",
+      "temperature": "AC temperature",
+      "scene": "scene",
+      "motion": "motion sensor",
+      "sensorTemp": "temp sensor"
     }
   }
 }

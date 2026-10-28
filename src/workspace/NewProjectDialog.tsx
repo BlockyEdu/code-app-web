@@ -31,7 +31,7 @@ const KIND_META: Record<ArtifactKind, { icon: ReactNode; templates: string[] }> 
   },
   smarthome: {
     icon: <HomeOutlined />,
-    templates: ["灯光场景", "温控联动", "安防演示"],
+    templates: ["灯光场景", "观影模式", "人体感应", "晚安模式", "温控联动", "安防演示"],
   },
   iot: {
     icon: <ApiOutlined />,

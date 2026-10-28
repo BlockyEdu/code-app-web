@@ -58,6 +58,16 @@ export function writeGuestDraft(draft: GuestDraft): void {
   }
 }
 
+/** Official samples should not reopen onto an empty Blockly canvas. */
+export function isBlankGuestEditor(draft: GuestDraft): boolean {
+  const compact = draft.blockXml.replace(/\s/g, "");
+  return (
+    !compact ||
+    compact === '<xmlxmlns="https://developers.google.com/blockly/xml"></xml>' ||
+    compact === "<xml></xml>"
+  );
+}
+
 export function clearGuestDraft(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);

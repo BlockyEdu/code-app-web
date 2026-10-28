@@ -4,7 +4,7 @@ import type { StageModel } from "./map-scene";
 import { PondScene } from "./PondScene";
 import { RoomNodeScene } from "./RoomNodeScene";
 import { RoverScene } from "./RoverScene";
-import { SmarthomeScene } from "./SmarthomeScene";
+import { SmarthomeFloorStage } from "./SmarthomeFloorStage";
 import { SmartWindowScene } from "./SmartWindowScene";
 import { ToyScene } from "./ToyScene";
 
@@ -23,7 +23,15 @@ export function sceneTitleKey(sceneId: StageModel["sceneId"]): string {
   return TITLES[sceneId];
 }
 
-export function SceneView({ model, label }: { model: StageModel; label: string }) {
+export function SceneView({
+  model,
+  label,
+  zoom,
+}: {
+  model: StageModel;
+  label: string;
+  zoom?: number;
+}) {
   switch (model.sceneId) {
     case "smart-window":
       return (
@@ -64,15 +72,7 @@ export function SceneView({ model, label }: { model: StageModel; label: string }
         />
       );
     case "smarthome":
-      return (
-        <SmarthomeScene
-          label={label}
-          lights={model.home.lights}
-          fan={model.home.fan}
-          curtain={model.home.curtain}
-          ac={model.home.ac}
-        />
-      );
+      return <SmarthomeFloorStage label={label} home={model.home} zoom={zoom} />;
     case "toy":
       return (
         <ToyScene

@@ -4,6 +4,7 @@
  */
 import type { ArtifactKind } from "../../types/artifact";
 import { t } from "../i18n";
+import { applyMqttPublish } from "../smarthome-mqtt";
 import {
   createIotWorld,
   evaluateIotAssertions,
@@ -204,7 +205,7 @@ function stripStepMarkers(code: string): string {
 
 /**
  * Execute generated create-kind code against a sandboxed world.
- * Only `web` / `mp` / `home` / `toy` / `iot` / `console` are exposed — no network/DOM.
+ * Only `web` / `mp` / `home` / `mqtt` / `toy` / `iot` / `console` are exposed — no network/DOM.
  */
 export function runTargetProgram(options: RunOptions): RunResult {
   const startedAt = performance.now();
@@ -425,27 +426,45 @@ export function runTargetProgram(options: RunOptions): RunResult {
     runScene: (scene: unknown) => {
       guard();
       const key = toText(scene) || "home";
-      state.home.scene = labeled("scene", key);
+      state.home.scene = key;
+      const lights = state.home.lights;
+      const devices = state.home.devices;
+      const off = (room: string) => {
+        if (!lights[room]) lights[room] = { on: false, brightness: 0 };
+        lights[room].on = false;
+      };
       if (key === "home") {
-        state.home.lights.living = { on: true, brightness: 80 };
-        state.home.devices.curtain = true;
-        state.home.devices.alarm = false;
+        lights.living = { on: true, brightness: 80 };
+        lights.bedroom = { on: true, brightness: 60 };
+        lights.kitchen = { on: true, brightness: 70 };
+        devices.curtain = true;
+        devices.alarm = false;
+        devices.socket = false;
+        devices.fan = false;
       } else if (key === "away") {
-        for (const room of Object.keys(state.home.lights)) {
-          state.home.lights[room].on = false;
-        }
-        state.home.devices.curtain = false;
-        state.home.devices.socket = false;
-        state.home.devices.alarm = true;
+        for (const room of Object.keys(lights)) off(room);
+        devices.curtain = false;
+        devices.socket = false;
+        devices.fan = false;
+        devices.alarm = true;
       } else if (key === "sleep") {
-        state.home.lights.living.on = false;
-        state.home.lights.kitchen.on = false;
-        state.home.lights.bedroom = { on: true, brightness: 20 };
+        off("living");
+        off("kitchen");
+        lights.bedroom = { on: true, brightness: 15 };
+        devices.curtain = false;
+        devices.alarm = false;
+        devices.socket = false;
+        devices.fan = false;
       } else if (key === "movie") {
-        state.home.lights.living = { on: true, brightness: 20 };
-        state.home.devices.curtain = false;
+        lights.living = { on: true, brightness: 18 };
+        off("bedroom");
+        off("kitchen");
+        devices.curtain = false;
+        devices.fan = false;
+        devices.socket = true;
+        devices.alarm = false;
       }
-      const text = t("runtime.runScene", { scene: state.home.scene });
+      const text = t("runtime.runScene", { scene: labeled("scene", key) });
       state.home.timeline.push(text);
       pushLine("log", text);
     },
@@ -453,6 +472,42 @@ export function runTargetProgram(options: RunOptions): RunResult {
       guard();
       const value = clamp(toNumber(seconds, 1), 0, 10);
       pushLine("log", t("runtime.wait", { value }));
+    },
+  };
+
+  const mqttHandlers: Record<string, Array<(payload: string) => void>> = {};
+  const mqtt = {
+    publish: (topic: unknown, payload: unknown) => {
+      guard();
+      const topicText = toText(topic) || "home/living/light";
+      const payloadText = toText(payload);
+      const proto = t("runtime.mqttPublish", { topic: topicText, payload: payloadText });
+      state.home.timeline.push(proto);
+      pushLine("log", proto);
+      applyMqttPublish(topicText, payloadText, {
+        setLight: (room, stateValue) => home.setLight(room, stateValue),
+        setBrightness: (room, value) => home.setBrightness(room, value),
+        setTemperature: (value) => home.setTemperature(value),
+        setDevice: (device, stateValue) => home.setDevice(device, stateValue),
+        triggerSensor: (sensor, value) => home.triggerSensor(sensor, value),
+        runScene: (scene) => home.runScene(scene),
+      });
+      for (const handler of mqttHandlers[topicText] ?? []) {
+        handler(payloadText);
+      }
+    },
+    subscribe: (topic: unknown, handler: unknown) => {
+      guard();
+      const topicText = toText(topic) || "home/living/light";
+      if (typeof handler !== "function") {
+        pushLine("warn", t("runtime.mqttSubscribeBad"));
+        return;
+      }
+      if (!mqttHandlers[topicText]) mqttHandlers[topicText] = [];
+      mqttHandlers[topicText].push(handler as (payload: string) => void);
+      const text = t("runtime.mqttSubscribe", { topic: topicText });
+      state.home.timeline.push(text);
+      pushLine("log", text);
     },
   };
 
@@ -571,13 +626,14 @@ export function runTargetProgram(options: RunOptions): RunResult {
       "web",
       "mp",
       "home",
+      "mqtt",
       "toy",
       "iot",
       "console",
       "__step",
       `"use strict";\n${code}`,
     );
-    runner(web, mp, home, toy, iot, sandboxConsole, setBlock);
+    runner(web, mp, home, mqtt, toy, iot, sandboxConsole, setBlock);
   } catch (error) {
     if (aborted === "timeout") {
       status = "timeout";

@@ -45,6 +45,11 @@ import {
 import type { WorldState } from "../lib/targets";
 import { DEFAULT_KIND_CODE, DEFAULT_KIND_XML } from "../lib/targets";
 import { type IotRunMode, starterIotCode, starterIotXml } from "../lib/targets/iot-lab";
+import {
+  isSmarthomeLabTemplate,
+  starterSmarthomeCode,
+  starterSmarthomeXml,
+} from "../lib/targets/smarthome-lab";
 import { track } from "../lib/telemetry";
 import {
   boardSkuForTemplate,
@@ -760,10 +765,21 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     const templateId = opts?.templateId ?? null;
     const iotPack = kind === "iot" ? packSlugFromTemplate(templateId) : null;
     const iotLab = Boolean(iotPack);
+    const smarthomeLab =
+      kind === "smarthome" && isSmarthomeLabTemplate(templateId) ? templateId : null;
     const primaryPath = codePathForKind(kind);
-    const nextXml = iotPack ? starterIotXml(iotPack) : DEFAULT_KIND_XML[kind];
+    const nextXml = iotPack
+      ? starterIotXml(iotPack)
+      : smarthomeLab
+        ? starterSmarthomeXml(smarthomeLab)
+        : DEFAULT_KIND_XML[kind];
     const nextCode =
-      extraMap[primaryPath] || (iotPack ? starterIotCode(iotPack) : DEFAULT_KIND_CODE[kind]);
+      extraMap[primaryPath] ||
+      (iotPack
+        ? starterIotCode(iotPack)
+        : smarthomeLab
+          ? starterSmarthomeCode(smarthomeLab)
+          : DEFAULT_KIND_CODE[kind]);
     const requested = language || get().languageId || "javascript";
     const lang = consoleKind ? requested : requested || "javascript";
     const plugin = getLanguagePlugin(lang);

@@ -211,7 +211,17 @@
     "toyReset": "Reset",
     "toyApiOffline": "Server sim offline — local twin only",
     "toyTick": "tick {{tick}}",
-    "toyStatus": "{{status}}"
+    "toyStatus": "{{status}}",
+    "floorEffect": "Isometric floor preview",
+    "floorLayout": "Floor layout",
+    "floorExport": "Export layout",
+    "floorImport": "Import layout",
+    "floorReset": "Reset layout",
+    "floorImportOk": "Floor layout imported",
+    "floorImportFailed": "Invalid floor.json",
+    "floorResetOk": "Floor layout reset to default",
+    "bridgeExperimental": "Experimental bridge",
+    "bridgeUnavailable": "SyncroBrain bridge unavailable — virtual simulation only (SH-FR)"
   },
   "lesson": {
     "loading": "Loading lesson...",
@@ -532,7 +542,8 @@
     "fan": "Fan",
     "alarm": "Alarm",
     "light": "Light",
-    "ac": "AC"
+    "ac": "AC",
+    "sensor": "Sensor"
   },
   "scene": {
     "home": "Home",
@@ -680,7 +691,8 @@
     "dataBind": "Data binding",
     "motors": "Motors & servos",
     "lightsSound": "Lights & sound",
-    "sequence": "Motion sequence"
+    "sequence": "Motion sequence",
+    "mqtt": "MQTT (virtual)"
   },
   "led": {
     "red": "red",
@@ -779,7 +791,17 @@
     "timeout": "Timed out (over {{ms}} ms)",
     "stepLimit": "Exceeded step limit {{max}}",
     "error": "Runtime error",
-    "noActions": "Program finished with no previewable actions."
+    "noActions": "Program finished with no previewable actions.",
+    "mqttPublish": "[mqtt] publish {{topic}} = {{payload}}",
+    "mqttSubscribe": "[mqtt] subscribe {{topic}}",
+    "mqttSubscribeBad": "[mqtt] subscribe needs a handler function",
+    "mqttLight": "[mqtt] light {{room}} → {{state}}",
+    "mqttBrightness": "[mqtt] brightness {{room}} → {{brightness}}%",
+    "mqttDevice": "[mqtt] device {{device}} → {{state}}",
+    "mqttTemp": "[mqtt] temperature → {{temp}}°C",
+    "mqttScene": "[mqtt] scene → {{scene}}",
+    "mqttSensor": "[mqtt] sensor {{sensor}} → {{value}}",
+    "mqttUnknown": "[mqtt] unknown topic {{topic}}"
   },
   "studio": {
     "eventChain": "Event chain",
@@ -885,7 +907,13 @@
     "iotWaitTip": "Simulation clock wait",
     "iotStop": "Emergency stop",
     "iotStopTip": "Local kill switch — stop actuators now",
-    "emptyHint": "Drag a block here to start."
+    "emptyHint": "Drag a block here to start.",
+    "mqttPublish": "publish MQTT %1 payload %2",
+    "mqttPublishTip": "Virtual publish — maps topic to home.* (no real broker)",
+    "mqttSubscribe": "when MQTT %1 received",
+    "mqttSubscribeTip": "Virtual subscribe — handlers run on publish in the same simulation",
+    "mqttPayload": "MQTT payload",
+    "mqttPayloadTip": "Payload string from the current subscribe handler"
   },
   "iotCh": {
     "rain": "Rain",
@@ -988,9 +1016,9 @@
     "newsMp": "News mini program",
     "event": "Event signup",
     "shop": "Shop mini program",
-    "lights": "Lighting scene",
-    "climate": "Climate scene",
-    "security": "Security demo",
+    "lights": "Welcome home lights",
+    "climate": "Cool-down climate",
+    "security": "Away security",
     "window": "Smart window",
     "irrigation": "Smart irrigation",
     "pond": "Pond aeration",
@@ -1000,7 +1028,10 @@
     "script": "Script draft",
     "blankEx": "Blank exercise",
     "hello": "Hello World",
-    "sort": "Sorting"
+    "sort": "Sorting",
+    "movie": "Movie night",
+    "motion": "Motion light",
+    "sleep": "Good night"
   },
   "lang": {
     "jsDesc": "Default language for Web and Blockly; runs in the browser",
@@ -1115,9 +1146,15 @@
     "freePrint": "Free coding",
     "webCodeComment": "// Website sample: build a page with web.* commands",
     "mpCodeComment": "// Mini program sample: pages + components + data binding",
-    "homeCodeComment": "// Smart home sample: lights + climate + scenes",
+    "homeCodeComment": "// Smart home — floor preview + virtual MQTT\n",
     "toyCodeComment": "// Smart toy sample: motion + sensors",
-    "freeCodeComment": "// Free coding — start here"
+    "freeCodeComment": "// Free coding — start here",
+    "homeWelcomeComment": "// Welcome home — watch the floor plan light up\n",
+    "homeClimateComment": "// Hot day — MQTT climate + fan on the floor stage\n",
+    "homeSecurityComment": "// Away mode — alarm glow, lights off\n",
+    "homeMovieComment": "// Movie night — dim lights, close curtains\n",
+    "homeMotionComment": "// Motion sensor → light via virtual MQTT\n",
+    "homeSleepComment": "// Good night — fade then sleep scene\n"
   },
   "studioFiles": {
     "cssLanding": "/* Landing page: one big heading that states who you are. */",
@@ -1326,8 +1363,8 @@
       "blurb": "Sense a room and switch a relay."
     },
     "living": {
-      "name": "Living room lights",
-      "blurb": "Turn lights and curtains on in one scene."
+      "name": "Welcome home",
+      "blurb": "Run a home scene and watch lights and curtains animate on the floor plan."
     },
     "pet": {
       "name": "Desk pet",
@@ -1346,12 +1383,12 @@
       "blurb": "Turn on the aerator when oxygen drops."
     },
     "climate": {
-      "name": "Climate scene",
-      "blurb": "Hold a comfortable temperature with a thermostat scene."
+      "name": "Cool-down day",
+      "blurb": "Publish MQTT climate topics and spin the fan on the isometric stage."
     },
     "security": {
-      "name": "Security demo",
-      "blurb": "Arm a door sensor and watch the alarm scene."
+      "name": "Away mode",
+      "blurb": "Arm the alarm scene — lights go dark and the alarm marker glows."
     },
     "event": {
       "name": "Event signup",
@@ -1372,6 +1409,18 @@
     "sort": {
       "name": "Sorting",
       "blurb": "Sort a list of numbers in code."
+    },
+    "movie": {
+      "name": "Movie night",
+      "blurb": "Dim the living room, close curtains, and see the floor preview set the mood."
+    },
+    "motion": {
+      "name": "Motion → light",
+      "blurb": "Subscribe to a virtual MQTT motion topic and light up the room — protocol made fun."
+    },
+    "sleep": {
+      "name": "Good night",
+      "blurb": "Step through a bedtime sequence: fade lights, then sleep scene on the stage."
     }
   },
   "about": {
@@ -1474,6 +1523,29 @@
       "relay": "Relay",
       "distance": "Distance",
       "comfort": "Comfort"
+    },
+    "floor": {
+      "defaultLabel": "Default apartment",
+      "customLabel": "Custom floor",
+      "hint": "Run simulation — markers light up on the floor plan"
+    },
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out"
+  },
+  "mqtt": {
+    "topic": {
+      "livingLight": "living light",
+      "bedroomLight": "bedroom light",
+      "kitchenLight": "kitchen light",
+      "livingBrightness": "living brightness",
+      "curtain": "curtain",
+      "fan": "fan",
+      "socket": "outlet",
+      "alarm": "alarm",
+      "temperature": "AC temperature",
+      "scene": "scene",
+      "motion": "motion sensor",
+      "sensorTemp": "temp sensor"
     }
   }
 }

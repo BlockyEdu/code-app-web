@@ -25,12 +25,26 @@ const RULES: readonly IntentRule[] = [
   {
     slug: "air-beacon",
     pattern:
-      /temperature|humidity|\btemp\b|thermo|esp32|stm32|firmware|\bchips?\b|温度|湿度|温湿度|溫度|濕度|溫濕度|气温|氣溫|固件|韌體|芯片|晶片|気温|ファームウェア|온도|습도|펌웨어|temperatura|umidade|humedad|umidit|temperatuur|luchtvochtigheid|temp[eé]rature|humidit[eé]/,
+      /temperature|humidity|\btemp\b|thermo|esp32|stm32|firmware|\bchips?\b|温度|湿度|温湿度|室温|室溫|溫度|濕度|溫濕度|气温|氣溫|固件|韌體|芯片|晶片|気温|ファームウェア|온도|습도|펌웨어|temperatura|umidade|humedad|umidit|temperatuur|luchtvochtigheid|temp[eé]rature|humidit[eé]/,
+  },
+  {
+    slug: "motion-light",
+    pattern:
+      /motion|pir|occupancy|人体感应|人体感應|感应灯|感應燈|モーション|인체\s?감지|movimento|presen[cç]a|mouvement/,
+  },
+  {
+    slug: "movie-night",
+    pattern:
+      /movie|cinema|film\s?night|观影|觀影|看电影|看電影|映画|영화|cine|filme|film\b|cin[eé]ma/,
+  },
+  {
+    slug: "good-night",
+    pattern: /good\s?night|bedtime|晚安|睡觉|睡覺|おやすみ|굿나잇|buenas noches|bonne nuit/,
   },
   {
     slug: "living-room",
     pattern:
-      /\blights?\b|\blamps?\b|curtains?|living\s?room|smart\s?home|灯|燈|窗帘|窗簾|家居|客厅|客廳|照明|ライト|カーテン|リビング|조명|커튼|거실|\bluz(es)?\b|\bluces\b|cortina|sala de estar|\bluce\b|\bluci\b|tenda|woonkamer|gordijn|\blampe\b|\blumi[eè]res?\b|rideau/,
+      /\blights?\b|\blichts?\b|\blamps?\b|curtains?|living\s?room|smart\s?home|mqtt|灯|燈|窗帘|窗簾|家居|客厅|客廳|照明|明かり|あかり|ライト|カーテン|リビング|조명|불을?|커튼|거실|\bluz(es)?\b|\bluces\b|cortina|sala de estar|\bluce\b|\bluci\b|tenda|woonkamer|gordijn|\blampe\b|lumi[eè]re?s?|rideau/,
   },
   {
     slug: "desk-rover",

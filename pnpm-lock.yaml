@@ -11,12 +11,18 @@ importers:
       '@ant-design/icons':
         specifier: ^6.3.4
         version: 6.3.4(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@fontsource/inter':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/jetbrains-mono':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@luminaryworks/auth-dev-proxy':
         specifier: ^0.2.2
         version: 0.2.2
       '@luminaryworks/auth-react':
-        specifier: ^0.7.4
-        version: 0.7.4(react@19.2.8)
+        specifier: ^0.7.5
+        version: 0.7.5(react@19.2.8)
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.56.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -268,12 +274,18 @@ packages:
       '@noble/hashes':
         optional: true
 
+  '@fontsource/inter@5.3.0':
+    resolution: {integrity: sha512-RofMylZmjlJEfELXeNHFWBRcSs75rGU/6bV2S2jfnvv/3rPXPGe0LgUJTklcHZ9lM4OZmAVFhcJPnACfb91A3g==}
+
+  '@fontsource/jetbrains-mono@5.3.0':
+    resolution: {integrity: sha512-fqDfB5I9f1p1TV486aUgB9t8zP84P0O1FtQR5Ol9vjwPy+S+EIGlVYm1cvj2W5shcZMTg2nZFdVMoH5wFu8a1A==}
+
   '@luminaryworks/auth-dev-proxy@0.2.2':
     resolution: {integrity: sha512-g/SOo02z89YCg546FZpxHlBuLKSnmu8t8MU6N1Jm+VnTJmniRRXy3ppRaX63ZVvkV+l58nbUUzqj7zxPkkXU1w==}
     engines: {node: '>=24.0.0'}
 
-  '@luminaryworks/auth-react@0.7.4':
-    resolution: {integrity: sha512-ZDxoBIow/15SiQXsbBiSJyX/WnyzuI7fCe4j/+hywdc/8PVSRxiJYRHkuEbpAUb3cjo/7v5/pASlmyFz97TyZQ==}
+  '@luminaryworks/auth-react@0.7.5':
+    resolution: {integrity: sha512-7tFIKftshHgbyFyZSXtzG+O6BravNxHTWz8irRkS98zpQ4Kc+gM7xNAq9AD0VleR5zd9fqJLMcrhF/af50Nt5Q==}
     engines: {node: '>=24.0.0', pnpm: '>=11'}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
@@ -1530,9 +1542,13 @@ snapshots:
 
   '@exodus/bytes@1.15.1': {}
 
+  '@fontsource/inter@5.3.0': {}
+
+  '@fontsource/jetbrains-mono@5.3.0': {}
+
   '@luminaryworks/auth-dev-proxy@0.2.2': {}
 
-  '@luminaryworks/auth-react@0.7.4(react@19.2.8)':
+  '@luminaryworks/auth-react@0.7.5(react@19.2.8)':
     dependencies:
       oidc-client-ts: 3.5.0
       react: 19.2.8

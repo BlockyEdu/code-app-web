@@ -211,7 +211,17 @@
     "toyReset": "Restablecer",
     "toyApiOffline": "Simulación del servidor fuera de línea — solo gemelo local",
     "toyTick": "tick {{tick}}",
-    "toyStatus": "{{status}}"
+    "toyStatus": "{{status}}",
+    "floorEffect": "Vista plana isométrica",
+    "floorLayout": "Floor layout",
+    "floorExport": "Export layout",
+    "floorImport": "Import layout",
+    "floorReset": "Reset layout",
+    "floorImportOk": "Floor layout imported",
+    "floorImportFailed": "Invalid floor.json",
+    "floorResetOk": "Floor layout reset to default",
+    "bridgeExperimental": "Puente experimental",
+    "bridgeUnavailable": "SyncroBrain bridge unavailable — virtual simulation only (SH-FR)"
   },
   "lesson": {
     "loading": "Cargando lección...",
@@ -532,7 +542,8 @@
     "fan": "Fan",
     "alarm": "Alarma",
     "light": "Luz",
-    "ac": "AC"
+    "ac": "AC",
+    "sensor": "Sensor"
   },
   "scene": {
     "home": "Modo casa",
@@ -680,7 +691,8 @@
     "dataBind": "Vinculación de datos",
     "motors": "Motores y servos",
     "lightsSound": "Luces y sonido",
-    "sequence": "Secuencia de movimiento"
+    "sequence": "Secuencia de movimiento",
+    "mqtt": "MQTT (virtual)"
   },
   "led": {
     "red": "rojo",
@@ -779,7 +791,17 @@
     "timeout": "Tiempo de espera agotado (más de {{ms}} ms)",
     "stepLimit": "Se excedió el límite de pasos {{max}}",
     "error": "Error de ejecución",
-    "noActions": "Programa finalizado sin acciones previas."
+    "noActions": "Programa finalizado sin acciones previas.",
+    "mqttPublish": "[mqtt] publish {{topic}} = {{payload}}",
+    "mqttSubscribe": "[mqtt] subscribe {{topic}}",
+    "mqttSubscribeBad": "[mqtt] subscribe needs a handler function",
+    "mqttLight": "[mqtt] light {{room}} → {{state}}",
+    "mqttBrightness": "[mqtt] brightness {{room}} → {{brightness}}%",
+    "mqttDevice": "[mqtt] device {{device}} → {{state}}",
+    "mqttTemp": "[mqtt] temperature → {{temp}}°C",
+    "mqttScene": "[mqtt] scene → {{scene}}",
+    "mqttSensor": "[mqtt] sensor {{sensor}} → {{value}}",
+    "mqttUnknown": "[mqtt] unknown topic {{topic}}"
   },
   "studio": {
     "eventChain": "Cadena de eventos",
@@ -885,7 +907,13 @@
     "iotWaitTip": "Espera del reloj de simulación",
     "iotStop": "Parada de emergencia",
     "iotStopTip": "Interruptor de apagado local — actuadores de parada ahora",
-    "emptyHint": "Arrastra un bloque aquí para empezar."
+    "emptyHint": "Arrastra un bloque aquí para empezar.",
+    "mqttPublish": "publish MQTT %1 payload %2",
+    "mqttPublishTip": "Virtual publish — maps topic to home.* (no real broker)",
+    "mqttSubscribe": "when MQTT %1 received",
+    "mqttSubscribeTip": "Virtual subscribe — handlers run on publish in the same simulation",
+    "mqttPayload": "MQTT payload",
+    "mqttPayloadTip": "Payload string from the current subscribe handler"
   },
   "iotCh": {
     "rain": "Lluvia",
@@ -988,9 +1016,9 @@
     "newsMp": "Mini programa de noticias",
     "event": "Registro de evento",
     "shop": "Mini programa de tienda",
-    "lights": "Escena de iluminación",
-    "climate": "Escena climática",
-    "security": "Demostración de seguridad",
+    "lights": "Luces de bienvenida",
+    "climate": "Clima fresco",
+    "security": "Modo ausente",
     "window": "Ventana inteligente",
     "irrigation": "Riego inteligente",
     "pond": "Aireación de estanque",
@@ -1000,7 +1028,10 @@
     "script": "Borrador de guion",
     "blankEx": "Ejercicio en blanco",
     "hello": "Hola Mundo",
-    "sort": "Ordenamiento"
+    "sort": "Ordenamiento",
+    "movie": "Noche de cine",
+    "motion": "Luz por movimiento",
+    "sleep": "Buenas noches"
   },
   "lang": {
     "jsDesc": "Idioma predeterminado para Web y Blockly; se ejecuta en el navegador",
@@ -1115,9 +1146,15 @@
     "freePrint": "Programación libre",
     "webCodeComment": "// Ejemplo de sitio web: construir una página con comandos web.*",
     "mpCodeComment": "// Ejemplo de mini programa: páginas   componentes   vinculación de datos",
-    "homeCodeComment": "// Ejemplo de hogar inteligente: luces   clima   escenas",
+    "homeCodeComment": "// Smart home — floor preview + virtual MQTT\n",
     "toyCodeComment": "// Ejemplo de juguete inteligente: movimiento   sensores",
-    "freeCodeComment": "// Programación libre — empieza aquí"
+    "freeCodeComment": "// Programación libre — empieza aquí",
+    "homeWelcomeComment": "// Welcome home — watch the floor plan light up\n",
+    "homeClimateComment": "// Hot day — MQTT climate + fan on the floor stage\n",
+    "homeSecurityComment": "// Away mode — alarm glow, lights off\n",
+    "homeMovieComment": "// Movie night — dim lights, close curtains\n",
+    "homeMotionComment": "// Motion sensor → light via virtual MQTT\n",
+    "homeSleepComment": "// Good night — fade then sleep scene\n"
   },
   "studioFiles": {
     "cssLanding": "/* Página de inicio: un gran encabezado que indique quién eres. */",
@@ -1326,8 +1363,8 @@
       "blurb": "Detecta la habitación y conmuta un relé."
     },
     "living": {
-      "name": "Luces del salón",
-      "blurb": "Enciende luces y cortinas en una escena."
+      "name": "Bienvenida a casa",
+      "blurb": "Ejecuta la escena home y mira luces y cortinas en el plano."
     },
     "pet": {
       "name": "Mascota de escritorio",
@@ -1346,12 +1383,12 @@
       "blurb": "Enciende el aireador cuando baja el oxígeno."
     },
     "climate": {
-      "name": "Escena de clima",
-      "blurb": "Mantén la habitación cómoda con un termostato."
+      "name": "Día de calor",
+      "blurb": "Publica topics MQTT virtuales y haz girar el ventilador."
     },
     "security": {
-      "name": "Demo de seguridad",
-      "blurb": "Arma un sensor de puerta y observa la alarma."
+      "name": "Modo ausente",
+      "blurb": "Activa la alarma: luces apagadas y marcador en alerta."
     },
     "event": {
       "name": "Inscripción a un evento",
@@ -1372,6 +1409,18 @@
     "sort": {
       "name": "Ordenación",
       "blurb": "Ordena una lista de números en código."
+    },
+    "movie": {
+      "name": "Noche de cine",
+      "blurb": "Atenúa el salón, cierra cortinas y crea ambiente en la vista previa."
+    },
+    "motion": {
+      "name": "Movimiento → luz",
+      "blurb": "Suscríbete al topic MQTT virtual de movimiento y enciende la sala."
+    },
+    "sleep": {
+      "name": "Buenas noches",
+      "blurb": "Apaga por pasos y luego entra en la escena sleep."
     }
   },
   "about": {
@@ -1474,6 +1523,29 @@
       "relay": "Relé",
       "distance": "Distancia",
       "comfort": "Confort"
+    },
+    "floor": {
+      "defaultLabel": "Apartamento predeterminado",
+      "customLabel": "Plano personalizado",
+      "hint": "Al simular, los marcadores se encienden en el plano"
+    },
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar"
+  },
+  "mqtt": {
+    "topic": {
+      "livingLight": "living light",
+      "bedroomLight": "bedroom light",
+      "kitchenLight": "kitchen light",
+      "livingBrightness": "living brightness",
+      "curtain": "curtain",
+      "fan": "fan",
+      "socket": "outlet",
+      "alarm": "alarm",
+      "temperature": "AC temperature",
+      "scene": "scene",
+      "motion": "motion sensor",
+      "sensorTemp": "temp sensor"
     }
   }
 }

@@ -211,7 +211,17 @@
     "toyReset": "リセット",
     "toyApiOffline": "サーバーシムオフライン — ローカルツインのみ",
     "toyTick": "tick {{tick}}",
-    "toyStatus": "{{status}}"
+    "toyStatus": "{{status}}",
+    "floorEffect": "アイソメ平面プレビュー",
+    "floorLayout": "Floor layout",
+    "floorExport": "Export layout",
+    "floorImport": "Import layout",
+    "floorReset": "Reset layout",
+    "floorImportOk": "Floor layout imported",
+    "floorImportFailed": "Invalid floor.json",
+    "floorResetOk": "Floor layout reset to default",
+    "bridgeExperimental": "実験ブリッジ",
+    "bridgeUnavailable": "SyncroBrain bridge unavailable — virtual simulation only (SH-FR)"
   },
   "lesson": {
     "loading": "レッスンを読み込み中...",
@@ -532,7 +542,8 @@
     "fan": "ファン",
     "alarm": "アラーム",
     "light": "ライト",
-    "ac": "AC"
+    "ac": "AC",
+    "sensor": "センサー"
   },
   "scene": {
     "home": "帰宅モード",
@@ -680,7 +691,8 @@
     "dataBind": "データバインディング",
     "motors": "モーター & サーボ",
     "lightsSound": "ライト & サウンド",
-    "sequence": "モーションシーケンス"
+    "sequence": "モーションシーケンス",
+    "mqtt": "MQTT（仮想）"
   },
   "led": {
     "red": "赤",
@@ -779,7 +791,17 @@
     "timeout": "タイムアウト ({{ms}} ms 超過)",
     "stepLimit": "ステップ制限を超過 {{max}}",
     "error": "ランタイムエラー",
-    "noActions": "プレビュー可能なアクションなしでプログラムが終了しました。"
+    "noActions": "プレビュー可能なアクションなしでプログラムが終了しました。",
+    "mqttPublish": "[mqtt] publish {{topic}} = {{payload}}",
+    "mqttSubscribe": "[mqtt] subscribe {{topic}}",
+    "mqttSubscribeBad": "[mqtt] subscribe needs a handler function",
+    "mqttLight": "[mqtt] light {{room}} → {{state}}",
+    "mqttBrightness": "[mqtt] brightness {{room}} → {{brightness}}%",
+    "mqttDevice": "[mqtt] device {{device}} → {{state}}",
+    "mqttTemp": "[mqtt] temperature → {{temp}}°C",
+    "mqttScene": "[mqtt] scene → {{scene}}",
+    "mqttSensor": "[mqtt] sensor {{sensor}} → {{value}}",
+    "mqttUnknown": "[mqtt] unknown topic {{topic}}"
   },
   "studio": {
     "eventChain": "イベントチェーン",
@@ -885,7 +907,13 @@
     "iotWaitTip": "シミュレーションクロック待機",
     "iotStop": "非常停止",
     "iotStopTip": "ローカルキルスイッチ — アクチュエータを直ちに停止",
-    "emptyHint": "ブロックをここにドラッグして始めます。"
+    "emptyHint": "ブロックをここにドラッグして始めます。",
+    "mqttPublish": "publish MQTT %1 payload %2",
+    "mqttPublishTip": "Virtual publish — maps topic to home.* (no real broker)",
+    "mqttSubscribe": "when MQTT %1 received",
+    "mqttSubscribeTip": "Virtual subscribe — handlers run on publish in the same simulation",
+    "mqttPayload": "MQTT payload",
+    "mqttPayloadTip": "Payload string from the current subscribe handler"
   },
   "iotCh": {
     "rain": "雨",
@@ -988,9 +1016,9 @@
     "newsMp": "ニュースミニプログラム",
     "event": "イベント登録",
     "shop": "ショップミニプログラム",
-    "lights": "照明シーン",
-    "climate": "気候シーン",
-    "security": "セキュリティデモ",
+    "lights": "おかえりライト",
+    "climate": "涼しくする",
+    "security": "外出警備",
     "window": "スマートウィンドウ",
     "irrigation": "スマート灌漑",
     "pond": "池のエアレーション",
@@ -1000,7 +1028,10 @@
     "script": "スクリプト草稿",
     "blankEx": "空の演習",
     "hello": "ハローワールド",
-    "sort": "ソート"
+    "sort": "ソート",
+    "movie": "映画鑑賞",
+    "motion": "人感ライト",
+    "sleep": "おやすみモード"
   },
   "lang": {
     "jsDesc": "WebおよびBlocklyのデフォルト言語。ブラウザで実行されます",
@@ -1115,9 +1146,15 @@
     "freePrint": "自由符号化",
     "webCodeComment": "ウェブサイトの例:web.* コマンドでページを作成する",
     "mpCodeComment": "ミニプログラムサンプル:pages components data binding",
-    "homeCodeComment": "スマートホームのサンプル:照明 気候シーン",
+    "homeCodeComment": "// Smart home — floor preview + virtual MQTT\n",
     "toyCodeComment": "スマートトイサンプル:モーションセンサー",
-    "freeCodeComment": "フリーコーディング — ここから始めましょう"
+    "freeCodeComment": "フリーコーディング — ここから始めましょう",
+    "homeWelcomeComment": "// Welcome home — watch the floor plan light up\n",
+    "homeClimateComment": "// Hot day — MQTT climate + fan on the floor stage\n",
+    "homeSecurityComment": "// Away mode — alarm glow, lights off\n",
+    "homeMovieComment": "// Movie night — dim lights, close curtains\n",
+    "homeMotionComment": "// Motion sensor → light via virtual MQTT\n",
+    "homeSleepComment": "// Good night — fade then sleep scene\n"
   },
   "studioFiles": {
     "cssLanding": "/* ランディングページ:あなたが誰かを示す大きな見出しが一つ。*/",
@@ -1326,8 +1363,8 @@
       "blurb": "部屋を感知し、リレーを切り替えます。"
     },
     "living": {
-      "name": "リビングの照明",
-      "blurb": "一つのシーンで照明とカーテンを操作します。"
+      "name": "おかえりモード",
+      "blurb": "帰宅シーンを実行し、平面図で照明とカーテンが動くのを見てみよう。"
     },
     "pet": {
       "name": "デスクペット",
@@ -1346,12 +1383,12 @@
       "blurb": "溶存酸素が下がったらエアレーターを回します。"
     },
     "climate": {
-      "name": "温度シーン",
-      "blurb": "サーモスタットのシーンで部屋を快適に保ちます。"
+      "name": "暑い日の涼しさ",
+      "blurb": "仮想MQTTで空調トピックを送り、ファンを回す。"
     },
     "security": {
-      "name": "防犯デモ",
-      "blurb": "ドアセンサーを警戒し、アラームの様子を見ます。"
+      "name": "外出モード",
+      "blurb": "外出シーンで消灯し、アラームが光る。"
     },
     "event": {
       "name": "イベント申込",
@@ -1372,6 +1409,18 @@
     "sort": {
       "name": "並べ替え",
       "blurb": "コードで数値のリストを並べ替えます。"
+    },
+    "movie": {
+      "name": "映画鑑賞",
+      "blurb": "リビングを暗くしカーテンを閉めてムードを出す。"
+    },
+    "motion": {
+      "name": "人感→点灯",
+      "blurb": "仮想MQTTの人感トピックを購読して点灯。プロトコルが楽しい。"
+    },
+    "sleep": {
+      "name": "おやすみモード",
+      "blurb": "段階的に消灯してからスリープシーンへ。"
     }
   },
   "about": {
@@ -1474,6 +1523,29 @@
       "relay": "リレー",
       "distance": "距離",
       "comfort": "快適度"
+    },
+    "floor": {
+      "defaultLabel": "標準アパート",
+      "customLabel": "カスタム平面",
+      "hint": "実行すると、平面図のマーカーが点灯します"
+    },
+    "zoomIn": "拡大",
+    "zoomOut": "縮小"
+  },
+  "mqtt": {
+    "topic": {
+      "livingLight": "living light",
+      "bedroomLight": "bedroom light",
+      "kitchenLight": "kitchen light",
+      "livingBrightness": "living brightness",
+      "curtain": "curtain",
+      "fan": "fan",
+      "socket": "outlet",
+      "alarm": "alarm",
+      "temperature": "AC temperature",
+      "scene": "scene",
+      "motion": "motion sensor",
+      "sensorTemp": "temp sensor"
     }
   }
 }

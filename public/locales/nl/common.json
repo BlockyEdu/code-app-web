@@ -211,7 +211,17 @@
     "toyReset": "Reset",
     "toyApiOffline": "Server-simulatie offline — alleen lokale tweeling",
     "toyTick": "tik {{tick}}",
-    "toyStatus": "{{status}}"
+    "toyStatus": "{{status}}",
+    "floorEffect": "Isometrisch plattegrondvoorbeeld",
+    "floorLayout": "Floor layout",
+    "floorExport": "Export layout",
+    "floorImport": "Import layout",
+    "floorReset": "Reset layout",
+    "floorImportOk": "Floor layout imported",
+    "floorImportFailed": "Invalid floor.json",
+    "floorResetOk": "Floor layout reset to default",
+    "bridgeExperimental": "Experimentele brug",
+    "bridgeUnavailable": "SyncroBrain bridge unavailable — virtual simulation only (SH-FR)"
   },
   "lesson": {
     "loading": "Les laden...",
@@ -532,7 +542,8 @@
     "fan": "Ventilator",
     "alarm": "Alarm",
     "light": "Licht",
-    "ac": "AC"
+    "ac": "AC",
+    "sensor": "Sensor"
   },
   "scene": {
     "home": "Thuismodus",
@@ -680,7 +691,8 @@
     "dataBind": "Gegevensbinding",
     "motors": "Motoren & servo's",
     "lightsSound": "Lichten & geluid",
-    "sequence": "Bewegingssequentie"
+    "sequence": "Bewegingssequentie",
+    "mqtt": "MQTT (virtueel)"
   },
   "led": {
     "red": "rood",
@@ -779,7 +791,17 @@
     "timeout": "Time-out (meer dan {{ms}} ms)",
     "stepLimit": "Overschreden staplimiet {{max}}",
     "error": "Runtime-fout",
-    "noActions": "Programma voltooid zonder voorbeeldbare acties."
+    "noActions": "Programma voltooid zonder voorbeeldbare acties.",
+    "mqttPublish": "[mqtt] publish {{topic}} = {{payload}}",
+    "mqttSubscribe": "[mqtt] subscribe {{topic}}",
+    "mqttSubscribeBad": "[mqtt] subscribe needs a handler function",
+    "mqttLight": "[mqtt] light {{room}} → {{state}}",
+    "mqttBrightness": "[mqtt] brightness {{room}} → {{brightness}}%",
+    "mqttDevice": "[mqtt] device {{device}} → {{state}}",
+    "mqttTemp": "[mqtt] temperature → {{temp}}°C",
+    "mqttScene": "[mqtt] scene → {{scene}}",
+    "mqttSensor": "[mqtt] sensor {{sensor}} → {{value}}",
+    "mqttUnknown": "[mqtt] unknown topic {{topic}}"
   },
   "studio": {
     "eventChain": "Evenementenketen",
@@ -885,7 +907,13 @@
     "iotWaitTip": "Simulatieklok wachten",
     "iotStop": "Noodstop",
     "iotStopTip": "Lokale noodschakelaar — stop actuatoren nu",
-    "emptyHint": "Sleep een blok hierheen om te beginnen."
+    "emptyHint": "Sleep een blok hierheen om te beginnen.",
+    "mqttPublish": "publish MQTT %1 payload %2",
+    "mqttPublishTip": "Virtual publish — maps topic to home.* (no real broker)",
+    "mqttSubscribe": "when MQTT %1 received",
+    "mqttSubscribeTip": "Virtual subscribe — handlers run on publish in the same simulation",
+    "mqttPayload": "MQTT payload",
+    "mqttPayloadTip": "Payload string from the current subscribe handler"
   },
   "iotCh": {
     "rain": "Regen",
@@ -988,9 +1016,9 @@
     "newsMp": "Nieuws mini-programma",
     "event": "Evenement aanmelden",
     "shop": "Shop mini-programma",
-    "lights": "Verlichtingsscène",
-    "climate": "Klimaatscène",
-    "security": "Beveiligingsdemo",
+    "lights": "Welkom thuis",
+    "climate": "Afkoelen",
+    "security": "Afwezigheidsmodus",
     "window": "Slim raam",
     "irrigation": "Slimme irrigatie",
     "pond": "Vijver beluchting",
@@ -1000,7 +1028,10 @@
     "script": "Scriptconcept",
     "blankEx": "Lege oefening",
     "hello": "Hallo Wereld",
-    "sort": "Sorteren"
+    "sort": "Sorteren",
+    "movie": "Filmavond",
+    "motion": "Bewegingslicht",
+    "sleep": "Welterusten"
   },
   "lang": {
     "jsDesc": "Standaardtaal voor Web en Blockly; draait in de browser",
@@ -1115,9 +1146,15 @@
     "freePrint": "Vrije codering",
     "webCodeComment": "Websitevoorbeeld: bouw een pagina met web.* commando's",
     "mpCodeComment": "Mini-programmavoorbeeld: pagina's componenten databinding",
-    "homeCodeComment": "Voorbeeld van slim huis: lichten, klimaatscènes,",
+    "homeCodeComment": "// Smart home — floor preview + virtual MQTT\n",
     "toyCodeComment": "Slim speelgoedmonster: bewegingssensoren",
-    "freeCodeComment": "Gratis programmeren — begin hier"
+    "freeCodeComment": "Gratis programmeren — begin hier",
+    "homeWelcomeComment": "// Welcome home — watch the floor plan light up\n",
+    "homeClimateComment": "// Hot day — MQTT climate + fan on the floor stage\n",
+    "homeSecurityComment": "// Away mode — alarm glow, lights off\n",
+    "homeMovieComment": "// Movie night — dim lights, close curtains\n",
+    "homeMotionComment": "// Motion sensor → light via virtual MQTT\n",
+    "homeSleepComment": "// Good night — fade then sleep scene\n"
   },
   "studioFiles": {
     "cssLanding": "/* Landingspagina: één grote kop die aangeeft wie je bent. */",
@@ -1326,8 +1363,8 @@
       "blurb": "Meet de kamer en schakel een relais."
     },
     "living": {
-      "name": "Woonkamerlampen",
-      "blurb": "Zet lampen en gordijnen aan in één scène."
+      "name": "Welkom thuis",
+      "blurb": "Start de home-scène en zie lampen en gordijnen bewegen op de plattegrond."
     },
     "pet": {
       "name": "Bureauhuisdier",
@@ -1346,12 +1383,12 @@
       "blurb": "Zet de beluchter aan als het zuurstof daalt."
     },
     "climate": {
-      "name": "Klimaatscène",
-      "blurb": "Houd de kamer comfortabel met een thermostaatscène."
+      "name": "Warme dag",
+      "blurb": "Publiceer virtuele MQTT-topics en laat de ventilator draaien."
     },
     "security": {
-      "name": "Beveiligingsdemo",
-      "blurb": "Activeer een deursensor en bekijk het alarm."
+      "name": "Afwezig",
+      "blurb": "Zet alarm aan: lichten uit, alarmmarkering aan."
     },
     "event": {
       "name": "Evenementaanmelding",
@@ -1372,6 +1409,18 @@
     "sort": {
       "name": "Sorteren",
       "blurb": "Sorteer een lijst getallen in code."
+    },
+    "movie": {
+      "name": "Filmavond",
+      "blurb": "Dim de woonkamer, sluit gordijnen — sfeer op het podium."
+    },
+    "motion": {
+      "name": "Beweging → licht",
+      "blurb": "Abonneer op virtueel MQTT-bewegingstopic en doe het licht aan."
+    },
+    "sleep": {
+      "name": "Welterusten",
+      "blurb": "Dim stap voor stap en ga naar de slaapscène."
     }
   },
   "about": {
@@ -1474,6 +1523,29 @@
       "relay": "Relais",
       "distance": "Afstand",
       "comfort": "Comfort"
+    },
+    "floor": {
+      "defaultLabel": "Standaard appartement",
+      "customLabel": "Aangepaste plattegrond",
+      "hint": "Na simulatie lichten de markers op de plattegrond op"
+    },
+    "zoomIn": "Inzoomen",
+    "zoomOut": "Uitzoomen"
+  },
+  "mqtt": {
+    "topic": {
+      "livingLight": "living light",
+      "bedroomLight": "bedroom light",
+      "kitchenLight": "kitchen light",
+      "livingBrightness": "living brightness",
+      "curtain": "curtain",
+      "fan": "fan",
+      "socket": "outlet",
+      "alarm": "alarm",
+      "temperature": "AC temperature",
+      "scene": "scene",
+      "motion": "motion sensor",
+      "sensorTemp": "temp sensor"
     }
   }
 }

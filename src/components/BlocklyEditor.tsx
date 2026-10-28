@@ -122,9 +122,11 @@ export function BlocklyEditor() {
         Blockly.Events.enable();
         applyingRef.current = false;
       }
+      persistFromWorkspace();
+    } else {
+      // Sample boot may still be seeding. Persisting now would save an empty lesson.
+      setCanvasEmpty(true);
     }
-
-    persistFromWorkspace();
 
     return () => {
       workspace.dispose();

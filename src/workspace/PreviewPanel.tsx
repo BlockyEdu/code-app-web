@@ -1,6 +1,6 @@
 import { ArrowRightOutlined, ReloadOutlined } from "@ant-design/icons";
 import { Segmented, Select } from "antd";
-import { useCallback, useEffect } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { hasDetailPage, usesHostedPosts } from "../lib/app-studio/app-schema";
 import { staticBoard } from "../lib/hardware-catalog-static";
 import { t } from "../lib/i18n";
@@ -18,7 +18,7 @@ import { KIND_DEFAULT_PREVIEW } from "../types/artifact";
 import studio from "./BlogStudio.module.scss";
 import styles from "./PreviewPanel.module.scss";
 import { SmarthomePreview } from "./SmarthomePreview";
-import { DeviceStage } from "./stage/DeviceStage";
+import { DeviceStage, StageChromeContext } from "./stage/DeviceStage";
 import { ToyPreview } from "./ToyPreview";
 
 interface PreviewPanelProps {
@@ -309,87 +309,94 @@ export function PreviewPanel({ kind, onRefresh }: PreviewPanelProps & { onRefres
   const handleReload = useCallback(() => {
     onRefresh?.();
   }, [onRefresh]);
+  const [stageChrome, setStageChrome] = useState<ReactNode>(null);
 
   return (
-    <div className={styles.previewPanel}>
-      <div className={styles.previewHeader}>
-        <span className={styles.previewTitle}>
-          {label}
-          {kind === "smarthome" && (
-            <span className={styles.previewBadge}>{t("preview.badgeDevice")}</span>
-          )}
-          {kind === "iot" && <span className={styles.previewBadge}>{t("preview.badgeIot")}</span>}
-          {kind === "web" && (
-            <span className={styles.previewBadge}>
-              {blogStudio ? t("preview.badgeSite") : t("preview.badgeSandbox")}
-            </span>
-          )}
-          {kind === "miniprogram" && blogStudio && (
-            <span className={styles.previewBadge}>{t("preview.badgeMini")}</span>
-          )}
-        </span>
-        <div className={styles.previewActions}>
-          {showDetailSwitch && (
-            <div className={studio.previewSwitch}>
-              <Segmented
-                size="small"
-                value={blogPreviewPage}
-                onChange={(v) => {
-                  const page = v as "home" | "post";
-                  if (page === "post") {
-                    setBlogPreview("post", blogPreviewSlug || blogPosts[0]?.slug || "");
-                  } else {
-                    setBlogPreview("home");
-                  }
-                }}
-                options={[
-                  { label: t("preview.home"), value: "home" },
-                  {
-                    label: t("preview.post"),
-                    value: "post",
-                    disabled: blogPosts.length === 0,
-                  },
-                ]}
-              />
-              {blogPreviewPage === "post" && (
-                <Select
+    <StageChromeContext.Provider value={setStageChrome}>
+      <div className={styles.previewPanel}>
+        <div className={styles.previewHeader}>
+          <span className={styles.previewTitle}>
+            {label}
+            {kind === "smarthome" && (
+              <span className={styles.previewBadge}>{t("preview.badgeDevice")}</span>
+            )}
+            {kind === "iot" && <span className={styles.previewBadge}>{t("preview.badgeIot")}</span>}
+            {kind === "web" && (
+              <span className={styles.previewBadge}>
+                {blogStudio ? t("preview.badgeSite") : t("preview.badgeSandbox")}
+              </span>
+            )}
+            {kind === "miniprogram" && blogStudio && (
+              <span className={styles.previewBadge}>{t("preview.badgeMini")}</span>
+            )}
+          </span>
+          <div className={styles.previewActions}>
+            {showDetailSwitch && (
+              <div className={studio.previewSwitch}>
+                <Segmented
                   size="small"
-                  style={{ minWidth: 120 }}
-                  value={blogPreviewSlug || undefined}
-                  placeholder={t("preview.selectPost")}
-                  onChange={(slug) => setBlogPreview("post", slug)}
-                  options={blogPosts.map((p) => ({
-                    value: p.slug,
-                    label: `${p.data.title || p.slug}${p.status === "draft" ? t("preview.postDraft") : ""}`,
-                  }))}
+                  value={blogPreviewPage}
+                  onChange={(v) => {
+                    const page = v as "home" | "post";
+                    if (page === "post") {
+                      setBlogPreview("post", blogPreviewSlug || blogPosts[0]?.slug || "");
+                    } else {
+                      setBlogPreview("home");
+                    }
+                  }}
+                  options={[
+                    { label: t("preview.home"), value: "home" },
+                    {
+                      label: t("preview.post"),
+                      value: "post",
+                      disabled: blogPosts.length === 0,
+                    },
+                  ]}
                 />
-              )}
+                {blogPreviewPage === "post" && (
+                  <Select
+                    size="small"
+                    style={{ minWidth: 120 }}
+                    value={blogPreviewSlug || undefined}
+                    placeholder={t("preview.selectPost")}
+                    onChange={(slug) => setBlogPreview("post", slug)}
+                    options={blogPosts.map((p) => ({
+                      value: p.slug,
+                      label: `${p.data.title || p.slug}${p.status === "draft" ? t("preview.postDraft") : ""}`,
+                    }))}
+                  />
+                )}
+              </div>
+            )}
+            {kind === "smarthome" ? (
+              stageChrome
+            ) : (
+              <button
+                type="button"
+                className={styles.previewBtn}
+                aria-label={t("preview.refreshAria")}
+                onClick={handleReload}
+              >
+                <ReloadOutlined />
+              </button>
+            )}
+          </div>
+        </div>
+        <div className={styles.previewContent}>
+          {kind === "web" && <WebPreview world={world} onRefresh={onRefresh} />}
+          {kind === "miniprogram" && blogStudio && (
+            <div className={styles.phoneFrame}>
+              <div className={styles.phoneScreenStudio}>
+                <WebPreview world={world} chrome="none" onRefresh={onRefresh} />
+              </div>
             </div>
           )}
-          <button
-            type="button"
-            className={styles.previewBtn}
-            aria-label={t("preview.refreshAria")}
-            onClick={handleReload}
-          >
-            <ReloadOutlined />
-          </button>
+          {kind === "miniprogram" && !blogStudio && <MiniprogramPreview world={world} />}
+          {kind === "smarthome" && <SmarthomePreview world={world} />}
+          {kind === "iot" && <IotLabPreview />}
+          {kind === "toy" && <ToyPreview world={world} />}
         </div>
       </div>
-      <div className={styles.previewContent}>
-        {kind === "web" && <WebPreview world={world} onRefresh={onRefresh} />}
-        {kind === "miniprogram" && blogStudio && (
-          <div className={styles.phoneFrame}>
-            <div className={styles.phoneScreenStudio}>
-              <WebPreview world={world} chrome="none" onRefresh={onRefresh} />
-            </div>
-          </div>
-        )}
-        {kind === "miniprogram" && !blogStudio && <MiniprogramPreview world={world} />}
-        {kind === "smarthome" && <SmarthomePreview world={world} />}
-        {kind === "iot" && <IotLabPreview />}
-        {kind === "toy" && <ToyPreview world={world} />}
-      </div>
-    </div>
+    </StageChromeContext.Provider>
   );
 }

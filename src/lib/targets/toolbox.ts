@@ -97,6 +97,11 @@ function smarthomeCategories(): TargetCategory[] {
       categorystyle: STUDIO_CATEGORY.scenes,
       types: ["home_run_scene", "home_wait"],
     },
+    {
+      name: t("toolbox.mqtt"),
+      categorystyle: STUDIO_CATEGORY.channels,
+      types: ["mqtt_publish", "mqtt_subscribe", "mqtt_payload"],
+    },
   ];
 }
 

@@ -6,9 +6,11 @@
  * `registerTargetBlocks()` can re-define blocks after a locale switch.
  */
 import * as Blockly from "blockly";
+import { javascriptGenerator } from "blockly/javascript";
 import type { ArtifactKind } from "../../types/artifact";
 import { STUDIO_BLOCK } from "../blockly-theme";
 import { t } from "../i18n";
+import { MQTT_TOPIC_PRESETS } from "../smarthome-mqtt";
 import { starterIotCode, starterIotXml } from "./iot-lab";
 
 export interface BlockSpec {
@@ -49,6 +51,10 @@ function sensorOptions(): DropdownOptions {
     [t("sensor.smoke"), "smoke"],
     [t("sensor.door"), "door"],
   ];
+}
+
+function mqttTopicOptions(): DropdownOptions {
+  return MQTT_TOPIC_PRESETS.map((item) => [t(item.labelKey), item.topic]);
 }
 
 function buildIotChannels(): DropdownOptions {
@@ -516,6 +522,59 @@ function buildSmarthomeBlocks(): BlockSpec[] {
       },
       generator: (block, readValue) => `home.wait(${readValue(block, "SECONDS", "1")});\n`,
     },
+    {
+      type: "mqtt_publish",
+      json: {
+        message0: t("blocks.mqttPublish"),
+        args0: [
+          {
+            type: "field_dropdown",
+            name: "TOPIC",
+            options: mqttTopicOptions(),
+          },
+          { type: "input_value", name: "PAYLOAD", check: ["String", "Number"] },
+        ],
+        previousStatement: null,
+        nextStatement: null,
+        style: STUDIO_BLOCK.sensor,
+        tooltip: t("blocks.mqttPublishTip"),
+      },
+      generator: (block, readValue) =>
+        `mqtt.publish('${block.getFieldValue("TOPIC")}', ${readValue(block, "PAYLOAD", "'on'")});\n`,
+    },
+    {
+      type: "mqtt_subscribe",
+      json: {
+        message0: t("blocks.mqttSubscribe"),
+        args0: [
+          {
+            type: "field_dropdown",
+            name: "TOPIC",
+            options: mqttTopicOptions(),
+          },
+        ],
+        message1: "%1",
+        args1: [{ type: "input_statement", name: "DO" }],
+        previousStatement: null,
+        nextStatement: null,
+        style: STUDIO_BLOCK.event,
+        tooltip: t("blocks.mqttSubscribeTip"),
+      },
+      generator: (block) => {
+        const body = javascriptGenerator.statementToCode(block, "DO");
+        return `mqtt.subscribe('${block.getFieldValue("TOPIC")}', function(payload) {\n${body}});\n`;
+      },
+    },
+    {
+      type: "mqtt_payload",
+      json: {
+        message0: t("blocks.mqttPayload"),
+        output: "String",
+        style: STUDIO_BLOCK.sensor,
+        tooltip: t("blocks.mqttPayloadTip"),
+      },
+      generator: () => "payload",
+    },
   ];
 }
 
@@ -849,21 +908,38 @@ export const DEFAULT_KIND_XML: Record<ArtifactKind, string> = {
   },
   get smarthome() {
     return `<xml xmlns="https://developers.google.com/blockly/xml">
-  <block type="home_light_switch" x="30" y="30">
-    <field name="ROOM">living</field>
-    <field name="STATE">on</field>
-    <next>
-      <block type="home_light_brightness">
-        <field name="ROOM">living</field>
-        <value name="VALUE"><block type="math_number"><field name="NUM">70</field></block></value>
-        <next>
-          <block type="home_set_temperature">
-            <value name="VALUE"><block type="math_number"><field name="NUM">26</field></block></value>
-            <next>
-              <block type="home_run_scene">
-                <field name="SCENE">home</field>
+  <block type="mqtt_subscribe" x="30" y="20">
+    <field name="TOPIC">home/sensor/motion</field>
+    <statement name="DO">
+      <block type="controls_if">
+        <value name="IF0">
+          <block type="logic_compare">
+            <field name="OP">GT</field>
+            <value name="A">
+              <block type="mqtt_payload"></block>
+            </value>
+            <value name="B">
+              <block type="math_number">
+                <field name="NUM">0</field>
               </block>
-            </next>
+            </value>
+          </block>
+        </value>
+        <statement name="DO0">
+          <block type="mqtt_publish">
+            <field name="TOPIC">home/living/light</field>
+            <value name="PAYLOAD"><block type="text"><field name="TEXT">on</field></block></value>
+          </block>
+        </statement>
+      </block>
+    </statement>
+    <next>
+      <block type="mqtt_publish">
+        <field name="TOPIC">home/sensor/motion</field>
+        <value name="PAYLOAD"><block type="text"><field name="TEXT">1</field></block></value>
+        <next>
+          <block type="home_run_scene">
+            <field name="SCENE">home</field>
           </block>
         </next>
       </block>
@@ -941,15 +1017,17 @@ mp.addComponent('detail', 'text', ${JSON.stringify(t("starter.mpDetailBody"))});
   },
   get smarthome() {
     return `${t("starter.homeCodeComment")}
-home.setLight('living', 'on');
+mqtt.subscribe('home/sensor/motion', function(payload) {
+  if (Number(payload) > 0) {
+    mqtt.publish('home/living/light', 'on');
+  }
+});
+
+mqtt.publish('home/sensor/motion', '1');
 home.setBrightness('living', 70);
 home.setTemperature(26);
-
-home.triggerSensor('motion', 1);
-if (home.readSensor('motion') > 0) {
-  home.setDevice('curtain', 'on');
-  home.runScene('home');
-}
+mqtt.publish('home/device/curtain', 'on');
+mqtt.publish('home/scene', 'home');
 `;
   },
   get iot() {
