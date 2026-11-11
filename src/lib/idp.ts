@@ -16,6 +16,7 @@ import {
   signInRedirect,
   signOutRedirect,
 } from "@luminaryworks/auth-react";
+import { rememberPageToken } from "./session";
 
 export type { LuminaryAuthSession, LuminaryIdpConfig };
 
@@ -110,7 +111,7 @@ export async function idpSignInPopup(): Promise<LuminaryAuthSession> {
   resetUserManager();
   const here = `${window.location.pathname}${window.location.search}`;
   const { session } = await signInPopup(config, here);
-  localStorage.setItem(config.tokenStorageKey ?? "blockyedu_token", session.accessToken);
+  rememberPageToken(session.accessToken, config.tokenStorageKey);
   return session;
 }
 
@@ -129,7 +130,7 @@ export async function idpHandleCallback(): Promise<{
   const config = readLuminaryIdpConfig();
   if (!isIdpConfigured(config)) throw new Error("IdP not configured");
   const { session, returnUrl } = await handleSignInCallback(config);
-  localStorage.setItem(config.tokenStorageKey ?? "blockyedu_token", session.accessToken);
+  rememberPageToken(session.accessToken, config.tokenStorageKey);
   return { accessToken: session.accessToken, returnUrl, session };
 }
 

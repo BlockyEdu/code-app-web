@@ -23,6 +23,7 @@ import {
   LOGIN_LOCALE_OPTIONS,
   useLocaleStore,
 } from "../lib/locale-store";
+import { rememberPageToken } from "../lib/session";
 import styles from "./login-stage.module.scss";
 
 const LOGIN_LOCALE_KEY = "blockyedu_login_locale";
@@ -181,7 +182,7 @@ export function LoginPage() {
 
   const onOidcSession = useCallback(
     async (session: LuminaryAuthSession, next?: string) => {
-      localStorage.setItem("blockyedu_token", session.accessToken);
+      rememberPageToken(session.accessToken, config.tokenStorageKey);
       await fetchMe();
       if (isProductLoginPopup()) {
         notifyProductLoginOpener();
@@ -191,8 +192,20 @@ export function LoginPage() {
       const dest = (next || returnUrl || "/").replace(/^\/?/, "/");
       window.location.replace(dest.startsWith("http") ? "/" : dest);
     },
-    [fetchMe, returnUrl],
+    [config.tokenStorageKey, fetchMe, returnUrl],
   );
+
+  useEffect(() => {
+    void fetchMe().then(() => {
+      if (!useAuthStore.getState().user) return;
+      if (isProductLoginPopup()) {
+        notifyProductLoginOpener();
+        window.close();
+        return;
+      }
+      window.location.replace(returnUrl);
+    });
+  }, [fetchMe, returnUrl]);
 
   return (
     <LoginCanvas

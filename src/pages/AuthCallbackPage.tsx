@@ -11,7 +11,6 @@ import {
   notifyProductLoginOpener,
 } from "../lib/idp";
 import { useLocaleStore } from "../lib/locale-store";
-import { clearAuthHash, readTokenFromHash } from "../lib/sso";
 
 export function AuthCallbackPage() {
   useLocaleStore((s) => s.locale);
@@ -27,8 +26,8 @@ export function AuthCallbackPage() {
       if (isDirectIdpEnabled()) {
         try {
           if (isProductLoginPopup()) {
-            const { accessToken } = await idpHandleCallback();
-            localStorage.setItem("blockyedu_token", accessToken);
+            await idpHandleCallback();
+            await fetchMe();
             notifyProductLoginOpener();
             window.close();
             return;
@@ -37,8 +36,7 @@ export function AuthCallbackPage() {
             await idpHandlePopupCallback();
             return;
           }
-          const { accessToken, returnUrl } = await idpHandleCallback();
-          localStorage.setItem("blockyedu_token", accessToken);
+          const { returnUrl } = await idpHandleCallback();
           await fetchMe();
           if (!useAuthStore.getState().user) {
             setError(t("authCallback.ssoFailed"));
@@ -53,15 +51,12 @@ export function AuthCallbackPage() {
         }
       }
 
-      const token = readTokenFromHash();
-      if (!token) {
-        setError(t("authCallback.noToken"));
-        return;
-      }
-      localStorage.setItem("blockyedu_token", token);
-      clearAuthHash();
       try {
         await fetchMe();
+        if (!useAuthStore.getState().user) {
+          setError(t("authCallback.invalid"));
+          return;
+        }
         window.location.replace("/");
       } catch {
         setError(t("authCallback.invalid"));

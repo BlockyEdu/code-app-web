@@ -139,7 +139,7 @@ describe("httpRequest JWT refresh", () => {
     globalThis.fetch = undefined;
   });
 
-  it("retries the original path once after refresh 200", async () => {
+  it("retries the original path once after refresh 200 without storing the token", async () => {
     const tokens = stubLocalStorage({ blockyedu_token: "old-token" });
     let unauthorized = 0;
     setUnauthorizedHandler(() => {
@@ -148,9 +148,11 @@ describe("httpRequest JWT refresh", () => {
 
     const original: string[] = [];
     const refresh: string[] = [];
+    const credentials: RequestCredentials[] = [];
 
-    globalThis.fetch = (async (input: RequestInfo | URL) => {
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = urlOf(input);
+      credentials.push(init?.credentials ?? "omit");
       if (url.includes("/auth/refresh")) {
         refresh.push(url);
         return new Response(JSON.stringify({ accessToken: "new-token" }), {
@@ -173,11 +175,13 @@ describe("httpRequest JWT refresh", () => {
     expect(original).toHaveLength(2);
     expect(refresh).toHaveLength(1);
     expect(unauthorized).toBe(0);
-    expect(tokens.get("blockyedu_token")).toBe("new-token");
+    expect(credentials.every((value) => value === "include")).toBe(true);
+    expect(tokens.has("blockyedu_token")).toBe(false);
+    expect(tokens.get("blockyedu_sess")).toBe("1");
   });
 
   it("does not treat refresh 501 as success", async () => {
-    stubLocalStorage({ blockyedu_token: "old-token" });
+    const tokens = stubLocalStorage({ blockyedu_token: "old-token" });
     let unauthorized = 0;
     setUnauthorizedHandler(() => {
       unauthorized += 1;
@@ -203,6 +207,7 @@ describe("httpRequest JWT refresh", () => {
     expect(originalCalls).toBe(1);
     expect(refreshCalls).toBe(1);
     expect(unauthorized).toBe(1);
+    expect(tokens.has("blockyedu_token")).toBe(false);
   });
 
   it("does not refresh when skipAuthHandlers is set", async () => {

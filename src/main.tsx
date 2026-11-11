@@ -11,13 +11,14 @@ import { requireLoginOnEntry } from "./lib/deploy-profile";
 import { shouldForceEntryLogin } from "./lib/guest-access";
 import { rememberPostLoginPath } from "./lib/idp";
 import { normalizePath } from "./lib/navigate";
+import { hasSessionHint } from "./lib/session";
 import "./styles.css";
 
 const initialPath = normalizePath();
 if (
   shouldForceEntryLogin({
     requireLogin: requireLoginOnEntry(),
-    hasToken: Boolean(localStorage.getItem("blockyedu_token")),
+    hasToken: hasSessionHint(),
     path: initialPath,
   })
 ) {

@@ -7,6 +7,7 @@
 import { shouldAttemptRefresh } from "./auth-refresh";
 import { t } from "./i18n";
 import { type AppLocale, useLocaleStore } from "./locale-store";
+import { getAccessToken, markSessionActive } from "./session";
 
 export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 
@@ -52,8 +53,7 @@ function acceptLanguage(locale: AppLocale): string {
 }
 
 export function authHeaders(extra?: HeadersInit): HeadersInit {
-  const storage = typeof globalThis !== "undefined" ? globalThis.localStorage : undefined;
-  const token = storage?.getItem("blockyedu_token") ?? null;
+  const token = getAccessToken();
   const locale = useLocaleStore.getState().locale;
   return {
     "Content-Type": "application/json",
@@ -85,24 +85,19 @@ type HttpRequestInternal = HttpRequestInit & {
 
 let refreshInflight: Promise<boolean> | null = null;
 
-async function persistAccessToken(accessToken: string) {
-  const storage = typeof globalThis !== "undefined" ? globalThis.localStorage : undefined;
-  storage?.setItem("blockyedu_token", accessToken);
-}
-
-/** One coalesced POST /auth/refresh. 501/401/network → false (not success). */
-async function refreshAccessToken(): Promise<boolean> {
+/** One coalesced POST /auth/refresh. The API rotates `be_code_session`. 501/401/network → false. */
+export function tryRefreshSession(): Promise<boolean> {
   if (refreshInflight) return refreshInflight;
 
   refreshInflight = (async () => {
     try {
-      const data = await httpRequest<{ accessToken?: unknown }>("/auth/refresh", {
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
         method: "POST",
-        skipAuthHandlers: true,
-        coalesce: false,
+        credentials: "include",
+        headers: authHeaders(),
       });
-      if (typeof data.accessToken !== "string" || !data.accessToken) return false;
-      persistAccessToken(data.accessToken);
+      if (!res.ok) return false;
+      markSessionActive();
       return true;
     } catch {
       return false;
@@ -193,6 +188,7 @@ async function execute<T>(path: string, init?: HttpRequestInternal): Promise<T> 
   const { coalesce: _coalesce, skipAuthHandlers, alreadyRetried, ...fetchInit } = init ?? {};
   const res = await fetch(`${API_BASE}${path}`, {
     ...fetchInit,
+    credentials: "include",
     headers: authHeaders(fetchInit.headers),
   });
 
@@ -205,7 +201,7 @@ async function execute<T>(path: string, init?: HttpRequestInternal): Promise<T> 
         path,
       })
     ) {
-      const refreshed = await refreshAccessToken();
+      const refreshed = await tryRefreshSession();
       if (refreshed) {
         return execute<T>(path, { ...init, alreadyRetried: true });
       }

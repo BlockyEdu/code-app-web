@@ -450,12 +450,12 @@ export function CreateWorkspace() {
           const eduApi = import.meta.env.VITE_EDU_API_URL?.trim();
           if (courseId && chapterId && eduApi) {
             try {
-              const { authHeaders } = await import("../lib/http");
               await fetch(
                 `${eduApi.replace(/\/$/, "")}/edu/course/courses/${courseId}/chapters/${chapterId}/iot-lab/evidence`,
                 {
                   method: "POST",
-                  headers: { ...authHeaders({ "Content-Type": "application/json" }) },
+                  credentials: "include",
+                  headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     packSlug: result.finalState.iot.packSlug,
                     runMode: "sim",

@@ -300,6 +300,7 @@ export interface AppSchemaPatch {
 
 async function requestText(path: string): Promise<string> {
   const res = await fetch(`${API_BASE}${path}`, {
+    credentials: "include",
     headers: authHeaders({ Accept: "text/html" }),
   });
   if (res.status === 401) {
@@ -670,6 +671,7 @@ export const api = {
         ? `/publish/miniprogram/${artifactId}/export`
         : `/publish/web/${artifactId}/export`;
     const res = await fetch(`${API_BASE}${path}`, {
+      credentials: "include",
       headers: authHeaders({ Accept: "application/zip" }),
     });
     if (res.status === 401) {

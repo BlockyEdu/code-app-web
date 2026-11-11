@@ -6,6 +6,8 @@ import {
   setUnauthorizedHandler,
 } from "./lib/api";
 import { useAuthStore } from "./lib/auth-store";
+import { requireLoginOnEntry } from "./lib/deploy-profile";
+import { shouldForceEntryLogin } from "./lib/guest-access";
 import { t } from "./lib/i18n";
 import { useLocaleStore } from "./lib/locale-store";
 import { useMembershipStore } from "./lib/membership-store";
@@ -24,6 +26,7 @@ import { CreateWorkspace } from "./workspace/CreateWorkspace";
 export default function App() {
   const fetchMe = useAuthStore((s) => s.fetchMe);
   const user = useAuthStore((s) => s.user);
+  const initialized = useAuthStore((s) => s.initialized);
   const openLoginPrompt = useAuthStore((s) => s.openLoginPrompt);
   const locale = useLocaleStore((s) => s.locale);
   const ensureTrialOnEntry = useMembershipStore((s) => s.ensureTrialOnEntry);
@@ -55,6 +58,19 @@ export default function App() {
   useEffect(() => {
     void fetchMe();
   }, [fetchMe]);
+
+  useEffect(() => {
+    if (!initialized || user) return;
+    if (
+      shouldForceEntryLogin({
+        requireLogin: requireLoginOnEntry(),
+        hasToken: false,
+        path,
+      })
+    ) {
+      openLoginPrompt();
+    }
+  }, [initialized, openLoginPrompt, path, user]);
 
   useEffect(() => {
     if (user) void ensureTrialOnEntry();

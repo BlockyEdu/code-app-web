@@ -1,28 +1,18 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
-const EDU_LOGIN_URL = import.meta.env.VITE_EDU_LOGIN_URL?.trim() ?? '';
+import { clearClientSession } from "./session";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
+const EDU_LOGIN_URL = import.meta.env.VITE_EDU_LOGIN_URL?.trim() ?? "";
 
 export function authCallbackUrl(): string {
   return `${window.location.origin}/auth/callback`;
 }
 
-export function readTokenFromHash(): string | null {
-  const raw = window.location.hash.startsWith('#')
-    ? window.location.hash.slice(1)
-    : window.location.hash;
-  return new URLSearchParams(raw).get('access_token');
-}
-
-export function clearAuthHash(): void {
-  window.history.replaceState(null, '', window.location.pathname);
-}
-
-export function redirectWithToken(returnUrl: string, accessToken: string): void {
-  const url = new URL(returnUrl);
-  url.hash = new URLSearchParams({
-    access_token: accessToken,
-    token_type: 'Bearer',
-  }).toString();
-  window.location.href = url.toString();
+export function postAuthLogout(returnUrl?: string): Promise<Response> {
+  const qs = returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : "";
+  return fetch(`${API_BASE}/auth/logout${qs}`, {
+    method: "POST",
+    credentials: "include",
+  });
 }
 
 export function isExternalReturnUrl(returnUrl: string): boolean {
@@ -50,10 +40,12 @@ export function startUnifiedLogin(returnUrl = authCallbackUrl()): void {
 }
 
 export function startSsoLogin(returnUrl = authCallbackUrl()): void {
-  fetch(`${API_BASE}/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`)
+  fetch(`${API_BASE}/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`, {
+    credentials: "include",
+  })
     .then((res) => res.json())
     .then((info: { mode?: string; redirect?: string }) => {
-      if (info.mode === 'oidc' && info.redirect) {
+      if (info.mode === "oidc" && info.redirect) {
         window.location.href = info.redirect;
         return;
       }
@@ -64,17 +56,18 @@ export function startSsoLogin(returnUrl = authCallbackUrl()): void {
 
 export function logoutAndRedirect(returnUrl?: string): void {
   const target = returnUrl ?? window.location.origin;
-  localStorage.removeItem('blockyedu_token');
-  fetch(`${API_BASE}/auth/logout?returnUrl=${encodeURIComponent(target)}`)
+  postAuthLogout(target)
     .then((res) => res.json())
     .then((info: { mode?: string; redirect?: string }) => {
-      if (info.mode === 'oidc' && info.redirect) {
+      clearClientSession();
+      if (info.mode === "oidc" && info.redirect) {
         window.location.href = info.redirect;
         return;
       }
       window.location.href = target;
     })
     .catch(() => {
+      clearClientSession();
       window.location.href = target;
     });
 }

@@ -1,8 +1,9 @@
 import { create } from "zustand";
-import { httpRequest } from "./http";
+import { httpRequest, tryRefreshSession, UnauthorizedError } from "./http";
 import { idpSignOut, isDirectIdpEnabled, PRODUCT_LOGIN_POPUP, rememberPostLoginPath } from "./idp";
 import { navigate } from "./navigate";
-import { logoutAndRedirect } from "./sso";
+import { clearClientSession, markSessionActive, rememberPageToken } from "./session";
+import { logoutAndRedirect, postAuthLogout } from "./sso";
 
 export interface AuthUser {
   id: string;
@@ -95,7 +96,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         coalesce: false,
         skipAuthHandlers: true,
       });
-      localStorage.setItem("blockyedu_token", data.accessToken);
+      if (data.accessToken) rememberPageToken(data.accessToken);
+      else markSessionActive();
       set({ user: data.user, loading: false, initialized: true, loginPromptOpen: false });
       return true;
     } catch {
@@ -108,18 +110,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (fetchMeInflight) return fetchMeInflight;
 
     fetchMeInflight = (async () => {
-      const token = localStorage.getItem("blockyedu_token");
-      if (!token) {
-        set({ user: null, loading: false, initialized: true });
-        return;
-      }
       set({ loading: true });
       try {
-        // 401 is refreshed once inside httpRequest; OIDC 501 is not treated as success.
-        const user = await httpRequest<AuthUser>("/auth/me");
+        // Cookie session: skip the global login redirect, but still refresh once on 401.
+        let user: AuthUser;
+        try {
+          user = await httpRequest<AuthUser>("/auth/me", { skipAuthHandlers: true });
+        } catch (err) {
+          if (!(err instanceof UnauthorizedError)) throw err;
+          if (!(await tryRefreshSession())) throw err;
+          user = await httpRequest<AuthUser>("/auth/me", { skipAuthHandlers: true });
+        }
+        markSessionActive();
         set({ user, loading: false, initialized: true });
       } catch {
-        localStorage.removeItem("blockyedu_token");
+        clearClientSession();
         set({ user: null, loading: false, initialized: true });
       }
     })().finally(() => {
@@ -132,11 +137,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: () => {
     const loginUrl = `${window.location.origin}/login`;
     set({ user: null, loginPromptOpen: false, initialized: true });
-    localStorage.removeItem("blockyedu_token");
     if (isDirectIdpEnabled()) {
-      idpSignOut().catch(() => {
-        window.location.href = loginUrl;
-      });
+      void postAuthLogout(loginUrl)
+        .catch(() => undefined)
+        .finally(() => {
+          clearClientSession();
+          idpSignOut().catch(() => {
+            window.location.href = loginUrl;
+          });
+        });
       return;
     }
     logoutAndRedirect(loginUrl);
